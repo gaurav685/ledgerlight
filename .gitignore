@@ -1,0 +1,56 @@
+# --- secrets / env ---
+.env
+.env.*
+!.env.example
+
+# --- data (raw/derived content is never committed; manifests are) ---
+data/raw/**
+data/interim/**
+data/processed/**
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+!data/manifests/
+!data/README.md
+
+# --- databases / local state ---
+*.db
+*.sqlite
+*.sqlite3
+
+# --- infra volumes (Postgres / MinIO local state) ---
+infra/pgdata/
+infra/miniodata/
+infra/*.volume/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# --- Node (recorded version only in Phase 0; no app scaffolded yet) ---
+node_modules/
+
+# --- Claude Code local settings ---
+.claude/settings.local.json
+
+# --- caches ---
+.cache/
+.uv-cache/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,318 @@
+# Machine-readable mirror of docs/data/source-inventory.md.
+# Every field here reflects something actually checked (a real HTTP request,
+# a robots.txt fetch, or a cited secondary report) on the date given, never
+# an assumption about current site behaviour.
+#
+# verdict: one of AVAILABLE | AVAILABLE_WITH_LIMITS | REQUIRES_REGISTRATION |
+#          REQUIRES_PAYMENT_OR_LICENCE | BLOCKED | UNCLEAR
+
+sources:
+  bse:
+    owner: "BSE Ltd (Bombay Stock Exchange)"
+    base_url: "https://www.bseindia.com"
+    endpoints:
+      - "Corporate announcements/attachments (Reg 30 disclosures, auditor resignations, KMP/director changes, results, board outcomes)"
+      - "Shareholding pattern / SAST promoter pledge disclosures"
+      - "XBRL filings"
+      - "Bhavcopy / price archives"
+    access_method: "HTML pages + static asset paths (xml-data/corpfiling, bseplus/AnnualReport); no documented public bulk API found"
+    registration_required: false
+    robots_txt:
+      fetched_at: "2026-10-23T18:08Z"
+      result: "Could not retrieve robots.txt itself — Akamai edge returned an 'Access Denied' page for the robots.txt request with our identifying User-Agent."
+    terms_of_use:
+      url: null
+      reviewed_at: null
+      note: "Not reached — every request with our identifying User-Agent (including to the terms page) was blocked at the edge (HTTP 403, Server: AkamaiGHost)."
+    rate_limits_or_anti_automation: "Akamai bot-mitigation blocks requests whose User-Agent is not a recognised browser string, on every path tested (homepage, robots.txt, PDF asset paths). A plain Mozilla-style browser User-Agent reached the homepage (HTTP 200); our honest, identifying User-Agent did not (HTTP 403) on any path tested."
+    formats: ["PDF", "XBRL", "CSV/ZIP (bhavcopy, as stated by the site; not verified by us)"]
+    verified_coverage: { earliest: null, latest: null, note: "Not verified — blocked before any listing/archive page could be read." }
+    delisted_or_suspended_accessible: "UNVERIFIED (blocked)"
+    verdict: "BLOCKED"
+    verdict_reason: "Edge bot-mitigation (Akamai) rejects our honestly-identified, non-browser User-Agent on every path tested, including robots.txt and static PDF assets. Ground rules forbid spoofing a browser User-Agent to get around this, so we do not attempt it."
+    urls_opened:
+      - "https://www.bseindia.com/ (identifying UA: 403; browser UA: 200)"
+      - "https://www.bseindia.com/robots.txt (403)"
+      - "https://www.bseindia.com/xml-data/corpfiling/AttachHis/49e48163-003f-4214-b6ca-838d775a057a.pdf (403)"
+      - "https://www.bseindia.com/bseplus/AnnualReport/511072/67061511072.pdf (403)"
+
+  nse:
+    owner: "National Stock Exchange of India Ltd"
+    base_url: "https://www.nseindia.com"
+    endpoints:
+      - "Corporate announcements and annual reports"
+      - "Shareholding patterns and encumbrance disclosures"
+      - "Financial results, including XBRL"
+      - "Bhavcopy archives (host: nsearchives.nseindia.com)"
+    access_method: "HTML pages on www.nseindia.com; static ZIP/CSV/PDF archive files on nsearchives.nseindia.com"
+    registration_required: false
+    robots_txt:
+      fetched_at: "2026-10-23T18:08Z"
+      quoted: "User-agent: *\nAllow: /\nDisallow: /market-data-test\nSitemap: https://www.nseindia.com/sitemap.xml"
+    terms_of_use:
+      url: null
+      reviewed_at: null
+      note: "Not reached — main site blocked at the edge for every User-Agent we tried, including a browser UA."
+    rate_limits_or_anti_automation: "www.nseindia.com returns HTTP 403 (Server: AkamaiGHost) for both our identifying User-Agent and a standard browser User-Agent — this looks like a broader bot/behavioural block, not simply a UA string filter. nsearchives.nseindia.com served a bhavcopy ZIP with HTTP 200 to a browser User-Agent, but the same request with our honest identifying User-Agent stalled (TLS renegotiation loop, connection timed out after 15s) and never completed."
+    formats: ["CSV/ZIP (bhavcopy)", "PDF (circulars)"]
+    verified_coverage: { earliest: null, latest: null, note: "Not verified — could not complete a request with our identifying User-Agent." }
+    delisted_or_suspended_accessible: "UNVERIFIED (blocked)"
+    verdict: "BLOCKED"
+    verdict_reason: "robots.txt is permissive on paper, but the actual control is edge bot-mitigation keyed on request fingerprint/User-Agent, which rejects our honestly-identified client. We do not spoof a browser identity to work around this."
+    urls_opened:
+      - "https://www.nseindia.com/ (identifying UA: connection failed/timeout; browser UA: 403)"
+      - "https://www.nseindia.com/robots.txt (identifying UA: 200, permissive)"
+      - "https://nsearchives.nseindia.com/content/historical/EQUITIES/2024/JAN/cm01JAN2024bhav.csv.zip (browser UA: 200; identifying UA: timeout)"
+
+  sebi:
+    owner: "Securities and Exchange Board of India"
+    base_url: "https://www.sebi.gov.in"
+    endpoints:
+      - "Enforcement orders, adjudication orders, settlement orders"
+      - "Circulars"
+    access_method: "Plain HTML pages; PDFs served from /sebi_data/attachdocs/<month-year>/<file>.pdf"
+    registration_required: false
+    robots_txt:
+      fetched_at: "2026-10-23T18:08Z"
+      quoted: "User-agent: *\nDisallow: \nDisallow: /js\nDisallow: /hindi/js\nDisallow: /css\nDisallow: /hindi/css"
+    terms_of_use:
+      url: "https://www.sebi.gov.in/website-policy.html"
+      reviewed_at: "2026-10-23"
+      research_use: "Permitted to read/use; site content is published for public information."
+      local_storage: "Not explicitly addressed; treated as permitted for internal, non-redistributed use."
+      redistribution: "Explicitly conditional: 'material featured on the website may be reproduced free of charge after taking proper permission' and must not be used in a derogatory or misleading context — i.e. redistribution requires asking first, not an open licence."
+      commercial_use: "Not explicitly addressed; treat as UNCLEAR absent permission."
+    rate_limits_or_anti_automation: "None observed. Identifying User-Agent reached every path tried (homepage, enforcement order HTML pages, PDF attachments) with HTTP 200."
+    formats: ["HTML", "PDF"]
+    verified_coverage: { earliest: "2025-04 (Gensol interim order, actually fetched)", latest: "2025-07 (Gensol confirmatory order, actually fetched)", note: "Only the two seed documents' dates were verified; SEBI states orders going back many years, not independently verified here." }
+    delisted_or_suspended_accessible: "UNVERIFIED (not tested — no delisted-company order was in the Phase 0 seed sample)"
+    verdict: "AVAILABLE"
+    verdict_reason: "robots.txt permissive; identifying UA succeeds on every tested path; two real documents downloaded and hash-verified. Redistribution of the documents themselves is NOT an open licence (permission required), so only manifests are committed."
+    urls_opened:
+      - "https://www.sebi.gov.in/robots.txt"
+      - "https://www.sebi.gov.in/enforcement/orders/apr-2025/interim-order-in-the-matter-of-gensol-engineering-limited_93458.html"
+      - "https://www.sebi.gov.in/sebi_data/attachdocs/apr-2025/1744719603252_1.pdf"
+      - "https://www.sebi.gov.in/sebi_data/attachdocs/jul-2025/confirm_order_gensol_engg.pdf"
+      - "https://www.sebi.gov.in/website-policy.html"
+
+  ibbi:
+    owner: "Insolvency and Bankruptcy Board of India"
+    base_url: "https://ibbi.gov.in"
+    endpoints:
+      - "CIRP/liquidation public announcements and NCLT/NCLAT orders (orders/nclt, uploads/order/*, webadmin/pdf/order/*)"
+    access_method: "HTML search/listing pages with query params (e.g. /orders/nclt?title=<company>); PDFs served directly"
+    registration_required: false
+    robots_txt:
+      fetched_at: "2026-10-23T18:14Z"
+      result: "No robots.txt file present (both www.ibbi.gov.in -> 301 redirect to ibbi.gov.in, and ibbi.gov.in/robots.txt -> 'Not Found' error page). Treated as allow-all by convention, not as licence to ignore the site's terms."
+    terms_of_use:
+      url: "https://ibbi.gov.in (website policy link referenced in footer; exact URL not isolated in Phase 0)"
+      reviewed_at: null
+      note: "Generic '© 2018. All Rights Reserved.' copyright notice observed via search; full terms text not read in Phase 0 (gap)."
+    rate_limits_or_anti_automation: "None observed. Identifying User-Agent reached every path tried with HTTP 200."
+    formats: ["HTML", "PDF"]
+    verified_coverage: { earliest: "2019-07 (Jet Airways order, actually fetched)", latest: "2024-08 (Reliance Capital listing page entry, actually seen)", note: "Based only on the Phase 0 seed sample." }
+    delisted_or_suspended_accessible: "Yes for the CIRP cases themselves (DHFL, Jet Airways, Reliance Capital, Future Retail orders all reachable despite those companies being suspended/delisted/under CIRP) — a positive survivorship-bias signal for insolvency records specifically."
+    verdict: "AVAILABLE"
+    verdict_reason: "No robots.txt restriction found; every tested path succeeded; four real documents/pages downloaded and hash-verified, covering companies currently suspended or under CIRP."
+    urls_opened:
+      - "https://ibbi.gov.in/robots.txt"
+      - "https://ibbi.gov.in/orders/nclt?title=Reliance+Capital"
+      - "https://ibbi.gov.in/orders/nclt?title=Future+Retail"
+      - "https://ibbi.gov.in/uploads/order/6c090481fbfc1830f8ef051502887749.pdf"
+      - "https://ibbi.gov.in/webadmin/pdf/order/2019/Jul/5th%20July%202019%20in%20the%20matter%20of%20Jet%20Airways%20(India)%20Ltd.%20C.P.%20(IB)-2205(MB)-2019_2019-07-16%2011:37:58.pdf"
+
+  crisil:
+    owner: "CRISIL Ratings Limited"
+    base_url: "https://www.crisilratings.com"
+    endpoints: ["Rating rationales / press releases"]
+    access_method: "HTML pages"
+    registration_required: false
+    robots_txt:
+      fetched_at: "2026-10-23T18:09Z"
+      note: "Permissive for a generic '*' User-Agent on most content, but explicitly disallows a long list of named crawlers INCLUDING anthropic-ai, claudebot, Claude-Web, cohere-ai, GPTBot, ChatGPT-User, PerplexityBot, CCBot, bingbot and others (each with 'Disallow: /')."
+    terms_of_use: { url: null, reviewed_at: null, note: "Not reviewed — see verdict_reason." }
+    rate_limits_or_anti_automation: "Not tested beyond robots.txt."
+    formats: ["HTML", "PDF"]
+    verified_coverage: { earliest: null, latest: null }
+    delisted_or_suspended_accessible: "UNVERIFIED"
+    verdict: "BLOCKED"
+    verdict_reason: "This acquisition tool is operated by an AI agent (Claude Code) on the user's behalf. CRISIL's robots.txt explicitly disallows multiple named AI-crawler user agents (anthropic-ai, claudebot, Claude-Web among them), even though our tool's literal custom User-Agent string is not one of those exact names. Out of respect for the site's evident intent toward AI-operated crawling — not merely the letter of the match — we chose not to fetch from this host. This is a deliberate, cautious judgment call, flagged for the user's awareness; it is not a technical block."
+    urls_opened:
+      - "https://www.crisilratings.com/robots.txt"
+
+  icra:
+    owner: "ICRA Limited"
+    base_url: "https://www.icra.in"
+    endpoints: ["Rating rationales / press releases"]
+    access_method: "HTML pages"
+    registration_required: false
+    robots_txt:
+      fetched_at: "2026-10-23T18:08Z"
+      result: "robots.txt request itself returned a bot-mitigation challenge page (obfuscated JavaScript fingerprinting challenge, 'barracuda.js' / Imperva-style), not an actual robots.txt file."
+    terms_of_use: { url: null, reviewed_at: null, note: "Not reached." }
+    rate_limits_or_anti_automation: "Heavy bot-mitigation / fingerprinting challenge observed on the very first request (robots.txt)."
+    formats: ["HTML", "PDF"]
+    verified_coverage: { earliest: null, latest: null }
+    delisted_or_suspended_accessible: "UNVERIFIED (blocked)"
+    verdict: "BLOCKED"
+    verdict_reason: "Edge bot-mitigation serves a browser-fingerprinting challenge instead of content, to our honest identifying User-Agent, on the very first request. Ground rules forbid defeating fingerprinting challenges."
+    urls_opened:
+      - "https://www.icra.in/robots.txt"
+
+  care:
+    owner: "CARE Ratings Ltd (CareEdge Ratings)"
+    base_url: "https://www.careratings.com"
+    endpoints: ["Rating rationales / press releases, served from /upload/CompanyFiles/PR/*.pdf"]
+    access_method: "HTML pages + direct PDF paths"
+    registration_required: false
+    robots_txt:
+      fetched_at: "2026-10-23T18:08Z"
+      quoted: "User-agent: *\nDisallow:"
+    terms_of_use:
+      url: "https://www.careratings.com (terms/privacy policy pages referenced in footer)"
+      reviewed_at: "2026-10-23"
+      note: "CARE Ratings Ltd holds copyright over published content, 'all rights reserved'; content is published for dissemination of information required under applicable law/regulation, which is not the same as an open redistribution licence."
+    rate_limits_or_anti_automation: "None observed."
+    formats: ["HTML", "PDF"]
+    verified_coverage: { earliest: "2019-06-05 (DHFL rationale, actually fetched)", latest: "2019-06-05", note: "Single document verified in Phase 0." }
+    delisted_or_suspended_accessible: "Yes for this one case — the DHFL rationale (a company later admitted to CIRP) was reachable."
+    verdict: "AVAILABLE"
+    verdict_reason: "Permissive robots.txt; identifying UA succeeded; one real rationale PDF downloaded and hash-verified. Redistribution of the documents is copyrighted/all-rights-reserved, so only the manifest is committed."
+    urls_opened:
+      - "https://www.careratings.com/robots.txt"
+      - "https://www.careratings.com/upload/CompanyFiles/PR/Dewan%20Housing%20Finance%20Corporation%20Ltd.-06-05-2019.pdf"
+
+  india_ratings:
+    owner: "India Ratings & Research (Fitch Group)"
+    base_url: "https://www.indiaratings.co.in"
+    endpoints: ["Rating rationales / press releases"]
+    access_method: "HTML pages"
+    registration_required: false
+    robots_txt:
+      fetched_at: "2026-10-23T18:08Z"
+      quoted: "User-agent: *\nDisallow: /admin/\nDisallow: /cgi-bin/\nDisallow: /tmp/\nDisallow: /private/\nDisallow: /logs/\nDisallow: /wp-admin/ ...(standard WordPress admin paths)"
+    terms_of_use: { url: null, reviewed_at: null, note: "Not reviewed in Phase 0 (no document from this source was in the final seed set — gap)." }
+    rate_limits_or_anti_automation: "Not tested beyond robots.txt (homepage GET returned HTTP 200 in the basic reachability probe)."
+    formats: ["HTML", "PDF"]
+    verified_coverage: { earliest: null, latest: null }
+    delisted_or_suspended_accessible: "UNVERIFIED"
+    verdict: "AVAILABLE_WITH_LIMITS"
+    verdict_reason: "robots.txt permissive and homepage reachable, but no specific company document was actually fetched in Phase 0 — treat as a promising candidate for Phase 1, not yet proven for a specific filing path."
+    urls_opened:
+      - "https://www.indiaratings.co.in/robots.txt"
+      - "https://www.indiaratings.co.in/ (basic reachability GET only)"
+
+  acuite:
+    owner: "Acuité Ratings & Research Limited"
+    base_url: "https://www.acuite.in"
+    endpoints: ["Rating rationales / press releases"]
+    access_method: "HTML pages"
+    registration_required: false
+    robots_txt:
+      fetched_at: "2026-10-23T18:08Z"
+      result: "Empty response body — no restrictions declared."
+    terms_of_use: { url: null, reviewed_at: null, note: "Not reviewed in Phase 0 (gap)." }
+    rate_limits_or_anti_automation: "Not tested beyond robots.txt."
+    formats: ["HTML", "PDF"]
+    verified_coverage: { earliest: null, latest: null }
+    delisted_or_suspended_accessible: "UNVERIFIED"
+    verdict: "AVAILABLE_WITH_LIMITS"
+    verdict_reason: "No robots.txt restriction and homepage reachable, but no specific document fetched in Phase 0."
+    urls_opened:
+      - "https://www.acuite.in/robots.txt"
+      - "https://www.acuite.in/ (basic reachability GET only)"
+
+  infomerics:
+    owner: "Infomerics Valuation and Rating Pvt Ltd"
+    base_url: "https://www.infomerics.com"
+    endpoints: ["Rating rationales / press releases"]
+    access_method: "HTML pages (Next.js app)"
+    registration_required: false
+    robots_txt:
+      fetched_at: "2026-10-23T18:08Z"
+      result: "No static robots.txt file; the framework served its generic 404 page for that path (meta 'robots: noindex' present on the 404 page itself, which is routine, not a site-wide crawl directive)."
+    terms_of_use: { url: null, reviewed_at: null, note: "Not reviewed in Phase 0 (gap)." }
+    rate_limits_or_anti_automation: "Not tested beyond robots.txt."
+    formats: ["HTML", "PDF"]
+    verified_coverage: { earliest: null, latest: null }
+    delisted_or_suspended_accessible: "UNVERIFIED"
+    verdict: "UNCLEAR"
+    verdict_reason: "No robots.txt restriction found and homepage reachable, but no document fetched and no terms reviewed in Phase 0."
+    urls_opened:
+      - "https://www.infomerics.com/robots.txt"
+      - "https://www.infomerics.com/ (basic reachability GET only)"
+
+  brickwork:
+    owner: "Brickwork Ratings India Pvt Ltd"
+    base_url: "https://www.brickworkratings.com"
+    endpoints: ["Rating rationales / press releases"]
+    access_method: "HTML pages"
+    registration_required: false
+    robots_txt:
+      fetched_at: "2026-10-23T18:08Z"
+      result: "robots.txt path returns a generic IIS '404 - File or directory not found' page, i.e. no robots.txt file present."
+    terms_of_use: { url: null, reviewed_at: null, note: "Not reviewed in Phase 0 (gap)." }
+    rate_limits_or_anti_automation: "Not tested beyond robots.txt."
+    formats: ["HTML", "PDF"]
+    verified_coverage: { earliest: null, latest: null }
+    delisted_or_suspended_accessible: "UNVERIFIED"
+    regulatory_status_note: >-
+      SEBI cancelled Brickwork's certificate of registration in Oct 2022 and ordered a wind-down
+      within six months; SEBI further restricted it from onboarding new clients in Sept 2023;
+      SEBI lifted those restrictions in March 2024 and Brickwork resumed normal operations.
+      As of this research (Oct 2026) it is listed as an active, perpetually-registered credit
+      rating agency per secondary reporting — not independently re-verified against SEBI's live
+      intermediary registry in Phase 0.
+    verdict: "UNCLEAR"
+    verdict_reason: "Site technically reachable with no robots.txt restriction, but its regulatory status had a disruption (2022-2024) worth flagging, and no document/terms were reviewed in Phase 0."
+    urls_opened:
+      - "https://www.brickworkratings.com/robots.txt"
+
+  mca:
+    owner: "Ministry of Corporate Affairs, Government of India"
+    base_url: "https://www.mca.gov.in"
+    endpoints: ["Company/LLP master data (CIN)", "Director master data (DIN)", "Filed documents (incorporation docs, annual returns, financials)"]
+    access_method: "MCA21 portal (web UI); bulk Company Master Data ZIP on data.gov.in (Open Government Data platform)"
+    registration_required: "Master data: no. Document downloads: yes, a free MCA21 account."
+    robots_txt:
+      fetched_at: "2026-10-23T18:08Z"
+      result: "Could not retrieve — Akamai edge returned an 'Access Denied' page for the robots.txt request, both with our identifying User-Agent and with a standard browser User-Agent."
+    terms_of_use: { url: null, reviewed_at: null, note: "Not reached (blocked)." }
+    rate_limits_or_anti_automation: "Edge WAF (Akamai) blocked robots.txt and the homepage for every User-Agent we tried, including a browser UA — unlike BSE, this did not look like a pure UA filter."
+    formats: ["HTML", "PDF (digitally signed)", "bulk CSV/ZIP on data.gov.in"]
+    verified_coverage: { earliest: null, latest: null }
+    delisted_or_suspended_accessible: "UNVERIFIED"
+    pricing_note: "Per secondary sources (not independently verified against a live MCA fee schedule page, since mca.gov.in was blocked): basic company/director master data is free with no login; downloading filed documents costs on the order of Rs 25-100 per document via a free account; the full Company Master Data (28M+ companies) is published free as a bulk ZIP on data.gov.in."
+    verdict: "BLOCKED"
+    verdict_reason: "mca.gov.in itself returned Access Denied for every request attempted, regardless of User-Agent. The data.gov.in bulk Company Master Data mirror is a promising unblocked alternative for CIN/company master data specifically, but was not independently fetched/verified in Phase 0 (gap)."
+    urls_opened:
+      - "https://www.mca.gov.in/robots.txt"
+      - "https://www.mca.gov.in/ (both UAs)"
+
+  price_data_alternatives:
+    owner: "Various (see note)"
+    base_url: null
+    note: >-
+      Given BSE and NSE bulk price archives are BLOCKED for our honestly-identified client, Phase 0
+      did not download any price history. Candidates for Phase 1 research (NOT verified or accessed
+      in Phase 0): NSE's own data.gov.in-style open data (if any), AMFI (mutual fund NAVs only, not
+      equity prices), and commercial end-of-day data vendors. No specific alternative source's terms
+      were reviewed, so this entry intentionally carries no verdict.
+    verdict: "UNCLEAR"
+
+  commercial_datasets:
+    owner: "CMIE (Prowess), Capitaline, ACE Equity, LSEG, Bloomberg"
+    base_url: null
+    note: "Recorded as alternatives only, per instructions. No access was attempted."
+    access_method: "Paid subscription / institutional licence"
+    verdict: "REQUIRES_PAYMENT_OR_LICENCE"
+
+  academic_datasets:
+    owner: "Various academic publishers/repositories"
+    base_url: null
+    note: >-
+      No specific open academic dataset on Indian corporate governance/fraud/default with an explicit
+      licence was identified and verified within the Phase 0 research budget. This is a gap, not a
+      finding of non-existence — a targeted search is a Phase 1 (or later Phase 0 follow-up) task.
+    verdict: "UNCLEAR"

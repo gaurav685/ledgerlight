@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint-typecheck-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Lint (ruff check + format check)
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Typecheck (mypy, strict)
+        run: uv run mypy
+
+      - name: Test (non-network only; network tests excluded by default)
+        run: uv run pytest

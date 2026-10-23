@@ -1,0 +1,61 @@
+name: ledgerlight-phase0
+
+services:
+  postgres:
+    # Tag pinned to a specific pgvector-on-Postgres-16 release tag (not
+    # ":latest"). We did not resolve/record the underlying image digest here
+    # because the local Docker daemon was unavailable at write time — see
+    # docs/phase-0/environment-report.md and the infra-check results in
+    # docs/phase-0/phase-0-report.md for what was actually verified.
+    image: pgvector/pgvector:pg16
+    restart: "no"
+    environment:
+      POSTGRES_USER: ${LEDGERLIGHT_POSTGRES_USER:-ledgerlight}
+      POSTGRES_PASSWORD: ${LEDGERLIGHT_POSTGRES_PASSWORD:-changeme-local-only}
+      POSTGRES_DB: ${LEDGERLIGHT_POSTGRES_DB:-ledgerlight}
+    ports:
+      - "127.0.0.1:${LEDGERLIGHT_POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${LEDGERLIGHT_POSTGRES_USER:-ledgerlight} -d ${LEDGERLIGHT_POSTGRES_DB:-ledgerlight}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    # MinIO's community edition was archived (Feb 2026) and its images were
+    # removed from BOTH Docker Hub and quay.io (confirmed here: quay.io pull
+    # returns 401, not 404). The only verified-pullable image at write time
+    # is the community-maintained Bitnami legacy mirror. IMPORTANT: the last
+    # free MinIO community release carries CVE-2026-40344 (auth bypass,
+    # CVSS 8.8) with no community-edition fix available. Acceptable for this
+    # Phase 0 loopback-only, no-real-data health check; NOT a decision about
+    # what Phase 1+ object storage should use — see
+    # docs/data/acquisition-strategy.md "Decisions needing approval".
+    image: bitnamilegacy/minio:2025.7.23-debian-12-r5
+    # Bitnami's image runs as a non-root UID by default; on this host the
+    # named volume is created root-owned and the entrypoint's own chown
+    # step is denied, so MinIO fails to start ("file access denied").
+    # Running as root lets Bitnami's entrypoint fix ownership itself —
+    # acceptable for this local, loopback-only Phase 0 health check.
+    user: root
+    restart: "no"
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${LEDGERLIGHT_MINIO_ROOT_USER:-ledgerlight}
+      MINIO_ROOT_PASSWORD: ${LEDGERLIGHT_MINIO_ROOT_PASSWORD:-changeme-local-only}
+    ports:
+      - "127.0.0.1:59000:9000"
+      - "127.0.0.1:59001:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
+  miniodata:
