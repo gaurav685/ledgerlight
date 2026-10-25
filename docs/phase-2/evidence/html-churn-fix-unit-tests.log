@@ -1,0 +1,19 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.15, pytest-8.4.2, pluggy-1.7.0 -- C:\ledger light\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\ledger light
+configfile: pyproject.toml
+plugins: anyio-4.15.1, platformdirs-4.13.5, cov-5.0.0, respx-0.21.1
+collecting ... collected 9 items
+
+tests/test_content_identity.py::test_same_inner_content_different_zip_timestamp_has_same_identity_hash PASSED [ 11%]
+tests/test_content_identity.py::test_genuinely_different_inner_content_has_different_identity_hash PASSED [ 22%]
+tests/test_content_identity.py::test_non_zip_non_html_content_identity_is_the_raw_bytes PASSED [ 33%]
+tests/test_content_identity.py::test_multi_entry_zip_falls_back_to_raw_bytes PASSED [ 44%]
+tests/test_content_identity.py::test_malformed_zip_falls_back_to_raw_bytes PASSED [ 55%]
+tests/test_content_identity.py::test_csrf_token_and_randomized_dom_id_do_not_change_identity_hash PASSED [ 66%]
+tests/test_content_identity.py::test_duplicated_title_text_in_body_does_not_change_identity_hash PASSED [ 77%]
+tests/test_content_identity.py::test_genuinely_different_html_text_has_different_identity_hash PASSED [ 88%]
+tests/test_content_identity.py::test_script_and_style_tags_are_fully_excluded_from_html_identity PASSED [100%]
+
+============================== 9 passed in 0.58s ==============================

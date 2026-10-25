@@ -1,0 +1,18 @@
+﻿source_id       doc_type                    bytes  pymupdf_pages  stored_pages  match
+thermax_ir      annual_report            13358993            217           217     OK
+dmart_ir        investor_presentation     3564259             13            13     OK
+mastek_ir       shareholding_pattern      2259252              5             5     OK
+brightcom_ir    annual_report             1932129            122           122     OK
+sebi            sebi_interim_order        1247907             29            29     OK
+sebi            sebi_confirmatory_order     978834             33            33     OK
+sebi            sebi_related_document      907087             32            32     OK
+spicejet_ir     shareholding_pattern       848284              4             4     OK
+vakrangee_ir    auditor_resignation_company_update     512753              2             2     OK
+jetairways_ir   shareholding_pattern       503265              7             7     OK
+care            rating_rationale           495362             17            17     OK
+lichousing_ir   shareholding_pattern       492014              8             8     OK
+vakrangee_ir    auditor_resignation_letter     250640              1             1     OK
+vakrangee_ir    reg30_intimation           237412              1             1     OK
+ibbi            nclt_order                 178066             22            22     OK
+
+mismatches: 0
