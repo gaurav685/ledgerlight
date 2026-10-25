@@ -1,0 +1,17 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.15, pytest-8.4.2, pluggy-1.7.0 -- C:\ledger light\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\ledger light
+configfile: pyproject.toml
+plugins: anyio-4.15.1, platformdirs-4.13.5, cov-5.0.0, respx-0.21.1
+collecting ... collected 7 items
+
+tests/test_chunking.py::test_empty_page_produces_no_chunks PASSED        [ 14%]
+tests/test_chunking.py::test_short_page_is_a_single_chunk PASSED         [ 28%]
+tests/test_chunking.py::test_spans_round_trip_exactly_to_the_source_text PASSED [ 42%]
+tests/test_chunking.py::test_spans_are_ordered_and_non_overlapping_for_packed_paragraphs PASSED [ 57%]
+tests/test_chunking.py::test_long_paragraph_is_hard_split_with_overlap PASSED [ 71%]
+tests/test_chunking.py::test_many_small_paragraphs_get_packed_up_to_target PASSED [ 85%]
+tests/test_chunking.py::test_chunk_text_is_never_empty PASSED            [100%]
+
+============================== 7 passed in 0.42s ==============================
