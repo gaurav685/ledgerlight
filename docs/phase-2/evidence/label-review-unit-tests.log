@@ -1,0 +1,17 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.15, pytest-8.4.2, pluggy-1.7.0 -- C:\ledger light\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\ledger light
+configfile: pyproject.toml
+plugins: anyio-4.15.1, platformdirs-4.13.5, cov-5.0.0, respx-0.21.1
+collecting ... collected 7 items
+
+tests/test_label_review.py::test_accept_sets_human_reviewed_and_accepted PASSED [ 14%]
+tests/test_label_review.py::test_correct_records_corrected_code PASSED   [ 28%]
+tests/test_label_review.py::test_reject_sets_rejected_but_still_human_reviewed PASSED [ 42%]
+tests/test_label_review.py::test_blank_reviewer_is_rejected PASSED       [ 57%]
+tests/test_label_review.py::test_correct_without_corrected_code_is_rejected PASSED [ 71%]
+tests/test_label_review.py::test_unknown_label_item_id_is_rejected PASSED [ 85%]
+tests/test_label_review.py::test_gold_label_counts_excludes_rejected_and_uses_corrected_code PASSED [100%]
+
+============================== 7 passed in 1.85s ==============================

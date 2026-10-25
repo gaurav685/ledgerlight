@@ -61,6 +61,10 @@ node_modules/
 .cache/
 .uv-cache/
 
+# --- Phase 2 knowledge-pipeline artifacts (rebuildable, never committed) ---
+data/indexes/
+.hf_cache/
+
 # --- OS / editor ---
 .DS_Store
 Thumbs.db

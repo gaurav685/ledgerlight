@@ -1,0 +1,14 @@
+﻿chunks_seen: 2591
+proposals_created: 241
+already_proposed: 0
+by_event_type:
+  AUDIT_QUAL: 8
+  AUD_RESIGN: 6
+  FORENSIC: 7
+  ID_EXIT: 6
+  KMP_EXIT: 2
+  PLEDGE_UP: 28
+  RATING_ACT: 4
+  RESULT_DELAY: 4
+  RPT_GROWTH: 22
+  none: 154
