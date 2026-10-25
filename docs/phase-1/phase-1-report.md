@@ -398,15 +398,21 @@ rather than an unqualified PASS, stated above rather than smoothed over.
 
 ## 16. Git and backup status
 
-- All Phase 1 work is staged for commit with `phase-1:`-prefixed commit
-  message(s), under the existing `gaurav685 <gaurav685@gmail.com>`
-  identity, **no AI/Claude/Anthropic attribution of any kind**.
+- All Phase 1 work is committed as `85fef1ec4d1383cd00cc9cbd815bd06f672fb0a4`
+  (`phase-1: data ingestion, raw storage and document processing`) on
+  branch `phase-1/ingestion-and-document-processing` (branched from
+  `phase-0/environment-and-data-inventory`'s tip, consistent with this
+  repo's per-phase branch convention), authored by
+  `gaurav685 <gaurav685@gmail.com>` — verified via `git log --format='%H
+  %an <%ae>'` to carry **no AI/Claude/Anthropic attribution of any kind**.
 - No remote added, nothing pushed — per your standing instruction
-  (deferred to the end of the whole project).
-- A local git bundle backup is created at
-  `../ledgerlight-backups/ledgerlight-phase-1.bundle` and verified with
-  `git bundle verify` (see commit output appended after this report is
-  committed).
+  (deferred to the end of the whole project). `git branch -a` shows only
+  the two local phase branches, no `origin`.
+- A local git bundle backup was created at
+  `../ledgerlight-backups/ledgerlight-phase-1.bundle` (436,484 bytes,
+  outside the repo) containing both phase branches' complete history,
+  and verified: `git bundle verify` reports "the bundle records a
+  complete history" and lists both branch refs plus `HEAD`.
 
 ---
 
