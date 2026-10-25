@@ -1,0 +1,23 @@
+﻿SILVER query set (ai_constructed_unreviewed): 30 queries
+  AUDIT_QUAL: 2
+  AUD_RESIGN: 2
+  FORENSIC: 2
+  ID_EXIT: 2
+  PLEDGE_UP: 10
+  RESULT_DELAY: 2
+  RPT_GROWTH: 10
+python.exe : 
+At line:6 char:1
++ & ".\.venv\Scripts\python.exe" scripts\retrieval_eval.py 2>&1 | Tee-O ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]
+Loading weights:  24%|██▎       | 47/199 [00:00<00:00, 449.79it/s]
+Loading weights: 100%|██████████| 199/199 [00:00<00:00, 1437.25it/s]
+
+method             n   recall@5  recall@10      mrr
+lexical_bm25      30      0.567      0.667    0.330
+vector            30      0.333      0.467    0.210
+hybrid_rrf        30      0.533      0.633    0.258
