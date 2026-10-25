@@ -1,0 +1,15 @@
+﻿python.exe : INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+At line:7 char:1
++ & ".\.venv\Scripts\python.exe" -m alembic upgrade head 2>&1 | Tee-Obj ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (INFO  [alembic....PostgresqlImpl.:Str 
+   ing) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> cef1aa08abb1, initial 
+ingestion schema
+INFO  [alembic.runtime.migration] Running upgrade cef1aa08abb1 -> c88219a1fbbb, 
+add content_sha256 to document_versions
+INFO  [alembic.runtime.migration] Running upgrade c88219a1fbbb -> 59ce66e91705, 
+phase 2 knowledge schema

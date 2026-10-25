@@ -21,6 +21,13 @@ dependencies = [
     "boto3>=1.35,<2",
     "dagster>=1.8,<2",
     "dagster-postgres>=0.24,<1",
+    "pgvector>=0.3,<1",
+    "rapidfuzz>=3.9,<4",
+    "rank-bm25>=0.2,<1",
+    "scikit-learn>=1.5,<2",
+    "torch>=2.14,<3",
+    "transformers>=4.45,<5",
+    "sentence-transformers>=3.2,<4",
 ]
 
 [project.optional-dependencies]
@@ -73,6 +80,36 @@ follow_imports = "skip"
 [[tool.mypy.overrides]]
 module = "ledgerlight.orchestration.*"
 disallow_any_generics = false
+
+[[tool.mypy.overrides]]
+module = "rapidfuzz.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "rank_bm25.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "sklearn.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "sentence_transformers.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "transformers.*"
+ignore_missing_imports = true
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = "torch.*"
+ignore_missing_imports = true
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = "pgvector.*"
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 markers = [

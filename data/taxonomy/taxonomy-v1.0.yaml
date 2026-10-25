@@ -1,0 +1,282 @@
+version: "1.0"
+status: active
+supersedes: "0.1"
+source_doc: docs/data/taxonomy-v0.1.md
+notes: >
+  A red flag is an analytical signal, not proof of misconduct or of future
+  default. Every category below describes a disclosure pattern that
+  warrants further human review; none of them, alone or in combination, is
+  a finding against any company, director, or officer. All language in
+  event/field descriptions must stay neutral ("disclosed", "reported",
+  "stated") -- never "fraudulent", "suspicious", etc.
+
+changelog:
+  - version: "1.0"
+    date: "2026-10-26"
+    changes:
+      - "Promoted from the Phase 0 draft (docs/data/taxonomy-v0.1.md) to a
+         machine-readable, versioned file loaded by scripts/taxonomy_load.py
+         into taxonomy_versions/event_types -- never hand-inserted."
+      - "PLEDGE_UP: threshold made precise and boundary-tested (>=5.0pp
+         exactly triggers; crossing 50% upward triggers once, staying above
+         50% without a qualifying increase does not re-trigger)."
+      - "RESULT_DELAY: deadlines sourced from SEBI LODR Regulation 33(3)(a)
+         (45 days, Q1-Q3) and 33(3)(d) (60 days, annual) -- verified against
+         SEBI's own master circular SEBI/HO/CFD/PoD2/CIR/P/2023/120 and a
+         secondary legal-explainer source (both cited in
+         docs/knowledge/taxonomy.md), not assumed from memory. Regulation
+         33(3)(e): Q4 standalone figures ride with the annual 60-day
+         deadline, NOT a separate 45-day Q4 deadline -- encoded explicitly
+         so Q4 is never checked against the 45-day rule."
+      - "RPT_GROWTH: threshold kept as the Phase 0 draft's placeholder
+         (>5pp RPT/revenue share increase YoY, OR RPT value more than
+         doubles YoY) -- still NOT empirically calibrated (BSE/NSE
+         announcement data remains BLOCKED per
+         docs/data/source-inventory.md), documented as a placeholder
+         requiring future calibration, not claimed as derived from data."
+      - "AUDIT_QUAL: emphasis-of-matter explicitly separated from
+         qualified/adverse/disclaimer as a distinct, lower-severity
+         opinion_type value -- never counted toward 'is_qualification'."
+      - "GUIDANCE_MISS: definition and fields specified; detection is
+         explicitly out of scope for Phase 2 (Phase 3), marked
+         detection_approach: deferred_phase3."
+  - version: "0.1"
+    date: "2026-10-24"
+    changes:
+      - "Initial draft for Phase 0 feasibility planning (docs/data/taxonomy-v0.1.md)."
+
+event_types:
+  - code: AUD_RESIGN
+    name: Statutory auditor resignation
+    definition: >
+      A statutory auditor (or any auditor otherwise required by listing
+      regulations) resigns, or is not re-appointed outside the normal
+      rotation/AGM cycle, and this is disclosed via an exchange filing
+      (BSE/NSE Regulation 30 of SEBI LODR).
+    required_fields: [audit_firm, resignation_date]
+    optional_fields: [firm_registration_number, partner_name, effective_date, stated_reasons]
+    severity_rules:
+      - condition: "resignation cites inability to complete audit procedures, or any fraud/misstatement-related reason"
+        severity: high
+      - condition: "effective_date is more than 60 days before the next scheduled AGM (mid-cycle resignation)"
+        severity: medium
+      - condition: default
+        severity: low
+    detection_approach: text_classifier
+    thresholds:
+      mid_cycle_days_before_agm: 60
+
+  - code: PLEDGE_UP
+    name: Promoter pledge increase
+    definition: >
+      Promoter/promoter-group pledge (encumbrance) of shares, as a
+      percentage of promoter holding, rises materially between two
+      consecutive shareholding-pattern disclosures for the same company.
+    required_fields: [as_of_date, promoter_holding_pct, pledged_pct_of_promoter_holding, previous_as_of_date, previous_pledged_pct_of_promoter_holding]
+    optional_fields: [previous_promoter_holding_pct]
+    severity_rules:
+      - condition: "new pledged_pct_of_promoter_holding >= 75"
+        severity: high
+      - condition: "new pledged_pct_of_promoter_holding >= 50"
+        severity: medium
+      - condition: default
+        severity: low
+    detection_approach: rule_over_structured_data
+    thresholds:
+      min_increase_pp: 5.0
+      crossing_threshold_pct: 50.0
+      rule: >
+        Trigger if (new_pct - old_pct) >= min_increase_pp, OR
+        (old_pct < crossing_threshold_pct AND new_pct >= crossing_threshold_pct).
+        A company already above crossing_threshold_pct that rises by less
+        than min_increase_pp does NOT re-trigger (not a new crossing, not a
+        qualifying jump).
+      boundary_tests_required:
+        - "increase of 4.99pp does not trigger"
+        - "increase of exactly 5.00pp triggers"
+        - "crossing from 49.9% to 50.0% or above triggers"
+        - "staying above 50% with a small increase (e.g. 55% -> 56%) does not trigger"
+
+  - code: KMP_EXIT
+    name: Key managerial personnel exit
+    definition: >
+      A KMP (CEO, CFO, Company Secretary, Whole-time Director, etc., as
+      defined under the Companies Act 2013 / SEBI LODR) resigns or is
+      removed outside a disclosed succession plan.
+    required_fields: [person_name, designation, effective_date]
+    optional_fields: [din, stated_reason, successor_named]
+    severity_rules:
+      - condition: "no successor named in the same filing, AND stated_reason is absent or non-substantive"
+        severity: high
+      - condition: "exit disclosed less than 30 days after appointment"
+        severity: high
+      - condition: default
+        severity: medium
+    detection_approach: text_classifier
+    thresholds:
+      min_days_since_appointment_for_concern: 30
+
+  - code: ID_EXIT
+    name: Independent director exit
+    definition: >
+      An independent director resigns before completing their term. SEBI
+      LODR Regulation 30 requires the resignation letter (or a detailed
+      reason) to be disclosed.
+    required_fields: [person_name, effective_date]
+    optional_fields: [din, stated_reason]
+    severity_rules:
+      - condition: "stated_reason is present and is not solely 'personal reasons' or 'other commitments'"
+        severity: high
+      - condition: "stated_reason is absent entirely"
+        severity: medium
+      - condition: default
+        severity: low
+    detection_approach: text_classifier
+    thresholds: {}
+    co_occurrence_note: >
+      A resignation can be both KMP_EXIT and ID_EXIT (e.g. an independent
+      director who is also a whole-time director). Both events are
+      created independently; they are not deduplicated against each other.
+
+  - code: RATING_ACT
+    name: Adverse rating action
+    definition: >
+      A credit rating agency downgrades, places on negative watch/outlook,
+      or withdraws a rating other than at the issuer's own request with no
+      other negative qualifier attached.
+    required_fields: [agency, instrument, previous_rating, new_rating, action_type, action_date]
+    optional_fields: [outlook]
+    severity_rules:
+      - condition: "new_rating crosses from investment grade to sub-investment grade"
+        severity: high
+      - condition: "action_type == downgrade"
+        severity: medium
+      - condition: "action_type in [negative_watch, negative_outlook]"
+        severity: low
+      - condition: default
+        severity: low
+    detection_approach: rule_over_structured_data
+    thresholds:
+      notch_downgrade_min: 1
+      investment_grade_cutoff: "BBB-"
+
+  - code: RESULT_DELAY
+    name: Delayed financial results
+    definition: >
+      Quarterly or annual financial results are filed after the SEBI LODR
+      Regulation 33 deadline for the applicable period.
+    required_fields: [period, deadline, actual_filing_date]
+    optional_fields: []
+    severity_rules:
+      - condition: "delay > 30 days"
+        severity: high
+      - condition: "delay > 7 days"
+        severity: medium
+      - condition: "delay >= 1 day"
+        severity: low
+    detection_approach: rule_over_structured_data
+    thresholds:
+      quarterly_deadline_days: 45
+      annual_deadline_days: 60
+      regulation_citation: >
+        SEBI LODR Regulation 33(3)(a): quarterly results (Q1, Q2, Q3) due
+        within 45 days of quarter-end. Regulation 33(3)(d): annual audited
+        results due within 60 days of financial-year-end. Regulation
+        33(3)(e): the last quarter's (Q4) standalone figures are filed
+        ALONG WITH the annual results under the 60-day deadline -- there is
+        NO separate 45-day deadline for Q4. Verified against SEBI's Master
+        Circular SEBI/HO/CFD/PoD2/CIR/P/2023/120
+        (sebi.gov.in/sebi_data/attachdocs/jul-2023/1689087475880.pdf) and
+        cross-checked against a secondary legal explainer (thefootnotes.in)
+        -- see docs/knowledge/taxonomy.md for the full citation.
+      q4_uses_annual_deadline: true
+      unverifiable_condition: "actual_filing_date is NULL/unknown -> status=unverifiable, never defaulted to on-time or late"
+
+  - code: AUDIT_QUAL
+    name: Audit qualification / adverse opinion / emphasis of matter
+    definition: >
+      The statutory auditor's report on annual or quarterly results
+      contains a qualified opinion, adverse opinion, disclaimer of
+      opinion, or an emphasis-of-matter paragraph.
+    required_fields: [opinion_type, period, basis_text_span]
+    optional_fields: []
+    severity_rules:
+      - condition: "opinion_type in [adverse, disclaimer]"
+        severity: high
+      - condition: "opinion_type == qualified"
+        severity: medium
+      - condition: "opinion_type == emphasis_of_matter"
+        severity: low
+    detection_approach: both
+    thresholds:
+      qualification_opinion_types: [qualified, adverse, disclaimer]
+      non_qualification_opinion_types: [emphasis_of_matter]
+      note: >
+        emphasis_of_matter is a DISTINCT, lower-severity opinion_type value.
+        is_qualification = opinion_type in qualification_opinion_types is
+        always False for emphasis_of_matter -- it must never be counted
+        as, or escalate to, a qualification.
+
+  - code: FORENSIC
+    name: Forensic audit ordered or disclosed
+    definition: >
+      A forensic audit of the company (or a subsidiary) is ordered by the
+      board, a regulator, or a lender consortium, and disclosed.
+    required_fields: [auditor_appointed, scope, date]
+    optional_fields: []
+    severity_rules:
+      - condition: default
+        severity: high
+    detection_approach: text_classifier
+    thresholds: {}
+
+  - code: RPT_GROWTH
+    name: Related-party transaction growth
+    definition: >
+      Related-party transactions (RPTs) grow disproportionately relative
+      to revenue or to total transactions, year over year.
+    required_fields: [counterparty, amount, period, previous_amount, previous_period]
+    optional_fields: [revenue, previous_revenue]
+    severity_rules:
+      - condition: "rpt_value more than triples YoY"
+        severity: high
+      - condition: default
+        severity: medium
+    detection_approach: rule_over_structured_data
+    thresholds:
+      rpt_to_revenue_share_increase_pp: 5.0
+      rpt_absolute_growth_multiple: 2.0
+      rule: >
+        Trigger if (RPT/revenue share increases by >=5pp YoY) OR
+        (RPT absolute value >= 2x its prior-year value).
+      rationale_and_caveat: >
+        PLACEHOLDER, not empirically calibrated. Phase 0's source inventory
+        found BSE/NSE corporate-announcement data (the primary real source
+        for RPT disclosures) BLOCKED (see docs/data/source-inventory.md);
+        no real distribution of RPT-growth values across Indian listed
+        companies was available to calibrate this threshold statistically.
+        Carried forward from the Phase 0 draft unchanged. Flagged here
+        explicitly so it is never mistaken for a data-derived threshold.
+
+  - code: GUIDANCE_MISS
+    name: Guidance vs. actual miss
+    definition: >
+      Management's previously disclosed guidance (revenue, margin, volume,
+      etc., stated on an earnings call or in an investor presentation) is
+      missed by a material margin in the subsequent actual results.
+    required_fields: [guided_metric, guided_value, actual_value, guidance_date, actual_period]
+    optional_fields: [guidance_revision_count_trailing_12m]
+    severity_rules:
+      - condition: default
+        severity: medium
+    detection_approach: deferred_phase3
+    thresholds:
+      miss_threshold_pct: 10.0
+      revision_count_window_months: 12
+      note: >
+        Defined here (schema, fields, draft thresholds) for taxonomy
+        completeness, per the Phase 2 brief. Detection logic
+        (matching disclosed guidance text to subsequent actual results) is
+        explicitly Phase 3 scope -- GUIDANCE_MISS is never classified,
+        extracted, or scored in Phase 2. No code path in Phase 2 may create
+        an event with this event_type.
