@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ssl
 from pathlib import Path
 
 import httpx
@@ -162,3 +163,14 @@ def test_404_is_not_written_to_disk_or_manifest(tmp_path: Path) -> None:
     assert raised
     assert not manifest_path.exists()
     assert list((tmp_path / "data" / "raw").glob("**/*")) == []
+
+
+def test_client_verifies_tls_certificates(tmp_path: Path) -> None:
+    """Regression guard: vakrangee.in's incomplete cert chain was fixed by
+    switching to truststore, never by disabling verification. This must
+    never silently become `verify=False` / `CERT_NONE` again."""
+    with _make_fetcher(tmp_path) as fetcher:
+        verify = fetcher._client._transport._pool._ssl_context  # type: ignore[attr-defined]
+        assert isinstance(verify, ssl.SSLContext)
+        assert verify.verify_mode == ssl.CERT_REQUIRED
+        assert verify.check_hostname is True
