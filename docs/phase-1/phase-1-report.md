@@ -411,21 +411,25 @@ rather than an unqualified PASS, stated above rather than smoothed over.
 
 ## 16. Git and backup status
 
-- All Phase 1 work is committed as `85fef1ec4d1383cd00cc9cbd815bd06f672fb0a4`
-  (`phase-1: data ingestion, raw storage and document processing`) on
-  branch `phase-1/ingestion-and-document-processing` (branched from
-  `phase-0/environment-and-data-inventory`'s tip, consistent with this
-  repo's per-phase branch convention), authored by
-  `gaurav685 <gaurav685@gmail.com>` — verified via `git log --format='%H
-  %an <%ae>'` to carry **no AI/Claude/Anthropic attribution of any kind**.
+- Phase 1 is committed across three commits on branch
+  `phase-1/ingestion-and-document-processing` (branched from
+  `phase-0/environment-and-data-inventory`'s tip): `85fef1e` (main
+  implementation), `0e30841` (report finalization), and `d0bc7f7`
+  (this verification pass's gap closure) — current tip
+  `d0bc7f74fb14e5f3c4ab9b0e3f01a69f452ada16`. All authored by
+  `gaurav685 <gaurav685@gmail.com>` — verified via `git log -n 5
+  --format='%H%n%an <%ae>%n%B---'` to carry **no AI/Claude/Anthropic
+  attribution of any kind** in any of the 5 commits in this repository's
+  history.
 - No remote added, nothing pushed — per your standing instruction
   (deferred to the end of the whole project). `git branch -a` shows only
   the two local phase branches, no `origin`.
 - A local git bundle backup was created at
-  `../ledgerlight-backups/ledgerlight-phase-1.bundle` (436,484 bytes,
+  `../ledgerlight-backups/ledgerlight-phase-1.bundle` (462,106 bytes,
   outside the repo) containing both phase branches' complete history,
   and verified: `git bundle verify` reports "the bundle records a
-  complete history" and lists both branch refs plus `HEAD`.
+  complete history" and lists both branch refs plus `HEAD` at the
+  current tip.
 
 ## 17. Phase 1 Verification Pass (gap closure)
 
