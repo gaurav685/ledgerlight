@@ -89,12 +89,25 @@ class DocumentVersion(Base):
     __table_args__ = (
         UniqueConstraint("document_id", "sha256", name="uq_document_versions_doc_sha256"),
         Index("ix_document_versions_sha256", "sha256"),
+        Index("ix_document_versions_doc_content_sha256", "document_id", "content_sha256"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     document_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("documents.id"), nullable=False)
 
     sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    content_sha256: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+        doc=(
+            "Hash of the dedup-relevant content, which may differ from `sha256` "
+            "(the raw downloaded bytes) for containers whose wrapper is not "
+            "byte-deterministic -- e.g. a single-entry ZIP whose per-entry "
+            "timestamp a server regenerates on every request even when the "
+            "payload is unchanged. See ledgerlight.ingestion.upsert. NULL for "
+            "versions created before this column existed."
+        ),
+    )
     object_key: Mapped[str] = mapped_column(String(512), nullable=False)
     bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
     mime_type: Mapped[str | None] = mapped_column(String(128), nullable=True)

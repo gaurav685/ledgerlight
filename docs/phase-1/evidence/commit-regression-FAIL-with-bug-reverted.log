@@ -1,0 +1,75 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.15, pytest-8.4.2, pluggy-1.7.0 -- C:\ledger light\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\ledger light
+configfile: pyproject.toml
+plugins: anyio-4.15.1, platformdirs-4.13.5, cov-5.0.0, respx-0.21.1
+collecting ... collected 1 item
+
+tests/test_commit_visibility_regression.py::test_ingested_rows_are_visible_from_a_brand_new_session FAILED [100%]
+
+================================== FAILURES ===================================
+___________ test_ingested_rows_are_visible_from_a_brand_new_session ___________
+
+    def test_ingested_rows_are_visible_from_a_brand_new_session() -> None:
+        settings = _load_real_settings()
+        store = ObjectStore(settings)
+        repo_root = Path(__file__).resolve().parent.parent
+        sources_yaml = repo_root / "data" / "manifests" / "sources.yaml"
+    
+        engine_a = create_engine(settings.database_url())
+        url = (
+            "https://archives.nseindia.com/content/historical/EQUITIES/"
+            f"visibility-test-{uuid.uuid4()}.csv.zip"
+        )
+        body = (
+            b"SYMBOL,SERIES,OPEN,HIGH,LOW,CLOSE,LAST,PREVCLOSE,TOTTRDQTY,TOTTRDVAL,TIMESTAMP,"
+            b"TOTALTRADES,ISIN,\n"
+        )
+        entry = ManifestEntry(
+            record_id=str(uuid.uuid4()),
+            source_id="nse_archives",
+            source_url="https://archives.nseindia.com/",
+            retrieval_url=url,
+            retrieved_at=utc_now().isoformat(),
+            retrieval_method="automated_fetch",
+            http_status=200,
+            content_type="application/zip",
+            bytes=len(body),
+            sha256=sha256_bytes(body),
+            local_path="data/raw/nse_archives/2026/visibility-test.csv.zip",
+            document_type="equity_bhavcopy",
+            licence_status="public_no_explicit_licence",
+            redistribution_allowed="unclear",
+        )
+    
+        try:
+            # Session A: sync sources, ingest, then CLOSE -- simulating the
+            # exact shape of the real bug (a script's `with session_factory()
+            # as session:` block ending).
+            with Session(bind=engine_a) as session_a:
+                sync_sources(session_a, sources_yaml)
+                upsert_document_version(session_a, store, entry, body)
+            engine_a.dispose()
+    
+            # Session B: a fully independent engine/connection, as if a
+            # completely different process queried the database afterward.
+            engine_b = create_engine(settings.database_url())
+            with Session(bind=engine_b) as session_b:
+                document = session_b.scalar(
+                    select(Document).where(
+                        Document.source_id == "nse_archives", Document.source_key == url
+                    )
+                )
+>               assert document is not None, (
+                    "document is not visible from a new session/connection -- "
+                    "this is exactly the bug: a missing commit() made the write "
+                    "invisible outside the originating session"
+                )
+E               AssertionError: document is not visible from a new session/connection -- this is exactly the bug: a missing commit() made the write invisible outside the originating session
+E               assert None is not None
+
+C:\ledger light\tests\test_commit_visibility_regression.py:94: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_commit_visibility_regression.py::test_ingested_rows_are_visible_from_a_brand_new_session
+============================== 1 failed in 2.39s ==============================

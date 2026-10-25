@@ -1,0 +1,18 @@
+﻿payload_ref: demo://dead-letter-demo/915c9a52-3cd7-4325-8466-32f32350689e
+-- simulating 3 failing attempts --
+  attempt 1: failed (demo: upstream still broken)
+  attempt 2: failed (demo: upstream still broken)
+  attempt 3: failed (demo: upstream still broken)
+dead_letter written: True
+  attempts=3 last_error='demo: upstream still broken'
+  resolved_at=None (should be None here)
+-- 'fixing' the issue and reprocessing --
+reprocess result: 'fixed'
+processing_attempts rows from this run: 4
+  attempt_number=1 status=failed
+  attempt_number=2 status=failed
+  attempt_number=3 status=failed
+  attempt_number=1 status=success
+dead_letters rows after reprocess: 1 (never deleted)
+  resolved_at=2026-10-25 17:53:49.056774+00:00  resolution='succeeded on a later attempt (attempt_number=1)'
+(this run's demo rows explicitly deleted -- not left in the database)

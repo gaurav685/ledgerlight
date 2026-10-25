@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from ledgerlight.acquisition.manifest import ManifestEntry
 from ledgerlight.db.models import Document, DocumentVersion
 from ledgerlight.db.temporal import compute_known_at
+from ledgerlight.ingestion.content_identity import content_identity_hash
 from ledgerlight.ingestion.date_parsing import parse_publication_time
 from ledgerlight.processing.mime_sniff import sniff_mime
 from ledgerlight.storage.s3_store import ObjectStore
@@ -65,6 +66,23 @@ def upsert_document_version(
         session.commit()
         return existing_version, document_was_new, False
 
+    # Raw bytes differ (checked above), but the dedup-relevant content may
+    # still be identical -- e.g. a single-entry ZIP a server re-wraps with a
+    # fresh per-entry timestamp on every request. Check by content identity
+    # before deciding this is genuinely new content (see
+    # ledgerlight.ingestion.content_identity and docs/adr for the real bug
+    # this fixes).
+    content_hash = content_identity_hash(body, mime)
+    existing_by_content = session.scalar(
+        select(DocumentVersion).where(
+            DocumentVersion.document_id == document.id,
+            DocumentVersion.content_sha256 == content_hash,
+        )
+    )
+    if existing_by_content is not None:
+        session.commit()
+        return existing_by_content, document_was_new, False
+
     retrieved_at = dt.datetime.fromisoformat(entry.retrieved_at)
     published_at = parse_publication_time(entry.publication_time)
     known_at, known_at_basis = compute_known_at(
@@ -77,6 +95,7 @@ def upsert_document_version(
     version = DocumentVersion(
         document_id=document.id,
         sha256=entry.sha256,
+        content_sha256=content_hash,
         object_key=object_key,
         bytes=entry.bytes,
         mime_type=mime,

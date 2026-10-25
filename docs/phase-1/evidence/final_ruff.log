@@ -1,0 +1,58 @@
+﻿ledgerlight\db\migrations\versions\c88219a1fbbb_add_content_sha256_to_document_versions.py:8:1: UP035 [*] Import from `collections.abc` instead: `Sequence`
+   |
+ 7 | """
+ 8 | from typing import Sequence, Union
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ UP035
+ 9 | 
+10 | from alembic import op
+   |
+   = help: Import from `collections.abc`
+
+ledgerlight\db\migrations\versions\c88219a1fbbb_add_content_sha256_to_document_versions.py:8:1: I001 [*] Import block is un-sorted or un-formatted
+   |
+ 7 |   """
+ 8 | / from typing import Sequence, Union
+ 9 | | 
+10 | | from alembic import op
+11 | | import sqlalchemy as sa
+12 | | 
+13 | | 
+14 | | # revision identifiers, used by Alembic.
+   | |_^ I001
+15 |   revision: str = 'c88219a1fbbb'
+16 |   down_revision: Union[str, Sequence[str], None] = 'cef1aa08abb1'
+   |
+   = help: Organize imports
+
+ledgerlight\db\migrations\versions\c88219a1fbbb_add_content_sha256_to_document_versions.py:16:16: UP007 [*] Use `X | Y` for type annotations
+   |
+14 | # revision identifiers, used by Alembic.
+15 | revision: str = 'c88219a1fbbb'
+16 | down_revision: Union[str, Sequence[str], None] = 'cef1aa08abb1'
+   |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ UP007
+17 | branch_labels: Union[str, Sequence[str], None] = None
+18 | depends_on: Union[str, Sequence[str], None] = None
+   |
+   = help: Convert to `X | Y`
+
+ledgerlight\db\migrations\versions\c88219a1fbbb_add_content_sha256_to_document_versions.py:17:16: UP007 [*] Use `X | Y` for type annotations
+   |
+15 | revision: str = 'c88219a1fbbb'
+16 | down_revision: Union[str, Sequence[str], None] = 'cef1aa08abb1'
+17 | branch_labels: Union[str, Sequence[str], None] = None
+   |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ UP007
+18 | depends_on: Union[str, Sequence[str], None] = None
+   |
+   = help: Convert to `X | Y`
+
+ledgerlight\db\migrations\versions\c88219a1fbbb_add_content_sha256_to_document_versions.py:18:13: UP007 [*] Use `X | Y` for type annotations
+   |
+16 | down_revision: Union[str, Sequence[str], None] = 'cef1aa08abb1'
+17 | branch_labels: Union[str, Sequence[str], None] = None
+18 | depends_on: Union[str, Sequence[str], None] = None
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ UP007
+   |
+   = help: Convert to `X | Y`
+
+Found 5 errors.
+[*] 5 fixable with the `--fix` option.

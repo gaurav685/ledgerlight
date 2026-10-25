@@ -12,6 +12,7 @@ import uuid
 from collections.abc import Callable
 from typing import TypeVar
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ledgerlight.common.timeutil import utc_now
@@ -89,6 +90,27 @@ def write_dead_letter(
     session.commit()
 
 
+def resolve_dead_letter_if_any(
+    session: Session, *, payload_ref: str, stage: str, resolution: str
+) -> None:
+    """Called automatically on a successful attempt (see
+    run_with_attempt_tracking below): if an unresolved dead_letters row
+    exists for this exact payload_ref/stage, mark it resolved. Dead
+    letters are never deleted -- resolution is recorded, not erased."""
+    unresolved = session.scalars(
+        select(DeadLetter).where(
+            DeadLetter.payload_ref == payload_ref,
+            DeadLetter.stage == stage,
+            DeadLetter.resolved_at.is_(None),
+        )
+    ).all()
+    for dead_letter in unresolved:
+        dead_letter.resolved_at = utc_now()
+        dead_letter.resolution = resolution[:4000]
+    if unresolved:
+        session.commit()
+
+
 def run_with_attempt_tracking(
     session: Session,
     fn: Callable[[], T],
@@ -138,5 +160,11 @@ def run_with_attempt_tracking(
             stage=stage,
             attempt_number=attempt_number,
             duration_ms=duration_ms,
+        )
+        resolve_dead_letter_if_any(
+            session,
+            payload_ref=payload_ref,
+            stage=stage,
+            resolution=f"succeeded on a later attempt (attempt_number={attempt_number})",
         )
         return result

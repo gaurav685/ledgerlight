@@ -22,7 +22,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from sqlalchemy import select  # noqa: E402
 
 from ledgerlight.config.settings import load_settings  # noqa: E402
-from ledgerlight.db.models import DeadLetter, ProcessingAttempt  # noqa: E402
+from ledgerlight.db.models import DeadLetter  # noqa: E402
 from ledgerlight.db.session import make_session_factory  # noqa: E402
 from ledgerlight.ingestion.retry import run_with_attempt_tracking  # noqa: E402
 
@@ -38,6 +38,9 @@ def main() -> int:
     max_attempts = 3
 
     with session_factory() as session:
+        from ledgerlight.common.timeutil import utc_now
+
+        demo_started_at = utc_now()
         print(f"payload_ref: {payload_ref}")
         print(f"-- simulating {max_attempts} failing attempts --")
         for attempt_number in range(1, max_attempts + 1):
@@ -63,6 +66,7 @@ def main() -> int:
         print(f"dead_letter written: {dead_letter is not None}")
         if dead_letter:
             print(f"  attempts={dead_letter.attempts} last_error={dead_letter.last_error!r}")
+            print(f"  resolved_at={dead_letter.resolved_at} (should be None here)")
 
         print("-- 'fixing' the issue and reprocessing --")
         result = run_with_attempt_tracking(
@@ -77,21 +81,39 @@ def main() -> int:
         )
         print(f"reprocess result: {result!r}")
 
+        # NOTE: ProcessingAttempt has no payload_ref column (only
+        # DeadLetter does) -- it's tied to a run_id/version_id, neither
+        # of which this synthetic demo has. Filtering by created_at
+        # window on *this* payload_ref's dead_letter instead of by
+        # stage avoids picking up every past run of this same script.
+        from ledgerlight.db.models import ProcessingAttempt as _PA
+
         attempts = session.scalars(
-            select(ProcessingAttempt)
-            .where(ProcessingAttempt.stage == "demo_stage")
-            .order_by(ProcessingAttempt.created_at)
+            select(_PA)
+            .where(_PA.stage == "demo_stage", _PA.created_at >= demo_started_at)
+            .order_by(_PA.created_at)
         ).all()
-        print(f"total processing_attempts rows for this demo: {len(attempts)}")
+        print(f"processing_attempts rows from this run: {len(attempts)}")
         for a in attempts:
             print(f"  attempt_number={a.attempt_number} status={a.status}")
 
         dead_letters_after = session.scalars(
             select(DeadLetter).where(DeadLetter.payload_ref == payload_ref)
         ).all()
-        print(f"dead_letters rows after reprocess: {len(dead_letters_after)} (unchanged)")
+        print(f"dead_letters rows after reprocess: {len(dead_letters_after)} (never deleted)")
+        for dl in dead_letters_after:
+            print(f"  resolved_at={dl.resolved_at}  resolution={dl.resolution!r}")
 
-        session.rollback()  # this is a demo -- never leaves rows behind
+        # run_with_attempt_tracking commits internally on every attempt --
+        # session.rollback() here would NOT undo any of it (see ADR 0004
+        # §6 / scripts/dead_letter_real_pipeline_demo.py). Delete the rows
+        # this run actually created, explicitly.
+        for a in attempts:
+            session.delete(a)
+        for dl in dead_letters_after:
+            session.delete(dl)
+        session.commit()
+        print("(this run's demo rows explicitly deleted -- not left in the database)")
 
     return 0
 

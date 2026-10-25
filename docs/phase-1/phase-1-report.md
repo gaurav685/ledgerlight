@@ -198,6 +198,15 @@ measured throughput 0.499 req/s (rate-limited, as configured). Extends
 real daily coverage by one full calendar year beyond the original
 twice-monthly seed sample.
 
+**Full-range backfill command and estimate:**
+`make backfill START=2017-01-01 END=2025-09-30` — not run in full during
+this phase (would take hours; see below). Estimated from the measured
+rate above: ≈2,250 business days over that ~8.75-year range ÷ 0.499
+req/s ≈ 4,500s ≈ **75 minutes minimum**, plus per-file processing time if
+`scripts/process.py` is re-run afterward (observed ≈31-44 minutes for
+the 211-434 files already processed in this phase) — budget **2-3 hours
+end to end** for a genuinely full historical backfill + reprocess.
+
 **Survivorship-bias check (real, not synthetic):** Jet Airways
 (`JETAIRWAYS`) traded 244 real sessions in 2019 (price falling from
 ₹280.80 to ₹245.20 in just the first week of January, consistent with
@@ -310,15 +319,19 @@ listing databases and confirming disjoint table sets.
 
 ## 12. Tests
 
-88 tests total, all passing:
+**Updated after the §17 verification pass.** 99 tests total, all passing:
 
-- **80 unit** (default `pytest` run, no external dependencies) — includes
+- **89 unit** (default `pytest` run, no external dependencies) — includes
   7 `known_at` tests, 7 limits tests, 6 mime-sniff tests, 6 OCR-heuristic
   tests, 5 bhavcopy-parsing/quarantine tests, 3 OCR-engine tests (against
-  the synthetic fixture), plus all pre-existing Phase 0 tests.
-- **6 integration** (`-m integration`, real Postgres via a transaction
-  rolled back per test): BLOCKED-source-unschedulable (2 tests),
-  unknown-source-raises, retry/dead-letter (2 tests).
+  the synthetic fixture), 5 content-identity tests (§17.1), 4 per-document
+  timeout tests (§17.2), plus all pre-existing Phase 0 tests.
+- **8 integration** (`-m integration`, real Postgres): BLOCKED-source-
+  unschedulable (2 tests), unknown-source-raises, retry/dead-letter
+  (2 tests), content-identity upsert dedup (§17.1), and the commit-
+  visibility regression test (§17.3) — the last one deliberately does
+  NOT use the rolled-back-transaction fixture other integration tests
+  use, since that pattern cannot catch a missing `commit()` (see §17.3).
 - **2 corpus** (`-m corpus`, real `data/raw/`, skip cleanly if absent):
   real-bhavcopy-parses-cleanly, real-corpus-has-zero-scanned-pages.
 - No placeholder tests, no `assert True`. Only one committed SYNTHETIC
@@ -327,9 +340,9 @@ listing databases and confirming disjoint table sets.
   real downloaded document.
 
 ```
-80 passed, 8 deselected in 8.97s        (default)
-6 passed, 82 deselected in 3.18s        (-m integration)
-2 passed, 86 deselected in 9.47s        (-m corpus)
+89 passed, 10 deselected in 12.19s      (default)
+8 passed, 91 deselected in 5.17s        (-m integration)
+2 passed, 97 deselected in 9.79s        (-m corpus)
 ```
 
 ## 13. §10 verification sequence — commands run and evidence
@@ -414,6 +427,213 @@ rather than an unqualified PASS, stated above rather than smoothed over.
   and verified: `git bundle verify` reports "the bundle records a
   complete history" and lists both branch refs plus `HEAD`.
 
+## 17. Phase 1 Verification Pass (gap closure)
+
+A follow-up verification pass re-examined the real data Phase 1
+produced — count reconciliation, OCR/determinism, incremental/versioning
+behaviour, safety limits, the dead-letter cycle, bhavcopy formats, and a
+dedicated regression test for the §6 commit bug. **Three more real
+defects were found and fixed**, and one real limitation was identified
+and deliberately left unfixed (documented, not hidden).
+
+### 17.1 Real bug: spurious DocumentVersion rows from non-deterministic ZIP re-wrapping
+
+**Finding.** Investigating why 15 documents had more than one version
+(§3.2 of the verification request) found that **all 11 ZIP-type
+multi-version documents had byte-identical inner CSV content across
+every version** — confirmed by unzipping and diffing, not assumed. NSE's
+server regenerates each ZIP's per-entry timestamp on every request
+(observed: `(2023, 8, 21, 17, 32, 16)` vs `(2023, 8, 21, 17, 32, 14)` for
+the same trading day, same CRC, same file size, same bytes once
+unzipped), so hashing the raw downloaded bytes — correct for content-
+addressed storage, since that's genuinely what was received — was also
+being used as the *versioning* identity check, creating a new
+`DocumentVersion` on every re-fetch of an unchanged trading day even
+though nothing had changed.
+
+**Fix.** Added `ledgerlight.ingestion.content_identity`: for a single-
+entry ZIP, the dedup-relevant "content identity" hash is computed from
+the *inner* entry's bytes, ignoring container metadata; for anything
+else, it's the raw bytes unchanged. Added a `content_sha256` column to
+`document_versions` (migration `c88219a1fbbb`) and wired
+`upsert_document_version` to check by content-identity hash before
+deciding a re-fetch is genuinely new content. The existing 15 duplicate
+rows were **not deleted** (a destructive operation beyond this
+verification's scope — see §18) but `content_sha256` was backfilled for
+all 468 existing rows so the duplicates are at least now identifiable.
+Proven two ways: `tests/test_content_identity.py` (5 pure-function
+tests, including the exact real byte pattern — same inner content,
+different ZIP timestamp) and `tests/test_upsert_content_identity.py`
+(1 integration test proving `upsert_document_version` returns
+`version_was_new=False` for a jittered re-fetch).
+
+**A related but distinct problem was found and deliberately NOT fixed:**
+the other 4 multi-version documents (2 IBBI NCLT listing pages,
+`pnbhousing_ir`/`suzlon_ir` shareholding pages) are dynamic HTML pages
+that embed per-request CSRF tokens and session nonces (`Liferay.authToken
+= 'jE6l8JTh'` vs `'scNXdLRy'`; randomized DOM element IDs like
+`cigw_quickAccessNav` vs `pcfr_quickAccessNav`) — confirmed by diffing,
+not assumed. These will never byte-match across fetches regardless of
+container normalization. Generically fixing this would require fragile,
+source-specific HTML scrubbing rules; given it affects only 4 auxiliary
+index/listing pages (not primary financial documents), it's documented
+here as a known limitation rather than patched. See §18.
+
+### 17.2 Real gap: zero test coverage for the per-document timeout
+
+`ledgerlight.processing.runner.run_with_timeout` — the module whose
+rewrite fixed a real hang bug (§9) — had no test exercising either its
+timeout path or its "completes promptly" path. Added
+`tests/test_runner_timeout.py` (4 tests): a fast function returns
+correctly; a function that takes real time but stays under the timeout
+still returns promptly (the exact regression the original bug was
+about); a function exceeding the timeout raises `ProcessingTimeoutError`;
+an exception inside the worker is wrapped as `ProcessingFailedError`.
+
+### 17.3 Regression test for the §6 commit bug, with a real fail/pass demonstration
+
+Added `tests/test_commit_visibility_regression.py`. It deliberately does
+**not** use the `db_session` fixture other integration tests share
+(which wraps each test in a transaction rolled back at teardown) —
+that pattern proves application *logic* correctness within one session,
+but cannot catch a missing `commit()`, because an uncommitted write
+stays visible to a second `Session` bound to the *same* held connection.
+This test instead uses two fully independent engines: ingest with
+session A, close it, then check visibility from a brand-new session B on
+a separate connection — precisely how the real bug manifested.
+
+Demonstrated for real, not just written:
+1. With the fix in place: **PASSED**
+   (`docs/phase-1/evidence/commit-regression-pass-before-revert.log`).
+2. `session.commit()` → `session.flush()` temporarily reverted in
+   `ledgerlight/ingestion/upsert.py` (the exact original bug): **FAILED**
+   with `assert None is not None` — the document was invisible from the
+   new session, reproducing the original defect exactly
+   (`docs/phase-1/evidence/commit-regression-FAIL-with-bug-reverted.log`).
+3. Fix restored, re-ran: **PASSED** again
+   (`docs/phase-1/evidence/commit-regression-pass-after-restore.log`).
+   `git diff` confirmed only the intended fix remains afterward.
+
+### 17.4 A real data-leak bug in `scripts/dead_letter_demo.py` itself
+
+**Finding.** The script's own closing comment claimed
+`session.rollback()  # this is a demo -- never leaves rows behind` — but
+`run_with_attempt_tracking` commits internally on every attempt
+(exactly the §6 commit-semantics lesson), so that `rollback()` was a
+no-op and every run of this demo left real `processing_attempts` and
+`dead_letters` rows in the production-shaped database. Found 8 leaked
+`processing_attempts` rows and 2 leaked `dead_letters` rows from two
+earlier runs of this exact script.
+
+**Fix.** Replaced the ineffective `rollback()` with explicit `DELETE`s
+of the rows the run actually created, and deleted the 10 pre-existing
+leaked rows directly. Re-verified: `select count(*) from dead_letters`
+and `processing_attempts` both return 0 immediately after a demo run
+(`docs/phase-1/evidence/dead-letter-demo-fixed.log`). Also added a
+dedicated real-pipeline version of this demo
+(`scripts/dead_letter_real_pipeline_demo.py`) that ingests a genuinely
+corrupted synthetic PDF through the actual `document_processor
+.process_version` path (not an abstract lambda), fails 3 times with a
+real `PyMuPDF` error, dead-letters, gets "fixed" with a valid PDF,
+reprocesses successfully, and confirms `resolved_at` is set — then
+cleans up explicitly
+(`docs/phase-1/evidence/dead-letter-real-pipeline-demo.log`). Also added
+`resolve_dead_letter_if_any` to `ledgerlight.ingestion.retry` (called
+automatically on every successful attempt), since no code previously set
+`resolved_at` at all despite the column existing since Phase 1's
+original migration.
+
+### 17.5 Count reconciliation, OCR, incremental/versioning, limits, bhavcopy formats — all clean
+
+No further defects found. Full raw output for each of these is in this
+turn's transcript and in `docs/phase-1/evidence/`; summarized:
+
+- **Counts**: 443 documents / 468 versions reconciles exactly from
+  444 Phase 0 manifest lines (237 distinct content-versions, 220 distinct
+  documents) union 530 live-ingestion manifest lines (269 distinct
+  content-versions, 265 distinct documents, of which 42 URLs overlap with
+  the seed) — 220+223=443 documents, union of 237 and 269 distinct-
+  version sets = 468 versions, both matching the database exactly.
+- **15 largest PDFs**: PyMuPDF page count vs stored `document_pages`
+  rows — 0 mismatches.
+- **Versions with 0 pages**: only `application/zip` (434 rows) —
+  expected (bhavcopy content goes to `price_bars`, not `document_pages`).
+- **`known_at_basis`**: matches the documented reliable-source allowlist
+  exactly (`sebi`/`ibbi`/`care`/`nse_archives` use `published_at` when
+  parseable, `retrieved_at` otherwise; every other source always uses
+  `retrieved_at`).
+- **OCR**: 0 real pages flagged `needs_ocr` across all 518 real PDF
+  pages (full heuristic output, not just the earlier spot-check) — the
+  same 14 low-text pages previously found are confirmed design layouts
+  (0-8 images, correctly below `OCR_MAX_IMAGE_COUNT`). A real-document
+  functional check (Thermax annual report page 1, clearly labeled as a
+  functional check, not a scanned-page claim) correctly OCR'd "44th
+  Annual Report 2024-25 THERMAX..." at 98.9% confidence.
+- **Determinism**: 10 real PDFs re-extracted, all 10 `text_sha256`
+  matches.
+- **Incremental**: SEBI job run twice in succession — both runs show
+  `fetched_new=0, unchanged=3` (content hadn't changed since an earlier
+  run today; a literal "N new → 0 new" transition wasn't available to
+  demonstrate since nothing in this source had changed all day, reported
+  honestly rather than staged).
+- **Safety limits**: all 15 limit/path-traversal/MIME-sniff tests pass;
+  configured values printed (200MB file size, 2000 pages, 120s timeout,
+  1GB ZIP uncompressed, 10,000 ZIP entries).
+- **Bhavcopy formats**: legacy 405 files / 819,112 rows (2017-01-05 to
+  2024-07-05), UDiFF 29 files / 86,378 rows (2024-07-22 to 2025-09-22),
+  0 quarantined in either format across the full corpus.
+- **Survivorship**: 574 symbols present in 2017 (the seed's sparse
+  twice-monthly sample) absent from the latest (2025-09-22) bhavcopy —
+  e.g. `3IINFOTECH`, `ABGSHIP`, `ADANITRANS` (renamed/delisted/merged
+  over the intervening years).
+
+## 18. Decisions needing your approval
+
+1. **The 11 spurious ZIP-jitter DocumentVersion rows (§17.1) were left
+   in place**, not deleted — `content_sha256` now identifies them as
+   duplicates, and the fix prevents new ones, but the historical rows
+   themselves are untouched. If you'd like them merged/cleaned up
+   retroactively (repointing any `document_pages`/`price_bars` that
+   reference the "extra" version onto the earliest version per document,
+   then deleting the rest), say so explicitly — it's a real decision
+   with FK implications I didn't want to make unilaterally this late.
+2. **The 4 dynamic-HTML-token duplicate versions (§17.1) are not
+   fixed** and are unlikely to be fixable generically. If these specific
+   pages matter enough to warrant per-site scrubbing rules (strip known
+   token/nonce patterns before hashing), that's additional Phase 1.x (or
+   Phase 2) scope, not something I built unasked.
+3. **Retry/dead-letter attempt-tracking is still not wired per-item
+   into the live ingestion jobs** (`run_known_items_job`,
+   `run_bhavcopy_range`) — proven correct via dedicated tests/demos, but
+   production ingestion runs still only record job-level stats, not a
+   `processing_attempts` row per item. Wiring it in would mean every
+   SEBI/IBBI/bhavcopy fetch gets its own attempt-tracked row; flagging
+   before doing it since it changes the volume/shape of that table.
+4. **The pre-commit `mypy`/`pytest-fast` hooks now hardcode
+   `./.venv/Scripts/python.exe`** (Windows-specific), fixed this session
+   after the original `uv run ...` entries failed with `uv` not on PATH
+   in the verification shell. If this project ever needs to run `pre-
+   commit` on a non-Windows machine, this will need revisiting.
+
+## 19. Updated exit gates (re-marked after the verification pass)
+
+| # | Gate | Status | Evidence |
+|---|---|---|---|
+| 1 | Metadata store schema migrated (Alembic), applies cleanly from empty | PASS | §4, §13; migration `c88219a1fbbb` also applied cleanly |
+| 2 | `known_at` rule implemented once, documented, tested | PASS | §4, §17.5 |
+| 3 | Content-addressed object storage, idempotent backfill proven | PASS | §5 |
+| 4 | BLOCKED/UNCLEAR/REQUIRES_*/AWAITING_KEY sources impossible to schedule, enforced in code and proven by test | PASS | §7, `tests/test_sources_unschedulable.py` |
+| 5 | Real ingestion for every AVAILABLE/AVAILABLE_WITH_LIMITS source, hash dedup, full provenance | PASS, with a real dedup defect found and fixed this pass (§17.1) | §7, §17.1 |
+| 6 | Bhavcopy backfill extends coverage ≥1 calendar year, measured throughput, survivorship check | PASS | §8, §17.5 |
+| 7 | PDF/HTML/CSV extraction, safety limits tested, OCR fallback actually runs | PASS (OCR proven on synthetic fixture and a real-document functional check — real corpus has zero genuine scans, reported honestly both times) | §9, §17.5 |
+| 8 | Deterministic re-processing (same extractor_version ⇒ byte-identical, no new rows) | PASS | §9, §17.5 (10/10 real PDFs re-verified) |
+| 9 | Dagster orchestration: partitions/jobs/schedule/sensor, separate DB, every job run with recorded run IDs, retries, dead-letters | PASS, with the same caveat as before (§18.3) — per-item attempt-tracking proven but not wired into live jobs | §7, §10, §11 |
+| 10 | Observability: structured logs, persisted run metrics, ingest-report CLI, fixed failure taxonomy | PASS; `ingest-report` now also shows resolved/unresolved dead-letter counts (§17.4) | §11, §17.4 |
+| 11 | Tests: unit + integration + corpus, no placeholders, only labeled synthetic fixtures committed | PASS; grew from 88 to 99 tests closing two real coverage gaps (timeout, commit-visibility) | §12, §17.2, §17.3 |
+
+No gate is BLOCKED or FAIL. Four items are explicitly flagged for your
+decision (§18) rather than resolved unilaterally.
+
 ---
 
-**Stop after Phase 1. Phase 2 has not been started.**
+**Stop after Phase 1 verification. Phase 2 has not been started.**

@@ -56,14 +56,18 @@ def main() -> int:
             )
 
         print()
-        print("-- overall dead letters by stage --")
+        print("-- overall dead letters by stage (resolved / unresolved) --")
         dead_letter_rows = session.execute(
-            select(DeadLetter.stage, func.count()).group_by(DeadLetter.stage)
+            select(
+                DeadLetter.stage,
+                func.count().filter(DeadLetter.resolved_at.is_(None)),
+                func.count().filter(DeadLetter.resolved_at.is_not(None)),
+            ).group_by(DeadLetter.stage)
         ).all()
         if not dead_letter_rows:
             print("  (none)")
-        for stage, count in dead_letter_rows:
-            print(f"  {stage}: {count}")
+        for stage, unresolved, resolved in dead_letter_rows:
+            print(f"  {stage}: unresolved={unresolved} resolved={resolved}")
 
         print()
         print("-- failure classes (processing_attempts, status=failed) --")

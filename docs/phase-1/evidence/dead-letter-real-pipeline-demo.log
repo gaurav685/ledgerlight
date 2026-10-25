@@ -1,0 +1,29 @@
+﻿ingested synthetic corrupted PDF as version 793f2912-2287-4d73-a647-e5f654e80983
+
+-- attempting to process it 3 times (expect failure each time) --
+  attempt 1: failed (ProcessingFailedError: FileDataError: Failed to open stream)
+  attempt 2: failed (ProcessingFailedError: FileDataError: Failed to open stream)
+  attempt 3: failed (ProcessingFailedError: FileDataError: Failed to open stream)
+
+-- dead_letters row (BEFORE fix) --
+  id=70c047a0-14f7-4750-92f6-9c769b1a209e attempts=3 resolved_at=None resolution=None
+  (1 row(s))
+
+-- ingest-report would show this under 'overall dead letters by stage' --
+  stage=process count>=1 (see scripts/ingest_report.py)
+
+-- fixing the input: re-uploading a valid PDF for the same version --
+-- reprocessing with the fixed input --
+  reprocess outcome: pages_created=1 mime=application/pdf
+
+-- dead_letters row (AFTER fix + successful reprocess) --
+  id=70c047a0-14f7-4750-92f6-9c769b1a209e attempts=3 resolved_at=2026-10-25 17:51:56.714443+00:00 resolution='succeeded on a later attempt (attempt_number=1)'
+  (1 row(s) -- same row, not deleted, resolved_at now set)
+
+processing_attempts for this version: 4
+  attempt_number=1 status=failed error_class=validation
+  attempt_number=2 status=failed error_class=validation
+  attempt_number=3 status=failed error_class=validation
+  attempt_number=1 status=success error_class=None
+
+(all demo rows explicitly deleted -- not left in the database)
