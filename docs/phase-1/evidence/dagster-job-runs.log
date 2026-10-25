@@ -1,0 +1,579 @@
+﻿python.exe : C:\ledger 
+light\.venv\Lib\site-packages\dagster\_core\definitions\definitions_class.py:478: 
+UserWarning: Found asset job named bhavcopy_job of type <class 'dagster._core.defin
+itions.unresolved_asset_job_definition.UnresolvedAssetJobDefinition'> passed to 
+`jobs` parameter. Starting in dagster 1.11, you must now use 
+Definitions.resolve_job_def to correctly retrieve this job definition.
+At line:9 char:1
++ & ".\.venv\Scripts\python.exe" scripts\run_all_jobs_once.py 2>&1 | Te ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\ledger light...job definition.:Str 
+   ing) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  warnings.warn(warning)
+2026-10-25 19:46:11 +0530 - dagster - DEBUG - bhavcopy_job - 
+4925c264-3739-4dd8-8b17-15eb2813cb64 - 3868 - RUN_START - Started execution of run 
+for "bhavcopy_job".
+2026-10-25 19:46:11 +0530 - dagster - DEBUG - bhavcopy_job - 
+4925c264-3739-4dd8-8b17-15eb2813cb64 - 3868 - ENGINE_EVENT - Executing steps in 
+process (pid: 3868)
+2026-10-25 19:46:11 +0530 - dagster - DEBUG - bhavcopy_job - 
+4925c264-3739-4dd8-8b17-15eb2813cb64 - 3868 - bhavcopy_daily - 
+RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
+2026-10-25 19:46:11 +0530 - dagster - DEBUG - bhavcopy_job - 
+4925c264-3739-4dd8-8b17-15eb2813cb64 - 3868 - bhavcopy_daily - 
+RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
+2026-10-25 19:46:11 +0530 - dagster - DEBUG - bhavcopy_job - 
+4925c264-3739-4dd8-8b17-15eb2813cb64 - 3868 - LOGS_CAPTURED - Capturing logs for 
+process (pid: 3868).
+2026-10-25 19:46:11 +0530 - dagster - DEBUG - bhavcopy_job - 
+4925c264-3739-4dd8-8b17-15eb2813cb64 - 3868 - bhavcopy_daily - STEP_START - 
+Started execution of step "bhavcopy_daily".
+
+  Telemetry:
+
+  As an open-source project, we collect usage statistics to inform development 
+priorities. For more
+  information, read https://docs.dagster.io/about/telemetry.
+
+  We will not see or store any data that is processed by your code.
+
+  To opt-out, add the following to $DAGSTER_HOME/dagster.yaml, creating that file 
+if necessary:
+
+    telemetry:
+      enabled: false
+
+
+  Welcome to Dagster!
+
+  If you have any questions or would like to engage with the Dagster team, please 
+join us on Slack
+  (https://bit.ly/39dvSsF).
+
+2026-10-25 19:46:14 +0530 - dagster - INFO - bhavcopy_job - 
+4925c264-3739-4dd8-8b17-15eb2813cb64 - bhavcopy_daily - bhavcopy 2025-09-01: 
+BhavcopyJobStats(attempted=1, fetched_new=1, unchanged=0, not_found=0, errors=[])
+2026-10-25 19:46:14 +0530 - dagster - DEBUG - bhavcopy_job - 
+4925c264-3739-4dd8-8b17-15eb2813cb64 - 3868 - bhavcopy_daily - STEP_OUTPUT - 
+Yielded output "result" of type "Any". (Type check passed).
+2026-10-25 19:46:14 +0530 - dagster - DEBUG - bhavcopy_job - 
+4925c264-3739-4dd8-8b17-15eb2813cb64 - 3868 - bhavcopy_daily - 
+ASSET_MATERIALIZATION - Materialized value bhavcopy_daily.
+2026-10-25 19:46:14 +0530 - dagster - DEBUG - bhavcopy_job - 
+4925c264-3739-4dd8-8b17-15eb2813cb64 - 3868 - bhavcopy_daily - STEP_SUCCESS - 
+Finished execution of step "bhavcopy_daily" in 2.83s.
+2026-10-25 19:46:15 +0530 - dagster - DEBUG - bhavcopy_job - 
+4925c264-3739-4dd8-8b17-15eb2813cb64 - 3868 - ENGINE_EVENT - Finished steps in 
+process (pid: 3868) in 3.94s
+2026-10-25 19:46:15 +0530 - dagster - DEBUG - bhavcopy_job - 
+4925c264-3739-4dd8-8b17-15eb2813cb64 - 3868 - RUN_SUCCESS - Finished execution of 
+run for "bhavcopy_job".
+2026-10-25 19:46:16 +0530 - dagster - DEBUG - inbox_import_job - 
+59315704-fa60-46e0-bf09-002985ccfda9 - 3868 - RUN_START - Started execution of run 
+for "inbox_import_job".
+2026-10-25 19:46:16 +0530 - dagster - DEBUG - inbox_import_job - 
+59315704-fa60-46e0-bf09-002985ccfda9 - 3868 - ENGINE_EVENT - Executing steps in 
+process (pid: 3868)
+2026-10-25 19:46:16 +0530 - dagster - DEBUG - inbox_import_job - 
+59315704-fa60-46e0-bf09-002985ccfda9 - 3868 - import_inbox_op - 
+RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
+2026-10-25 19:46:16 +0530 - dagster - DEBUG - inbox_import_job - 
+59315704-fa60-46e0-bf09-002985ccfda9 - 3868 - import_inbox_op - 
+RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
+2026-10-25 19:46:16 +0530 - dagster - DEBUG - inbox_import_job - 
+59315704-fa60-46e0-bf09-002985ccfda9 - 3868 - LOGS_CAPTURED - Capturing logs for 
+process (pid: 3868).
+2026-10-25 19:46:16 +0530 - dagster - DEBUG - inbox_import_job - 
+59315704-fa60-46e0-bf09-002985ccfda9 - 3868 - import_inbox_op - STEP_START - 
+Started execution of step "import_inbox_op".
+2026-10-25 19:46:16 +0530 - dagster - INFO - inbox_import_job - 
+59315704-fa60-46e0-bf09-002985ccfda9 - import_inbox_op - inbox: imported=0 
+skipped=0 rejected=0
+2026-10-25 19:46:16 +0530 - dagster - DEBUG - inbox_import_job - 
+59315704-fa60-46e0-bf09-002985ccfda9 - 3868 - import_inbox_op - STEP_OUTPUT - 
+Yielded output "result" of type "Nothing". (Type check passed).
+2026-10-25 19:46:16 +0530 - dagster - DEBUG - inbox_import_job - 
+59315704-fa60-46e0-bf09-002985ccfda9 - 3868 - import_inbox_op - STEP_SUCCESS - 
+Finished execution of step "import_inbox_op" in 80ms.
+2026-10-25 19:46:18 +0530 - dagster - DEBUG - inbox_import_job - 
+59315704-fa60-46e0-bf09-002985ccfda9 - 3868 - ENGINE_EVENT - Finished steps in 
+process (pid: 3868) in 2.81s
+2026-10-25 19:46:19 +0530 - dagster - DEBUG - inbox_import_job - 
+59315704-fa60-46e0-bf09-002985ccfda9 - 3868 - RUN_SUCCESS - Finished execution of 
+run for "inbox_import_job".
+2026-10-25 19:46:19 +0530 - dagster - DEBUG - sebi_job - 
+5b251da3-4a53-49d4-8678-28355a4ea3e2 - 3868 - RUN_START - Started execution of run 
+for "sebi_job".
+2026-10-25 19:46:19 +0530 - dagster - DEBUG - sebi_job - 
+5b251da3-4a53-49d4-8678-28355a4ea3e2 - 3868 - ENGINE_EVENT - Executing steps in 
+process (pid: 3868)
+2026-10-25 19:46:19 +0530 - dagster - DEBUG - sebi_job - 
+5b251da3-4a53-49d4-8678-28355a4ea3e2 - 3868 - ingest_sebi - RESOURCE_INIT_STARTED 
+- Starting initialization of resources [io_manager].
+2026-10-25 19:46:19 +0530 - dagster - DEBUG - sebi_job - 
+5b251da3-4a53-49d4-8678-28355a4ea3e2 - 3868 - ingest_sebi - RESOURCE_INIT_SUCCESS 
+- Finished initialization of resources [io_manager].
+2026-10-25 19:46:19 +0530 - dagster - DEBUG - sebi_job - 
+5b251da3-4a53-49d4-8678-28355a4ea3e2 - 3868 - LOGS_CAPTURED - Capturing logs for 
+process (pid: 3868).
+2026-10-25 19:46:19 +0530 - dagster - DEBUG - sebi_job - 
+5b251da3-4a53-49d4-8678-28355a4ea3e2 - 3868 - ingest_sebi - STEP_START - Started 
+execution of step "ingest_sebi".
+2026-10-25 19:46:24 [info     ] duplicate_skipped              sha256=8004a0fe494eefa4ea687285880c9fbae67329b8e97733a0cd30b9ac782092a8 url=https://www.sebi.gov.in/sebi_data/attachdocs/apr-2025/1744719603252_1.pdf
+2026-10-25 19:46:27 [info     ] duplicate_skipped              sha256=8cfc7c9f1058d4b5e99b1ec92107979bc141d773c9d0fdb9e5625504abbb0973 url=https://www.sebi.gov.in/sebi_data/attachdocs/jul-2025/confirm_order_gensol_engg.pdf
+2026-10-25 19:46:28 [info     ] duplicate_skipped              sha256=317d3a8b6a9f5106b1c7b73026ece6d0fa98d9e8d00440723ca24431790f1059 url=https://www.sebi.gov.in/sebi_data/attachdocs/sep-2019/1568728579007.pdf
+2026-10-25 19:46:28 +0530 - dagster - INFO - sebi_job - 
+5b251da3-4a53-49d4-8678-28355a4ea3e2 - ingest_sebi - sebi: 
+KnownItemsJobStats(source_id='sebi', attempted=3, fetched_new=0, unchanged=3, 
+blocked=0, errors=[])
+2026-10-25 19:46:28 +0530 - dagster - DEBUG - sebi_job - 
+5b251da3-4a53-49d4-8678-28355a4ea3e2 - 3868 - ingest_sebi - STEP_OUTPUT - Yielded 
+output "result" of type "Nothing". (Type check passed).
+2026-10-25 19:46:28 +0530 - dagster - DEBUG - sebi_job - 
+5b251da3-4a53-49d4-8678-28355a4ea3e2 - 3868 - ingest_sebi - STEP_SUCCESS - 
+Finished execution of step "ingest_sebi" in 8.77s.
+2026-10-25 19:46:29 +0530 - dagster - DEBUG - sebi_job - 
+5b251da3-4a53-49d4-8678-28355a4ea3e2 - 3868 - ENGINE_EVENT - Finished steps in 
+process (pid: 3868) in 9.7s
+2026-10-25 19:46:29 +0530 - dagster - DEBUG - sebi_job - 
+5b251da3-4a53-49d4-8678-28355a4ea3e2 - 3868 - RUN_SUCCESS - Finished execution of 
+run for "sebi_job".
+2026-10-25 19:46:30 +0530 - dagster - DEBUG - ibbi_job - 
+132b6c2a-38af-4e45-a011-06b135cab63c - 3868 - RUN_START - Started execution of run 
+for "ibbi_job".
+2026-10-25 19:46:30 +0530 - dagster - DEBUG - ibbi_job - 
+132b6c2a-38af-4e45-a011-06b135cab63c - 3868 - ENGINE_EVENT - Executing steps in 
+process (pid: 3868)
+2026-10-25 19:46:30 +0530 - dagster - DEBUG - ibbi_job - 
+132b6c2a-38af-4e45-a011-06b135cab63c - 3868 - ingest_ibbi - RESOURCE_INIT_STARTED 
+- Starting initialization of resources [io_manager].
+2026-10-25 19:46:30 +0530 - dagster - DEBUG - ibbi_job - 
+132b6c2a-38af-4e45-a011-06b135cab63c - 3868 - ingest_ibbi - RESOURCE_INIT_SUCCESS 
+- Finished initialization of resources [io_manager].
+2026-10-25 19:46:30 +0530 - dagster - DEBUG - ibbi_job - 
+132b6c2a-38af-4e45-a011-06b135cab63c - 3868 - LOGS_CAPTURED - Capturing logs for 
+process (pid: 3868).
+2026-10-25 19:46:30 +0530 - dagster - DEBUG - ibbi_job - 
+132b6c2a-38af-4e45-a011-06b135cab63c - 3868 - ingest_ibbi - STEP_START - Started 
+execution of step "ingest_ibbi".
+2026-10-25 19:46:30 [info     ] duplicate_skipped              sha256=94d629f5c69147d69038fae6512b262f5b4384628aa0c97325ab1714748287cd url=https://ibbi.gov.in/uploads/order/6c090481fbfc1830f8ef051502887749.pdf
+2026-10-25 19:46:32 [info     ] duplicate_skipped              sha256=85f0482eadb0a5eebf3e4bfedcbad8609513d5e2804299769e109f5cd3aa8187 url=https://ibbi.gov.in/webadmin/pdf/order/2019/Jul/5th%20July%202019%20in%20the%20matter%20of%20Jet%20Airways%20(India)%20Ltd.%20C.P.%20(IB)-2205(MB)-2019_2019-07-16%2011:37:58.pdf
+2026-10-25 19:46:51 +0530 - dagster - INFO - ibbi_job - 
+132b6c2a-38af-4e45-a011-06b135cab63c - ingest_ibbi - ibbi: 
+KnownItemsJobStats(source_id='ibbi', attempted=4, fetched_new=2, unchanged=2, 
+blocked=0, errors=[])
+2026-10-25 19:46:51 +0530 - dagster - DEBUG - ibbi_job - 
+132b6c2a-38af-4e45-a011-06b135cab63c - 3868 - ingest_ibbi - STEP_OUTPUT - Yielded 
+output "result" of type "Nothing". (Type check passed).
+2026-10-25 19:46:51 +0530 - dagster - DEBUG - ibbi_job - 
+132b6c2a-38af-4e45-a011-06b135cab63c - 3868 - ingest_ibbi - STEP_SUCCESS - 
+Finished execution of step "ingest_ibbi" in 21.16s.
+2026-10-25 19:46:52 +0530 - dagster - DEBUG - ibbi_job - 
+132b6c2a-38af-4e45-a011-06b135cab63c - 3868 - ENGINE_EVENT - Finished steps in 
+process (pid: 3868) in 22.01s
+2026-10-25 19:46:52 +0530 - dagster - DEBUG - ibbi_job - 
+132b6c2a-38af-4e45-a011-06b135cab63c - 3868 - RUN_SUCCESS - Finished execution of 
+run for "ibbi_job".
+2026-10-25 19:46:52 +0530 - dagster - DEBUG - care_job - 
+3081df76-1e1d-4e67-9707-14169cbbc261 - 3868 - RUN_START - Started execution of run 
+for "care_job".
+2026-10-25 19:46:52 +0530 - dagster - DEBUG - care_job - 
+3081df76-1e1d-4e67-9707-14169cbbc261 - 3868 - ENGINE_EVENT - Executing steps in 
+process (pid: 3868)
+2026-10-25 19:46:52 +0530 - dagster - DEBUG - care_job - 
+3081df76-1e1d-4e67-9707-14169cbbc261 - 3868 - ingest_care - RESOURCE_INIT_STARTED 
+- Starting initialization of resources [io_manager].
+2026-10-25 19:46:52 +0530 - dagster - DEBUG - care_job - 
+3081df76-1e1d-4e67-9707-14169cbbc261 - 3868 - ingest_care - RESOURCE_INIT_SUCCESS 
+- Finished initialization of resources [io_manager].
+2026-10-25 19:46:52 +0530 - dagster - DEBUG - care_job - 
+3081df76-1e1d-4e67-9707-14169cbbc261 - 3868 - LOGS_CAPTURED - Capturing logs for 
+process (pid: 3868).
+2026-10-25 19:46:52 +0530 - dagster - DEBUG - care_job - 
+3081df76-1e1d-4e67-9707-14169cbbc261 - 3868 - ingest_care - STEP_START - Started 
+execution of step "ingest_care".
+2026-10-25 19:46:53 [info     ] duplicate_skipped              sha256=6a04e114386f8270e418c5a9d531f4dae5b485cf8c4db305058c3bb05fef62e3 url=https://www.careratings.com/upload/CompanyFiles/PR/Dewan%20Housing%20Finance%20Corporation%20Ltd.-06-05-2019.pdf
+2026-10-25 19:46:53 +0530 - dagster - INFO - care_job - 
+3081df76-1e1d-4e67-9707-14169cbbc261 - ingest_care - care: 
+KnownItemsJobStats(source_id='care', attempted=1, fetched_new=0, unchanged=1, 
+blocked=0, errors=[])
+2026-10-25 19:46:53 +0530 - dagster - DEBUG - care_job - 
+3081df76-1e1d-4e67-9707-14169cbbc261 - 3868 - ingest_care - STEP_OUTPUT - Yielded 
+output "result" of type "Nothing". (Type check passed).
+2026-10-25 19:46:53 +0530 - dagster - DEBUG - care_job - 
+3081df76-1e1d-4e67-9707-14169cbbc261 - 3868 - ingest_care - STEP_SUCCESS - 
+Finished execution of step "ingest_care" in 675ms.
+2026-10-25 19:46:55 +0530 - dagster - DEBUG - care_job - 
+3081df76-1e1d-4e67-9707-14169cbbc261 - 3868 - ENGINE_EVENT - Finished steps in 
+process (pid: 3868) in 2.53s
+2026-10-25 19:46:55 +0530 - dagster - DEBUG - care_job - 
+3081df76-1e1d-4e67-9707-14169cbbc261 - 3868 - RUN_SUCCESS - Finished execution of 
+run for "care_job".
+2026-10-25 19:46:55 +0530 - dagster - DEBUG - vakrangee_ir_job - 
+8d45d94e-88f8-4bb4-aaca-5983712bf404 - 3868 - RUN_START - Started execution of run 
+for "vakrangee_ir_job".
+2026-10-25 19:46:55 +0530 - dagster - DEBUG - vakrangee_ir_job - 
+8d45d94e-88f8-4bb4-aaca-5983712bf404 - 3868 - ENGINE_EVENT - Executing steps in 
+process (pid: 3868)
+2026-10-25 19:46:55 +0530 - dagster - DEBUG - vakrangee_ir_job - 
+8d45d94e-88f8-4bb4-aaca-5983712bf404 - 3868 - ingest_vakrangee_ir - 
+RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
+2026-10-25 19:46:55 +0530 - dagster - DEBUG - vakrangee_ir_job - 
+8d45d94e-88f8-4bb4-aaca-5983712bf404 - 3868 - ingest_vakrangee_ir - 
+RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
+2026-10-25 19:46:56 +0530 - dagster - DEBUG - vakrangee_ir_job - 
+8d45d94e-88f8-4bb4-aaca-5983712bf404 - 3868 - LOGS_CAPTURED - Capturing logs for 
+process (pid: 3868).
+2026-10-25 19:46:56 +0530 - dagster - DEBUG - vakrangee_ir_job - 
+8d45d94e-88f8-4bb4-aaca-5983712bf404 - 3868 - ingest_vakrangee_ir - STEP_START - 
+Started execution of step "ingest_vakrangee_ir".
+2026-10-25 19:46:56 [info     ] duplicate_skipped              sha256=07bf6b01b228f0bac113b0279b60709179d2ebf7fcf78fb7a513874b57d9d786 url=https://www.vakrangee.in/pdf/News_and_Announcements/ResignLetter.pdf
+2026-10-25 19:46:58 [info     ] duplicate_skipped              sha256=8f47891accf0c6a8c3d1b566100aecfb8f80f87ee41bb7d883312e77cc9290f9 url=https://www.vakrangee.in/pdf/News_and_Announcements/36Company%20Update%20on%20Resignation%20of%20Statutory%20Auditors.pdf
+2026-10-25 19:47:00 [info     ] duplicate_skipped              sha256=932d816e61b0614d3c5dd561ee05ce4f2830993a1cac39ed4d6b67d3989fd7b9 url=https://www.vakrangee.in/pdf/News_and_Announcements/37Intimation%20to%20Stock%20Exchange%20regarding%20resignation%20of%20Statutory%20Auditors%20%E2%80%93%20Reg.%2030%20SEBI%20LODR%20Regulations.pdf
+2026-10-25 19:47:00 +0530 - dagster - INFO - vakrangee_ir_job - 
+8d45d94e-88f8-4bb4-aaca-5983712bf404 - ingest_vakrangee_ir - vakrangee_ir: 
+KnownItemsJobStats(source_id='vakrangee_ir', attempted=3, fetched_new=0, 
+unchanged=3, blocked=0, errors=[])
+2026-10-25 19:47:00 +0530 - dagster - DEBUG - vakrangee_ir_job - 
+8d45d94e-88f8-4bb4-aaca-5983712bf404 - 3868 - ingest_vakrangee_ir - STEP_OUTPUT - 
+Yielded output "result" of type "Nothing". (Type check passed).
+2026-10-25 19:47:00 +0530 - dagster - DEBUG - vakrangee_ir_job - 
+8d45d94e-88f8-4bb4-aaca-5983712bf404 - 3868 - ingest_vakrangee_ir - STEP_SUCCESS - 
+Finished execution of step "ingest_vakrangee_ir" in 4.48s.
+2026-10-25 19:47:01 +0530 - dagster - DEBUG - vakrangee_ir_job - 
+8d45d94e-88f8-4bb4-aaca-5983712bf404 - 3868 - ENGINE_EVENT - Finished steps in 
+process (pid: 3868) in 5.41s
+2026-10-25 19:47:01 +0530 - dagster - DEBUG - vakrangee_ir_job - 
+8d45d94e-88f8-4bb4-aaca-5983712bf404 - 3868 - RUN_SUCCESS - Finished execution of 
+run for "vakrangee_ir_job".
+2026-10-25 19:47:01 +0530 - dagster - DEBUG - jetairways_ir_job - 
+825b88b5-7321-4c63-801a-76b168d4ccbc - 3868 - RUN_START - Started execution of run 
+for "jetairways_ir_job".
+2026-10-25 19:47:01 +0530 - dagster - DEBUG - jetairways_ir_job - 
+825b88b5-7321-4c63-801a-76b168d4ccbc - 3868 - ENGINE_EVENT - Executing steps in 
+process (pid: 3868)
+2026-10-25 19:47:01 +0530 - dagster - DEBUG - jetairways_ir_job - 
+825b88b5-7321-4c63-801a-76b168d4ccbc - 3868 - ingest_jetairways_ir - 
+RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
+2026-10-25 19:47:02 +0530 - dagster - DEBUG - jetairways_ir_job - 
+825b88b5-7321-4c63-801a-76b168d4ccbc - 3868 - ingest_jetairways_ir - 
+RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
+2026-10-25 19:47:02 +0530 - dagster - DEBUG - jetairways_ir_job - 
+825b88b5-7321-4c63-801a-76b168d4ccbc - 3868 - LOGS_CAPTURED - Capturing logs for 
+process (pid: 3868).
+2026-10-25 19:47:02 +0530 - dagster - DEBUG - jetairways_ir_job - 
+825b88b5-7321-4c63-801a-76b168d4ccbc - 3868 - ingest_jetairways_ir - STEP_START - 
+Started execution of step "ingest_jetairways_ir".
+2026-10-25 19:47:02 [info     ] duplicate_skipped              sha256=37f82ff6ec6c4f36a364d439c3c7150163c5df43a3506ca191c73c39adbc69ef url=https://www.jetairways.com/information/Documents/SHP_31032022.pdf
+2026-10-25 19:47:02 +0530 - dagster - INFO - jetairways_ir_job - 
+825b88b5-7321-4c63-801a-76b168d4ccbc - ingest_jetairways_ir - jetairways_ir: 
+KnownItemsJobStats(source_id='jetairways_ir', attempted=1, fetched_new=0, 
+unchanged=1, blocked=0, errors=[])
+2026-10-25 19:47:02 +0530 - dagster - DEBUG - jetairways_ir_job - 
+825b88b5-7321-4c63-801a-76b168d4ccbc - 3868 - ingest_jetairways_ir - STEP_OUTPUT - 
+Yielded output "result" of type "Nothing". (Type check passed).
+2026-10-25 19:47:02 +0530 - dagster - DEBUG - jetairways_ir_job - 
+825b88b5-7321-4c63-801a-76b168d4ccbc - 3868 - ingest_jetairways_ir - STEP_SUCCESS 
+- Finished execution of step "ingest_jetairways_ir" in 702ms.
+2026-10-25 19:47:04 +0530 - dagster - DEBUG - jetairways_ir_job - 
+825b88b5-7321-4c63-801a-76b168d4ccbc - 3868 - ENGINE_EVENT - Finished steps in 
+process (pid: 3868) in 2.53s
+2026-10-25 19:47:04 +0530 - dagster - DEBUG - jetairways_ir_job - 
+825b88b5-7321-4c63-801a-76b168d4ccbc - 3868 - RUN_SUCCESS - Finished execution of 
+run for "jetairways_ir_job".
+2026-10-25 19:47:05 +0530 - dagster - DEBUG - brightcom_ir_job - 
+68c86504-8257-43ce-92cd-b6a47e5076bd - 3868 - RUN_START - Started execution of run 
+for "brightcom_ir_job".
+2026-10-25 19:47:05 +0530 - dagster - DEBUG - brightcom_ir_job - 
+68c86504-8257-43ce-92cd-b6a47e5076bd - 3868 - ENGINE_EVENT - Executing steps in 
+process (pid: 3868)
+2026-10-25 19:47:05 +0530 - dagster - DEBUG - brightcom_ir_job - 
+68c86504-8257-43ce-92cd-b6a47e5076bd - 3868 - ingest_brightcom_ir - 
+RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
+2026-10-25 19:47:05 +0530 - dagster - DEBUG - brightcom_ir_job - 
+68c86504-8257-43ce-92cd-b6a47e5076bd - 3868 - ingest_brightcom_ir - 
+RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
+2026-10-25 19:47:05 +0530 - dagster - DEBUG - brightcom_ir_job - 
+68c86504-8257-43ce-92cd-b6a47e5076bd - 3868 - LOGS_CAPTURED - Capturing logs for 
+process (pid: 3868).
+2026-10-25 19:47:05 +0530 - dagster - DEBUG - brightcom_ir_job - 
+68c86504-8257-43ce-92cd-b6a47e5076bd - 3868 - ingest_brightcom_ir - STEP_START - 
+Started execution of step "ingest_brightcom_ir".
+2026-10-25 19:47:08 [info     ] duplicate_skipped              sha256=ec22a86d8d00b013e37ef07a317aa84e13cb557c55a0ea6afeda9cd14c1f0ad4 url=https://www.brightcomgroup.com/wp-content/uploads/2021/03/Annual-Report-2018-2019.pdf
+2026-10-25 19:47:08 +0530 - dagster - INFO - brightcom_ir_job - 
+68c86504-8257-43ce-92cd-b6a47e5076bd - ingest_brightcom_ir - brightcom_ir: 
+KnownItemsJobStats(source_id='brightcom_ir', attempted=1, fetched_new=0, 
+unchanged=1, blocked=0, errors=[])
+2026-10-25 19:47:08 +0530 - dagster - DEBUG - brightcom_ir_job - 
+68c86504-8257-43ce-92cd-b6a47e5076bd - 3868 - ingest_brightcom_ir - STEP_OUTPUT - 
+Yielded output "result" of type "Nothing". (Type check passed).
+2026-10-25 19:47:08 +0530 - dagster - DEBUG - brightcom_ir_job - 
+68c86504-8257-43ce-92cd-b6a47e5076bd - 3868 - ingest_brightcom_ir - STEP_SUCCESS - 
+Finished execution of step "ingest_brightcom_ir" in 2.73s.
+2026-10-25 19:47:08 +0530 - dagster - DEBUG - brightcom_ir_job - 
+68c86504-8257-43ce-92cd-b6a47e5076bd - 3868 - ENGINE_EVENT - Finished steps in 
+process (pid: 3868) in 3.68s
+2026-10-25 19:47:09 +0530 - dagster - DEBUG - brightcom_ir_job - 
+68c86504-8257-43ce-92cd-b6a47e5076bd - 3868 - RUN_SUCCESS - Finished execution of 
+run for "brightcom_ir_job".
+2026-10-25 19:47:09 +0530 - dagster - DEBUG - lichousing_ir_job - 
+18e4f1fd-78dd-4f6b-8c0e-8cafbb305127 - 3868 - RUN_START - Started execution of run 
+for "lichousing_ir_job".
+2026-10-25 19:47:09 +0530 - dagster - DEBUG - lichousing_ir_job - 
+18e4f1fd-78dd-4f6b-8c0e-8cafbb305127 - 3868 - ENGINE_EVENT - Executing steps in 
+process (pid: 3868)
+2026-10-25 19:47:09 +0530 - dagster - DEBUG - lichousing_ir_job - 
+18e4f1fd-78dd-4f6b-8c0e-8cafbb305127 - 3868 - ingest_lichousing_ir - 
+RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
+2026-10-25 19:47:09 +0530 - dagster - DEBUG - lichousing_ir_job - 
+18e4f1fd-78dd-4f6b-8c0e-8cafbb305127 - 3868 - ingest_lichousing_ir - 
+RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
+2026-10-25 19:47:09 +0530 - dagster - DEBUG - lichousing_ir_job - 
+18e4f1fd-78dd-4f6b-8c0e-8cafbb305127 - 3868 - LOGS_CAPTURED - Capturing logs for 
+process (pid: 3868).
+2026-10-25 19:47:09 +0530 - dagster - DEBUG - lichousing_ir_job - 
+18e4f1fd-78dd-4f6b-8c0e-8cafbb305127 - 3868 - ingest_lichousing_ir - STEP_START - 
+Started execution of step "ingest_lichousing_ir".
+2026-10-25 19:47:10 [info     ] duplicate_skipped              sha256=6d70a81cf85f4a7424a7644924ff897cc14d40f620409bd91ad38c7152748c61 url=https://cdn.lichousing.com/2025/07/lichfl_shareholders_pattern_q125.pdf
+2026-10-25 19:47:10 +0530 - dagster - INFO - lichousing_ir_job - 
+18e4f1fd-78dd-4f6b-8c0e-8cafbb305127 - ingest_lichousing_ir - lichousing_ir: 
+KnownItemsJobStats(source_id='lichousing_ir', attempted=1, fetched_new=0, 
+unchanged=1, blocked=0, errors=[])
+2026-10-25 19:47:10 +0530 - dagster - DEBUG - lichousing_ir_job - 
+18e4f1fd-78dd-4f6b-8c0e-8cafbb305127 - 3868 - ingest_lichousing_ir - STEP_OUTPUT - 
+Yielded output "result" of type "Nothing". (Type check passed).
+2026-10-25 19:47:10 +0530 - dagster - DEBUG - lichousing_ir_job - 
+18e4f1fd-78dd-4f6b-8c0e-8cafbb305127 - 3868 - ingest_lichousing_ir - STEP_SUCCESS 
+- Finished execution of step "ingest_lichousing_ir" in 841ms.
+2026-10-25 19:47:12 +0530 - dagster - DEBUG - lichousing_ir_job - 
+18e4f1fd-78dd-4f6b-8c0e-8cafbb305127 - 3868 - ENGINE_EVENT - Finished steps in 
+process (pid: 3868) in 2.64s
+2026-10-25 19:47:12 +0530 - dagster - DEBUG - lichousing_ir_job - 
+18e4f1fd-78dd-4f6b-8c0e-8cafbb305127 - 3868 - RUN_SUCCESS - Finished execution of 
+run for "lichousing_ir_job".
+2026-10-25 19:47:12 +0530 - dagster - DEBUG - pnbhousing_ir_job - 
+041c9789-25aa-47ae-8409-f19011c07116 - 3868 - RUN_START - Started execution of run 
+for "pnbhousing_ir_job".
+2026-10-25 19:47:13 +0530 - dagster - DEBUG - pnbhousing_ir_job - 
+041c9789-25aa-47ae-8409-f19011c07116 - 3868 - ENGINE_EVENT - Executing steps in 
+process (pid: 3868)
+2026-10-25 19:47:13 +0530 - dagster - DEBUG - pnbhousing_ir_job - 
+041c9789-25aa-47ae-8409-f19011c07116 - 3868 - ingest_pnbhousing_ir - 
+RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
+2026-10-25 19:47:13 +0530 - dagster - DEBUG - pnbhousing_ir_job - 
+041c9789-25aa-47ae-8409-f19011c07116 - 3868 - ingest_pnbhousing_ir - 
+RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
+2026-10-25 19:47:13 +0530 - dagster - DEBUG - pnbhousing_ir_job - 
+041c9789-25aa-47ae-8409-f19011c07116 - 3868 - LOGS_CAPTURED - Capturing logs for 
+process (pid: 3868).
+2026-10-25 19:47:13 +0530 - dagster - DEBUG - pnbhousing_ir_job - 
+041c9789-25aa-47ae-8409-f19011c07116 - 3868 - ingest_pnbhousing_ir - STEP_START - 
+Started execution of step "ingest_pnbhousing_ir".
+2026-10-25 19:47:15 +0530 - dagster - INFO - pnbhousing_ir_job - 
+041c9789-25aa-47ae-8409-f19011c07116 - ingest_pnbhousing_ir - pnbhousing_ir: 
+KnownItemsJobStats(source_id='pnbhousing_ir', attempted=1, fetched_new=1, 
+unchanged=0, blocked=0, errors=[])
+2026-10-25 19:47:15 +0530 - dagster - DEBUG - pnbhousing_ir_job - 
+041c9789-25aa-47ae-8409-f19011c07116 - 3868 - ingest_pnbhousing_ir - STEP_OUTPUT - 
+Yielded output "result" of type "Nothing". (Type check passed).
+2026-10-25 19:47:15 +0530 - dagster - DEBUG - pnbhousing_ir_job - 
+041c9789-25aa-47ae-8409-f19011c07116 - 3868 - ingest_pnbhousing_ir - STEP_SUCCESS 
+- Finished execution of step "ingest_pnbhousing_ir" in 2.4s.
+2026-10-25 19:47:16 +0530 - dagster - DEBUG - pnbhousing_ir_job - 
+041c9789-25aa-47ae-8409-f19011c07116 - 3868 - ENGINE_EVENT - Finished steps in 
+process (pid: 3868) in 3.29s
+2026-10-25 19:47:16 +0530 - dagster - DEBUG - pnbhousing_ir_job - 
+041c9789-25aa-47ae-8409-f19011c07116 - 3868 - RUN_SUCCESS - Finished execution of 
+run for "pnbhousing_ir_job".
+2026-10-25 19:47:16 +0530 - dagster - DEBUG - spicejet_ir_job - 
+7114f1c9-62bc-4cff-9e7a-2b57241a3d5c - 3868 - RUN_START - Started execution of run 
+for "spicejet_ir_job".
+2026-10-25 19:47:17 +0530 - dagster - DEBUG - spicejet_ir_job - 
+7114f1c9-62bc-4cff-9e7a-2b57241a3d5c - 3868 - ENGINE_EVENT - Executing steps in 
+process (pid: 3868)
+2026-10-25 19:47:17 +0530 - dagster - DEBUG - spicejet_ir_job - 
+7114f1c9-62bc-4cff-9e7a-2b57241a3d5c - 3868 - ingest_spicejet_ir - 
+RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
+2026-10-25 19:47:17 +0530 - dagster - DEBUG - spicejet_ir_job - 
+7114f1c9-62bc-4cff-9e7a-2b57241a3d5c - 3868 - ingest_spicejet_ir - 
+RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
+2026-10-25 19:47:17 +0530 - dagster - DEBUG - spicejet_ir_job - 
+7114f1c9-62bc-4cff-9e7a-2b57241a3d5c - 3868 - LOGS_CAPTURED - Capturing logs for 
+process (pid: 3868).
+2026-10-25 19:47:17 +0530 - dagster - DEBUG - spicejet_ir_job - 
+7114f1c9-62bc-4cff-9e7a-2b57241a3d5c - 3868 - ingest_spicejet_ir - STEP_START - 
+Started execution of step "ingest_spicejet_ir".
+2026-10-25 19:47:17 [info     ] duplicate_skipped              sha256=6bf0941f690949e43a219da63a8564d6d64db8d321170a2b527fa9a9f0eb8063 url=https://corporate.spicejet.com/Content/pdf/ShareholdingPatternQ3_24_25.pdf
+2026-10-25 19:47:17 +0530 - dagster - INFO - spicejet_ir_job - 
+7114f1c9-62bc-4cff-9e7a-2b57241a3d5c - ingest_spicejet_ir - spicejet_ir: 
+KnownItemsJobStats(source_id='spicejet_ir', attempted=1, fetched_new=0, 
+unchanged=1, blocked=0, errors=[])
+2026-10-25 19:47:17 +0530 - dagster - DEBUG - spicejet_ir_job - 
+7114f1c9-62bc-4cff-9e7a-2b57241a3d5c - 3868 - ingest_spicejet_ir - STEP_OUTPUT - 
+Yielded output "result" of type "Nothing". (Type check passed).
+2026-10-25 19:47:17 +0530 - dagster - DEBUG - spicejet_ir_job - 
+7114f1c9-62bc-4cff-9e7a-2b57241a3d5c - 3868 - ingest_spicejet_ir - STEP_SUCCESS - 
+Finished execution of step "ingest_spicejet_ir" in 658ms.
+2026-10-25 19:47:19 +0530 - dagster - DEBUG - spicejet_ir_job - 
+7114f1c9-62bc-4cff-9e7a-2b57241a3d5c - 3868 - ENGINE_EVENT - Finished steps in 
+process (pid: 3868) in 2.42s
+2026-10-25 19:47:19 +0530 - dagster - DEBUG - spicejet_ir_job - 
+7114f1c9-62bc-4cff-9e7a-2b57241a3d5c - 3868 - RUN_SUCCESS - Finished execution of 
+run for "spicejet_ir_job".
+2026-10-25 19:47:20 +0530 - dagster - DEBUG - dmart_ir_job - 
+d8fe3094-e3f1-4d2a-92e9-446337ed2cc5 - 3868 - RUN_START - Started execution of run 
+for "dmart_ir_job".
+2026-10-25 19:47:20 +0530 - dagster - DEBUG - dmart_ir_job - 
+d8fe3094-e3f1-4d2a-92e9-446337ed2cc5 - 3868 - ENGINE_EVENT - Executing steps in 
+process (pid: 3868)
+2026-10-25 19:47:20 +0530 - dagster - DEBUG - dmart_ir_job - 
+d8fe3094-e3f1-4d2a-92e9-446337ed2cc5 - 3868 - ingest_dmart_ir - 
+RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
+2026-10-25 19:47:20 +0530 - dagster - DEBUG - dmart_ir_job - 
+d8fe3094-e3f1-4d2a-92e9-446337ed2cc5 - 3868 - ingest_dmart_ir - 
+RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
+2026-10-25 19:47:20 +0530 - dagster - DEBUG - dmart_ir_job - 
+d8fe3094-e3f1-4d2a-92e9-446337ed2cc5 - 3868 - LOGS_CAPTURED - Capturing logs for 
+process (pid: 3868).
+2026-10-25 19:47:20 +0530 - dagster - DEBUG - dmart_ir_job - 
+d8fe3094-e3f1-4d2a-92e9-446337ed2cc5 - 3868 - ingest_dmart_ir - STEP_START - 
+Started execution of step "ingest_dmart_ir".
+2026-10-25 19:47:21 [info     ] duplicate_skipped              sha256=8e102536422c02cad77d2ec5fed958f1e500bed0a6113e02861a2d0acedce14d url=https://api.dmartindia.com/corporate/content/file/v1/2/3uvHxSiASSCtZ94xNwxwjgea1714823973/Investor%20Presentation%20for%20the%20year%20ended%2031st%20March,%202024.pdf
+2026-10-25 19:47:21 +0530 - dagster - INFO - dmart_ir_job - 
+d8fe3094-e3f1-4d2a-92e9-446337ed2cc5 - ingest_dmart_ir - dmart_ir: 
+KnownItemsJobStats(source_id='dmart_ir', attempted=1, fetched_new=0, unchanged=1, 
+blocked=0, errors=[])
+2026-10-25 19:47:21 +0530 - dagster - DEBUG - dmart_ir_job - 
+d8fe3094-e3f1-4d2a-92e9-446337ed2cc5 - 3868 - ingest_dmart_ir - STEP_OUTPUT - 
+Yielded output "result" of type "Nothing". (Type check passed).
+2026-10-25 19:47:21 +0530 - dagster - DEBUG - dmart_ir_job - 
+d8fe3094-e3f1-4d2a-92e9-446337ed2cc5 - 3868 - ingest_dmart_ir - STEP_SUCCESS - 
+Finished execution of step "ingest_dmart_ir" in 1.11s.
+2026-10-25 19:47:23 +0530 - dagster - DEBUG - dmart_ir_job - 
+d8fe3094-e3f1-4d2a-92e9-446337ed2cc5 - 3868 - ENGINE_EVENT - Finished steps in 
+process (pid: 3868) in 2.84s
+2026-10-25 19:47:23 +0530 - dagster - DEBUG - dmart_ir_job - 
+d8fe3094-e3f1-4d2a-92e9-446337ed2cc5 - 3868 - RUN_SUCCESS - Finished execution of 
+run for "dmart_ir_job".
+2026-10-25 19:47:23 +0530 - dagster - DEBUG - thermax_ir_job - 
+bbfbfe67-bdfe-479d-832f-58280461bd8c - 3868 - RUN_START - Started execution of run 
+for "thermax_ir_job".
+2026-10-25 19:47:23 +0530 - dagster - DEBUG - thermax_ir_job - 
+bbfbfe67-bdfe-479d-832f-58280461bd8c - 3868 - ENGINE_EVENT - Executing steps in 
+process (pid: 3868)
+2026-10-25 19:47:23 +0530 - dagster - DEBUG - thermax_ir_job - 
+bbfbfe67-bdfe-479d-832f-58280461bd8c - 3868 - ingest_thermax_ir - 
+RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
+2026-10-25 19:47:23 +0530 - dagster - DEBUG - thermax_ir_job - 
+bbfbfe67-bdfe-479d-832f-58280461bd8c - 3868 - ingest_thermax_ir - 
+RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
+2026-10-25 19:47:23 +0530 - dagster - DEBUG - thermax_ir_job - 
+bbfbfe67-bdfe-479d-832f-58280461bd8c - 3868 - LOGS_CAPTURED - Capturing logs for 
+process (pid: 3868).
+2026-10-25 19:47:23 +0530 - dagster - DEBUG - thermax_ir_job - 
+bbfbfe67-bdfe-479d-832f-58280461bd8c - 3868 - ingest_thermax_ir - STEP_START - 
+Started execution of step "ingest_thermax_ir".
+2026-10-25 19:47:25 [info     ] duplicate_skipped              sha256=3eaba8c1f4543433837e45fbf20d454a4c8ae4cc378a299869676a93f84498b7 url=https://www.thermaxglobal.com/sites/default/files/2026-04/Thermax_44-Annual-Report_0.pdf
+2026-10-25 19:47:25 +0530 - dagster - INFO - thermax_ir_job - 
+bbfbfe67-bdfe-479d-832f-58280461bd8c - ingest_thermax_ir - thermax_ir: 
+KnownItemsJobStats(source_id='thermax_ir', attempted=1, fetched_new=0, 
+unchanged=1, blocked=0, errors=[])
+2026-10-25 19:47:25 +0530 - dagster - DEBUG - thermax_ir_job - 
+bbfbfe67-bdfe-479d-832f-58280461bd8c - 3868 - ingest_thermax_ir - STEP_OUTPUT - 
+Yielded output "result" of type "Nothing". (Type check passed).
+2026-10-25 19:47:25 +0530 - dagster - DEBUG - thermax_ir_job - 
+bbfbfe67-bdfe-479d-832f-58280461bd8c - 3868 - ingest_thermax_ir - STEP_SUCCESS - 
+Finished execution of step "ingest_thermax_ir" in 2.03s.
+2026-10-25 19:47:26 +0530 - dagster - DEBUG - thermax_ir_job - 
+bbfbfe67-bdfe-479d-832f-58280461bd8c - 3868 - ENGINE_EVENT - Finished steps in 
+process (pid: 3868) in 2.89s
+2026-10-25 19:47:26 +0530 - dagster - DEBUG - thermax_ir_job - 
+bbfbfe67-bdfe-479d-832f-58280461bd8c - 3868 - RUN_SUCCESS - Finished execution of 
+run for "thermax_ir_job".
+2026-10-25 19:47:27 +0530 - dagster - DEBUG - suzlon_ir_job - 
+64ef8134-9a96-49ee-9e9a-5efdea6603d0 - 3868 - RUN_START - Started execution of run 
+for "suzlon_ir_job".
+2026-10-25 19:47:27 +0530 - dagster - DEBUG - suzlon_ir_job - 
+64ef8134-9a96-49ee-9e9a-5efdea6603d0 - 3868 - ENGINE_EVENT - Executing steps in 
+process (pid: 3868)
+2026-10-25 19:47:27 +0530 - dagster - DEBUG - suzlon_ir_job - 
+64ef8134-9a96-49ee-9e9a-5efdea6603d0 - 3868 - ingest_suzlon_ir - 
+RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
+2026-10-25 19:47:27 +0530 - dagster - DEBUG - suzlon_ir_job - 
+64ef8134-9a96-49ee-9e9a-5efdea6603d0 - 3868 - ingest_suzlon_ir - 
+RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
+2026-10-25 19:47:27 +0530 - dagster - DEBUG - suzlon_ir_job - 
+64ef8134-9a96-49ee-9e9a-5efdea6603d0 - 3868 - LOGS_CAPTURED - Capturing logs for 
+process (pid: 3868).
+2026-10-25 19:47:27 +0530 - dagster - DEBUG - suzlon_ir_job - 
+64ef8134-9a96-49ee-9e9a-5efdea6603d0 - 3868 - ingest_suzlon_ir - STEP_START - 
+Started execution of step "ingest_suzlon_ir".
+2026-10-25 19:47:29 +0530 - dagster - INFO - suzlon_ir_job - 
+64ef8134-9a96-49ee-9e9a-5efdea6603d0 - ingest_suzlon_ir - suzlon_ir: 
+KnownItemsJobStats(source_id='suzlon_ir', attempted=1, fetched_new=1, unchanged=0, 
+blocked=0, errors=[])
+2026-10-25 19:47:29 +0530 - dagster - DEBUG - suzlon_ir_job - 
+64ef8134-9a96-49ee-9e9a-5efdea6603d0 - 3868 - ingest_suzlon_ir - STEP_OUTPUT - 
+Yielded output "result" of type "Nothing". (Type check passed).
+2026-10-25 19:47:29 +0530 - dagster - DEBUG - suzlon_ir_job - 
+64ef8134-9a96-49ee-9e9a-5efdea6603d0 - 3868 - ingest_suzlon_ir - STEP_SUCCESS - 
+Finished execution of step "ingest_suzlon_ir" in 2.31s.
+2026-10-25 19:47:30 +0530 - dagster - DEBUG - suzlon_ir_job - 
+64ef8134-9a96-49ee-9e9a-5efdea6603d0 - 3868 - ENGINE_EVENT - Finished steps in 
+process (pid: 3868) in 3.07s
+2026-10-25 19:47:30 +0530 - dagster - DEBUG - suzlon_ir_job - 
+64ef8134-9a96-49ee-9e9a-5efdea6603d0 - 3868 - RUN_SUCCESS - Finished execution of 
+run for "suzlon_ir_job".
+2026-10-25 19:47:31 +0530 - dagster - DEBUG - mastek_ir_job - 
+c73f3091-9162-4607-be53-5211a7050b0f - 3868 - RUN_START - Started execution of run 
+for "mastek_ir_job".
+2026-10-25 19:47:31 +0530 - dagster - DEBUG - mastek_ir_job - 
+c73f3091-9162-4607-be53-5211a7050b0f - 3868 - ENGINE_EVENT - Executing steps in 
+process (pid: 3868)
+2026-10-25 19:47:31 +0530 - dagster - DEBUG - mastek_ir_job - 
+c73f3091-9162-4607-be53-5211a7050b0f - 3868 - ingest_mastek_ir - 
+RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
+2026-10-25 19:47:31 +0530 - dagster - DEBUG - mastek_ir_job - 
+c73f3091-9162-4607-be53-5211a7050b0f - 3868 - ingest_mastek_ir - 
+RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
+2026-10-25 19:47:31 +0530 - dagster - DEBUG - mastek_ir_job - 
+c73f3091-9162-4607-be53-5211a7050b0f - 3868 - LOGS_CAPTURED - Capturing logs for 
+process (pid: 3868).
+2026-10-25 19:47:31 +0530 - dagster - DEBUG - mastek_ir_job - 
+c73f3091-9162-4607-be53-5211a7050b0f - 3868 - ingest_mastek_ir - STEP_START - 
+Started execution of step "ingest_mastek_ir".
+2026-10-25 19:47:32 [info     ] duplicate_skipped              sha256=3fd728868637efbb9adedf1e94273a0d56b0d8e1f5b169e7f95dbec17557a198 url=https://www.mastek.com/wp-content/uploads/2022/08/Shareholding-Pattern-Q1-2017-18.pdf
+2026-10-25 19:47:32 +0530 - dagster - INFO - mastek_ir_job - 
+c73f3091-9162-4607-be53-5211a7050b0f - ingest_mastek_ir - mastek_ir: 
+KnownItemsJobStats(source_id='mastek_ir', attempted=1, fetched_new=0, unchanged=1, 
+blocked=0, errors=[])
+2026-10-25 19:47:32 +0530 - dagster - DEBUG - mastek_ir_job - 
+c73f3091-9162-4607-be53-5211a7050b0f - 3868 - ingest_mastek_ir - STEP_OUTPUT - 
+Yielded output "result" of type "Nothing". (Type check passed).
+2026-10-25 19:47:32 +0530 - dagster - DEBUG - mastek_ir_job - 
+c73f3091-9162-4607-be53-5211a7050b0f - 3868 - ingest_mastek_ir - STEP_SUCCESS - 
+Finished execution of step "ingest_mastek_ir" in 981ms.
+2026-10-25 19:47:33 +0530 - dagster - DEBUG - mastek_ir_job - 
+c73f3091-9162-4607-be53-5211a7050b0f - 3868 - ENGINE_EVENT - Finished steps in 
+process (pid: 3868) in 2.76s
+2026-10-25 19:47:34 +0530 - dagster - DEBUG - mastek_ir_job - 
+c73f3091-9162-4607-be53-5211a7050b0f - 3868 - RUN_SUCCESS - Finished execution of 
+run for "mastek_ir_job".
+job_name,run_id,success
+bhavcopy_job,4925c264-3739-4dd8-8b17-15eb2813cb64,True
+inbox_import_job,59315704-fa60-46e0-bf09-002985ccfda9,True
+sebi_job,5b251da3-4a53-49d4-8678-28355a4ea3e2,True
+ibbi_job,132b6c2a-38af-4e45-a011-06b135cab63c,True
+care_job,3081df76-1e1d-4e67-9707-14169cbbc261,True
+vakrangee_ir_job,8d45d94e-88f8-4bb4-aaca-5983712bf404,True
+jetairways_ir_job,825b88b5-7321-4c63-801a-76b168d4ccbc,True
+brightcom_ir_job,68c86504-8257-43ce-92cd-b6a47e5076bd,True
+lichousing_ir_job,18e4f1fd-78dd-4f6b-8c0e-8cafbb305127,True
+pnbhousing_ir_job,041c9789-25aa-47ae-8409-f19011c07116,True
+spicejet_ir_job,7114f1c9-62bc-4cff-9e7a-2b57241a3d5c,True
+dmart_ir_job,d8fe3094-e3f1-4d2a-92e9-446337ed2cc5,True
+thermax_ir_job,bbfbfe67-bdfe-479d-832f-58280461bd8c,True
+suzlon_ir_job,64ef8134-9a96-49ee-9e9a-5efdea6603d0,True
+mastek_ir_job,c73f3091-9162-4607-be53-5211a7050b0f,True

@@ -11,6 +11,11 @@ provisioning step is Garage-specific infra setup, not "application
 schema" — the actual round-trip (list/put/get/delete object, then delete
 the bucket) is done entirely through a generic boto3 S3 client, so the
 object-storage backend can be swapped without any application code change.
+
+Phase 1: the Garage-CLI helpers moved to ledgerlight/storage/garage_admin.py
+so scripts/garage_provision.py (which provisions the *persistent* raw-object
+bucket/key, as opposed to this script's throwaway one) can reuse them
+instead of duplicating the docker-exec logic. Behaviour here is unchanged.
 """
 
 from __future__ import annotations
@@ -25,58 +30,11 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from ledgerlight.config.settings import load_settings  # noqa: E402
-
-GARAGE_CONTAINER = "ledgerlight-phase0-garage-1"  # from infra/docker-compose.yml: name + service
-
-
-def _garage_cli(*args: str) -> str:
-    proc = subprocess.run(
-        ["docker", "exec", GARAGE_CONTAINER, "/garage", *args],
-        capture_output=True,
-        text=True,
-        timeout=30,
-        check=True,
-    )
-    return proc.stdout
-
-
-def _ensure_layout_applied() -> None:
-    status = _garage_cli("status")
-    if "NO ROLE ASSIGNED" not in status:
-        return  # already has a role from a previous run against the same volume
-    node_id = None
-    for line in status.splitlines():
-        if "NO ROLE ASSIGNED" in line:
-            node_id = line.split()[0]
-            break
-    if node_id is None:
-        raise RuntimeError(f"could not parse node id from `garage status`:\n{status}")
-    _garage_cli("layout", "assign", node_id, "-z", "dc1", "-c", "1G")
-    layout = _garage_cli("layout", "show")
-    version_line = next(ln for ln in layout.splitlines() if "layout apply --version" in ln)
-    version = version_line.strip().split("--version")[1].strip()
-    _garage_cli("layout", "apply", "--version", version)
-
-
-def _provision_key_and_bucket(bucket: str, key_name: str) -> tuple[str, str]:
-    created = _garage_cli("key", "create", key_name)
-    access_key_id = next(
-        ln.split(":", 1)[1].strip()
-        for ln in created.splitlines()
-        if ln.strip().startswith("Key ID:")
-    )
-    secret_access_key = next(
-        ln.split(":", 1)[1].strip()
-        for ln in created.splitlines()
-        if ln.strip().startswith("Secret key:")
-    )
-    _garage_cli("bucket", "create", bucket)
-    _garage_cli("bucket", "allow", "--read", "--write", "--owner", bucket, "--key", key_name)
-    return access_key_id, secret_access_key
-
-
-def _deprovision_key(key_name: str) -> None:
-    _garage_cli("key", "delete", "--yes", key_name)
+from ledgerlight.storage.garage_admin import (  # noqa: E402
+    deprovision_key,
+    ensure_layout_applied,
+    provision_key_and_bucket,
+)
 
 
 def check_postgres_pgvector() -> tuple[bool, str]:
@@ -116,8 +74,8 @@ def check_s3_bucket_roundtrip() -> tuple[bool, str]:
     key_name = f"ledgerlight-phase0-check-{suffix}"
 
     try:
-        _ensure_layout_applied()
-        access_key_id, secret_access_key = _provision_key_and_bucket(bucket, key_name)
+        ensure_layout_applied()
+        access_key_id, secret_access_key = provision_key_and_bucket(bucket, key_name)
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, StopIteration) as exc:
         return False, f"Garage CLI provisioning failed: {exc}"
 
@@ -146,7 +104,7 @@ def check_s3_bucket_roundtrip() -> tuple[bool, str]:
     finally:
         # best-effort cleanup; a failure here does not affect the check's PASS/FAIL result
         with contextlib.suppress(subprocess.CalledProcessError):
-            _deprovision_key(key_name)
+            deprovision_key(key_name)
 
 
 def main() -> int:

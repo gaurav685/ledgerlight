@@ -1,0 +1,14 @@
+versions_seen: 237
+documents_processed (pdf/html): 26
+  pages_created: 528
+  pages_already_present: 0
+  ocr_pages: 0
+price_files_processed (bhavcopy): 211
+  price_rows_upserted: 472343
+  price_rows_unchanged: 1703
+  price_rows_quarantined: 0
+skipped (no extractor for mime type): 0
+errors: 0
+elapsed_seconds: 1874.92
+
+[exited with code 0]

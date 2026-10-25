@@ -1,0 +1,38 @@
+﻿source_id            enabled  last_run_status    last_run_at                doc_count  last_run_failed
+academic_datasets    False    never_run          -                          0          -              
+acuite               True     never_run          -                          0          -              
+alpha_vantage        False    never_run          -                          0          -              
+brickwork            False    never_run          -                          0          -              
+brightcom_ir         True     success            2026-10-25 15:02:28.763034+00:00 1          0              
+bse                  False    never_run          -                          0          -              
+care                 True     success            2026-10-25 15:02:15.256907+00:00 1          0              
+commercial_datasets  False    never_run          -                          0          -              
+crisil               False    never_run          -                          0          -              
+dhfl_own_site        False    never_run          -                          0          -              
+dmart_ir             True     success            2026-10-25 15:02:44.618376+00:00 1          0              
+ibbi                 True     success            2026-10-25 15:01:53.165493+00:00 4          0              
+icra                 False    never_run          -                          0          -              
+india_ratings        True     never_run          -                          0          -              
+infomerics           False    never_run          -                          0          -              
+jetairways_ir        True     success            2026-10-25 15:02:24.615777+00:00 1          0              
+kaggle_nse_datasets  False    never_run          -                          0          -              
+lichousing_ir        True     success            2026-10-25 15:02:33.746321+00:00 1          0              
+mastek_ir            True     success            2026-10-25 15:02:56.635949+00:00 1          0              
+mca                  False    never_run          -                          0          -              
+nse                  False    never_run          -                          0          -              
+nse_archives         True     success            2026-10-25 15:03:24.967444+00:00 423        0              
+pnbhousing_ir        True     success            2026-10-25 15:02:37.045634+00:00 1          0              
+price_data_alternatives False    never_run          -                          0          -              
+sebi                 True     success            2026-10-25 15:01:45.797669+00:00 3          0              
+spicejet_ir          True     success            2026-10-25 15:02:40.389477+00:00 1          0              
+suzlon_ir            True     success            2026-10-25 15:02:52.754630+00:00 1          0              
+thermax_ir           True     success            2026-10-25 15:02:48.375435+00:00 1          0              
+vakrangee_ir         True     success            2026-10-25 15:02:18.575498+00:00 3          0              
+
+-- overall dead letters by stage --
+  demo_stage: 1
+
+-- failure classes (processing_attempts, status=failed) --
+  validation: 3
+
+total document_versions: 464

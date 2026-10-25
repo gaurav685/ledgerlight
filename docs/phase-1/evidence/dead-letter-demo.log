@@ -1,0 +1,15 @@
+﻿payload_ref: demo://dead-letter-demo/d52f10ef-2169-44b1-bbd0-2e63c9be2db3
+-- simulating 3 failing attempts --
+  attempt 1: failed (demo: upstream still broken)
+  attempt 2: failed (demo: upstream still broken)
+  attempt 3: failed (demo: upstream still broken)
+dead_letter written: True
+  attempts=3 last_error='demo: upstream still broken'
+-- 'fixing' the issue and reprocessing --
+reprocess result: 'fixed'
+total processing_attempts rows for this demo: 4
+  attempt_number=1 status=failed
+  attempt_number=2 status=failed
+  attempt_number=3 status=failed
+  attempt_number=1 status=success
+dead_letters rows after reprocess: 1 (unchanged)

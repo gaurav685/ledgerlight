@@ -1,0 +1,64 @@
+# Dagster instance config. Run/event-log/schedule storage lives in Postgres,
+# in its OWN database (ledgerlight_dagster) — never the application schema
+# (ledgerlight) used by ledgerlight/db/models.py. See
+# docs/adr/0004-metadata-store-and-orchestration.md.
+#
+# Credentials are read from the environment (LEDGERLIGHT_POSTGRES_* — the
+# same vars the app settings use); nothing secret is written to this file.
+# Export them (e.g. load .env into the shell) before running any `dagster`
+# CLI command. The database name itself is not secret and is hardcoded here
+# to match Settings.postgres_dagster_db's default.
+
+run_storage:
+  module: dagster_postgres.run_storage
+  class: PostgresRunStorage
+  config:
+    postgres_db:
+      hostname:
+        env: LEDGERLIGHT_POSTGRES_HOST
+      port:
+        env: LEDGERLIGHT_POSTGRES_PORT
+      username:
+        env: LEDGERLIGHT_POSTGRES_USER
+      password:
+        env: LEDGERLIGHT_POSTGRES_PASSWORD
+      db_name: ledgerlight_dagster
+      scheme: postgresql+psycopg2
+
+event_log_storage:
+  module: dagster_postgres.event_log
+  class: PostgresEventLogStorage
+  config:
+    postgres_db:
+      hostname:
+        env: LEDGERLIGHT_POSTGRES_HOST
+      port:
+        env: LEDGERLIGHT_POSTGRES_PORT
+      username:
+        env: LEDGERLIGHT_POSTGRES_USER
+      password:
+        env: LEDGERLIGHT_POSTGRES_PASSWORD
+      db_name: ledgerlight_dagster
+      scheme: postgresql+psycopg2
+
+schedule_storage:
+  module: dagster_postgres.schedule_storage
+  class: PostgresScheduleStorage
+  config:
+    postgres_db:
+      hostname:
+        env: LEDGERLIGHT_POSTGRES_HOST
+      port:
+        env: LEDGERLIGHT_POSTGRES_PORT
+      username:
+        env: LEDGERLIGHT_POSTGRES_USER
+      password:
+        env: LEDGERLIGHT_POSTGRES_PASSWORD
+      db_name: ledgerlight_dagster
+      scheme: postgresql+psycopg2
+
+local_artifact_storage:
+  module: dagster.core.storage.root
+  class: LocalArtifactStorage
+  config:
+    base_dir: storage

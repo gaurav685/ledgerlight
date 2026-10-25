@@ -23,6 +23,16 @@ infra/pgdata/
 infra/garagedata/
 infra/garagemeta/
 
+# --- Dagster local runtime state (run storage itself is in Postgres;
+#     dagster.yaml is config, not state, and IS committed) ---
+dagster_home/storage/
+dagster_home/logs/
+dagster_home/compute_logs/
+dagster_home/history/
+dagster_home/schedules/
+dagster_home/.telemetry/
+dagster_home/*.db
+
 # --- manual-import inbox (local-only staging for exchange-only documents) ---
 data/inbox/
 infra/*.volume/

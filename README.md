@@ -23,6 +23,19 @@ verified, legally sourced data inventory and seed dataset. It does **not**
 include the ingestion pipeline, database schema, extraction, models, API or
 frontend. See `docs/phase-0/phase-0-report.md` for the full Phase 0 report.
 
+**Phase 1 — data ingestion, raw storage and document processing.** This
+phase adds the metadata store (SQLAlchemy/Alembic, Postgres), the
+content-addressed object storage abstraction, real ingestion jobs for
+every AVAILABLE/AVAILABLE_WITH_LIMITS source, PDF/HTML/bhavcopy
+processing (with an OCR fallback and a tested safety-limits layer),
+Dagster orchestration (partitions/jobs/schedules/sensor/retries), and
+observability (structured logs, persisted run metrics, dead-letter
+tracking, an `ingest-report` CLI). It does **not** include event
+classification/extraction, entity resolution, chunking/embeddings,
+features/models, API or frontend. See `docs/phase-1/phase-1-report.md`
+for the full Phase 1 report and `docs/ingestion/architecture.md` /
+`docs/ingestion/runbook.md` for the pipeline design and day-to-day usage.
+
 ## Setup
 
 Requires [uv](https://docs.astral.sh/uv/) (Python 3.12 is fetched
@@ -57,8 +70,17 @@ All commands are exposed as `uv run <script>` entry points (see
 | `docker compose --env-file .env -f infra/docker-compose.yml up -d` | Start local Postgres+pgvector / Garage (S3-compatible) — `--env-file .env` is required: Compose otherwise looks for `.env` next to the compose file, not at the repo root |
 | `uv run python scripts/infra_check.py` | Verify infra health (pgvector extension, S3 bucket round-trip) |
 | `docker compose --env-file .env -f infra/docker-compose.yml down` | Stop local infra |
+| `uv run alembic upgrade head` | Apply database migrations |
+| `uv run python scripts/sources_sync.py` | Sync `sources` table from `data/manifests/sources.yaml` |
+| `uv run python scripts/store_backfill.py` | Idempotently load all Phase 0 manifest entries into object storage |
+| `uv run python scripts/ingest.py SOURCE_ID [DATE]` | Run one source's Dagster ingestion job |
+| `uv run python scripts/backfill.py START END` | Historical bhavcopy backfill over a date range |
+| `uv run python scripts/process.py` | Extract PDF/HTML text and load bhavcopy CSVs into `price_bars` |
+| `uv run python scripts/reprocess.py VERSION_ID` | Force reprocessing of one document version |
+| `uv run python scripts/ingest_report.py` | Per-source health / dead-letter / failure-class report |
+| `uv run dagster dev -m ledgerlight.orchestration.definitions` | Dagster webserver (needs `DAGSTER_HOME`, see `docs/ingestion/runbook.md`) |
 
-A `Makefile` wraps these as `make setup|lint|typecheck|test|verify-env|verify-manifests|acquire-seed|infra-up|infra-check|infra-down`.
+A `Makefile` wraps these as `make setup|lint|typecheck|test|verify-env|verify-manifests|acquire-seed|infra-up|infra-check|infra-down|db-upgrade|sources-sync|store-backfill|ingest|backfill|process|reprocess|ingest-report|dagster-dev|test-integration|test-corpus`.
 
 ## Data policy
 

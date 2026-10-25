@@ -50,12 +50,28 @@ class Settings(BaseSettings):
     postgres_db: str = Field(default="ledgerlight")
 
     # Generic S3-compatible endpoint for local infra (Garage; see
-    # docs/adr/0003-object-storage.md). Credentials are provisioned
-    # dynamically per infra-check run (scripts/infra_check.py), not read
-    # from settings, because Garage issues keys via its admin CLI rather
-    # than accepting a static root user/password like MinIO did.
+    # docs/adr/0003-object-storage.md). The ephemeral infra-check round-trip
+    # (scripts/infra_check.py) still provisions its own throwaway key per
+    # run. Phase 1's persistent raw-object bucket uses a stable key instead,
+    # provisioned once by scripts/garage_provision.py into these settings.
     s3_endpoint: str = Field(default="127.0.0.1:59000")
     s3_region: str = Field(default="garage")
+    s3_bucket: str = Field(default="ledgerlight-raw")
+    s3_access_key_id: str | None = Field(default=None)
+    s3_secret_access_key: str | None = Field(default=None)
+
+    # Phase 1 metadata store (SQLAlchemy/Alembic) reuses postgres_db above
+    # as the application database. Dagster gets its own database name, per
+    # the Phase 1 brief — its run/event storage is never mixed with the
+    # application schema.
+    postgres_dagster_db: str = Field(default="ledgerlight_dagster")
+
+    def database_url(self, db_name: str | None = None) -> str:
+        name = db_name or self.postgres_db
+        return (
+            f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}"
+            f"@{self.postgres_host}:{self.postgres_port}/{name}"
+        )
 
     @field_validator("contact_email")
     @classmethod
