@@ -38,6 +38,9 @@ class ManifestEntry(BaseModel):
     retrieval_url: str = Field(description="Exact URL actually fetched")
 
     retrieved_at: str = Field(description="UTC ISO-8601 timestamp of retrieval")
+    retrieval_method: Literal["automated_fetch", "manual_browser_download", "archive_snapshot"] = (
+        Field(description="How this file actually reached data/raw/")
+    )
     http_status: int
     content_type: str | None = None
 

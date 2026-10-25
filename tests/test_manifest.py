@@ -13,6 +13,7 @@ VALID_KWARGS = dict(
     source_url="https://www.sebi.gov.in/enforcement/orders/example.html",
     retrieval_url="https://www.sebi.gov.in/enforcement/orders/example.pdf",
     retrieved_at="2026-01-01T00:00:00+00:00",
+    retrieval_method="automated_fetch",
     http_status=200,
     content_type="application/pdf",
     bytes=1234,
@@ -39,6 +40,26 @@ def test_manifest_entry_rejects_unknown_licence_status() -> None:
     bad = dict(VALID_KWARGS, licence_status="made_up_status")
     with pytest.raises(ValidationError):
         ManifestEntry(**bad)
+
+
+def test_manifest_entry_rejects_unknown_retrieval_method() -> None:
+    bad = dict(VALID_KWARGS, retrieval_method="made_up_method")
+    with pytest.raises(ValidationError):
+        ManifestEntry(**bad)
+
+
+def test_manifest_entry_requires_retrieval_method() -> None:
+    missing = {k: v for k, v in VALID_KWARGS.items() if k != "retrieval_method"}
+    with pytest.raises(ValidationError):
+        ManifestEntry(**missing)
+
+
+@pytest.mark.parametrize(
+    "method", ["automated_fetch", "manual_browser_download", "archive_snapshot"]
+)
+def test_manifest_entry_accepts_each_retrieval_method(method: str) -> None:
+    entry = ManifestEntry(**dict(VALID_KWARGS, retrieval_method=method))
+    assert entry.retrieval_method == method
 
 
 def test_json_schema_exports_required_fields() -> None:

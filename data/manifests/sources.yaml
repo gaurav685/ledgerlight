@@ -35,6 +35,14 @@ sources:
       - "https://www.bseindia.com/robots.txt (403)"
       - "https://www.bseindia.com/xml-data/corpfiling/AttachHis/49e48163-003f-4214-b6ca-838d775a057a.pdf (403)"
       - "https://www.bseindia.com/bseplus/AnnualReport/511072/67061511072.pdf (403)"
+    retest_2026_10_25:
+      note: "Correction-1 retest, identifying UA ONLY (no browser-UA comparison this round, per instruction)."
+      urls_opened:
+        - "https://www.bseindia.com/data/xml/notices.xml (403)"
+        - "https://www.bseindia.com/data/xml/sensexrss.xml (403)"
+        - "https://beta.bseindia.com/ (403) — a distinct BSE subdomain, also blocked"
+        - "https://beta.bseindia.com/robots.txt (403)"
+      conclusion: "BLOCKED verdict stands; the block is domain-wide, not limited to www.bseindia.com or to any single path."
 
   nse:
     owner: "National Stock Exchange of India Ltd"
@@ -63,6 +71,41 @@ sources:
       - "https://www.nseindia.com/ (identifying UA: connection failed/timeout; browser UA: 403)"
       - "https://www.nseindia.com/robots.txt (identifying UA: 200, permissive)"
       - "https://nsearchives.nseindia.com/content/historical/EQUITIES/2024/JAN/cm01JAN2024bhav.csv.zip (browser UA: 200; identifying UA: timeout)"
+    retest_2026_10_25:
+      note: "Correction-1 retest, identifying UA ONLY. nsearchives.nseindia.com is now blocked even harder than before (connection refused, not just a timeout). IMPORTANT: a DIFFERENT NSE subdomain, archives.nseindia.com, is NOT blocked — see the new 'nse_archives' source entry below. www.nseindia.com and nsearchives.nseindia.com verdicts remain BLOCKED; this does not change that."
+      urls_opened:
+        - "https://nsearchives.nseindia.com/robots.txt (000 — connection failed)"
+        - "https://nsearchives.nseindia.com/content/RSS/Online_announcements.xml (000)"
+        - "https://nsearchives.nseindia.com/content/RSS/Corporate_action.xml (000)"
+      conclusion: "BLOCKED verdict stands for www.nseindia.com and nsearchives.nseindia.com specifically."
+
+  nse_archives:
+    owner: "National Stock Exchange of India Ltd"
+    base_url: "https://archives.nseindia.com"
+    endpoints:
+      - "Historical equity bhavcopy, legacy format: /content/historical/EQUITIES/<YYYY>/<MON>/cm<DD><MON><YYYY>bhav.csv.zip"
+      - "Equity bhavcopy, current UDiFF format: /content/cm/BhavCopy_NSE_CM_0_0_0_<YYYYMMDD>_F_0000.csv.zip"
+    access_method: "Direct static file paths; discovered 2026-10-25 while retesting NSE hosts per the correction brief"
+    registration_required: false
+    robots_txt:
+      fetched_at: "2026-10-25"
+      result: "robots.txt itself returns 404 at archives.nseindia.com/robots.txt (no file present) — treated as allow by convention. The host root (/) and /content/ both return connection failures (000), same as nsearchives.nseindia.com, but specific file paths under /content/historical/... and /content/cm/... succeed."
+    terms_of_use: { url: null, reviewed_at: null, note: "Not reached — same edge behaviour as the rest of nseindia.com; only specific static file paths are reachable, not HTML pages." }
+    rate_limits_or_anti_automation: "Unlike www.nseindia.com and nsearchives.nseindia.com, specific static bhavcopy file paths on this host return HTTP 200 to our honest identifying User-Agent. A pre-2016-ish date (tested: 1999) returned the same Akamai 'Access Denied' page seen on the fully-blocked hosts, so this host is NOT simply unprotected — it appears some file paths/date ranges are excluded from the edge rule and others are not. Treat each date range as independently verified, not as a blanket exemption."
+    formats: ["CSV/ZIP (bhavcopy)"]
+    verified_coverage: { earliest: "2016-01-01 (spot-checked, 200 + valid zip)", latest: "2025 UDiFF format (spot-checked 2024-07-08 onward, 200)", note: "1999-01-04 spot-check returned the Akamai block page (403-equivalent), so coverage before ~2016 is NOT available via this path; exact cutover date between 'works' and 'blocked' was not pinpointed." }
+    delisted_or_suspended_accessible: "Not specifically tested (bhavcopy contains all listed symbols for that date, not company-specific; the seed acquisition run pulls dates spanning each event company's suspension/CIRP period as the survivorship check — see docs/data/seed-universe.md)."
+    verdict: "AVAILABLE_WITH_LIMITS"
+    verdict_reason: "A genuinely separate finding from the BLOCKED www.nseindia.com / nsearchives.nseindia.com verdicts above: specific bhavcopy file paths on archives.nseindia.com are reachable with our honest, identifying User-Agent and robots.txt does not exist (allow by convention). Real files were downloaded and verified as valid ZIP/CSV content. Marked WITH_LIMITS because the host's root/listing pages are not reachable (only exact, predictable file paths work) and at least one old date (1999) was blocked, so the full historical range is not confirmed."
+    urls_opened:
+      - "https://archives.nseindia.com/robots.txt (404)"
+      - "https://archives.nseindia.com/content/historical/EQUITIES/2016/JAN/cm01JAN2016bhav.csv.zip (200, verified valid zip)"
+      - "https://archives.nseindia.com/content/historical/EQUITIES/2019/JUN/cm20JUN2019bhav.csv.zip (200)"
+      - "https://archives.nseindia.com/content/historical/EQUITIES/2021/DEC/cm06DEC2021bhav.csv.zip (200)"
+      - "https://archives.nseindia.com/content/historical/EQUITIES/2024/JUL/cm05JUL2024bhav.csv.zip (200, last legacy-format date)"
+      - "https://archives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_20240708_F_0000.csv.zip (200, first UDiFF-format date)"
+      - "https://archives.nseindia.com/content/historical/EQUITIES/1999/JAN/cm04JAN1999bhav.csv.zip (403, Akamai Access Denied page)"
+      - "https://archives.nseindia.com/ (000, root not reachable)"
 
   sebi:
     owner: "Securities and Exchange Board of India"
@@ -316,3 +359,105 @@ sources:
       licence was identified and verified within the Phase 0 research budget. This is a gap, not a
       finding of non-existence — a targeted search is a Phase 1 (or later Phase 0 follow-up) task.
     verdict: "UNCLEAR"
+
+  # === Correction 1 (2026-10-25) additions below ===
+
+  alpha_vantage:
+    owner: "Alpha Vantage Inc."
+    base_url: "https://www.alphavantage.co"
+    note: >-
+      Per public documentation (not independently re-verified against their live terms page):
+      free tier is 25 requests/day, 5/minute; NSE data has reportedly been discontinued, BSE-only
+      coverage remains. Requires a free API key (account creation) to use at all.
+    access_method: "REST API, requires API key"
+    registration_required: true
+    verdict: "AWAITING_KEY"
+    verdict_reason: >-
+      Ground rules forbid creating accounts. LEDGERLIGHT_PRICE_API_KEY (or similar) is not present
+      in .env — checked via `grep -i PRICE_API_KEY .env .env.example`, no match. No data was
+      requested from this API. Moot in any case: docs/data/source-inventory.md §B1 found
+      archives.nseindia.com directly reachable for real NSE bhavcopy, making a third-party price
+      API unnecessary for Phase 0's seed.
+
+  kaggle_nse_datasets:
+    owner: "Various Kaggle dataset publishers"
+    base_url: "https://www.kaggle.com"
+    note: >-
+      Multiple NSE/BSE historical-price datasets on Kaggle are tagged with a CC0 (public domain)
+      licence by their publishers (e.g. 'NSE India Stock Data (1990-2021)', 'NSE Stock Market Daily
+      Update Bhavcopy') — found via web search, not independently opened (downloading requires a
+      Kaggle account).
+    access_method: "Web UI / Kaggle API, requires a Kaggle account to download"
+    registration_required: true
+    verdict: "REQUIRES_REGISTRATION"
+    verdict_reason: >-
+      Ground rules forbid creating accounts, regardless of the dataset's own licence being
+      permissive. Not used. Same mootness note as alpha_vantage above — archives.nseindia.com
+      already provides real, licence-ambiguous-but-primary-source bhavcopy without any account.
+
+  vakrangee_ir:
+    owner: "Vakrangee Ltd"
+    base_url: "https://www.vakrangee.in"
+    endpoints: ["News & Announcements PDF archive: /pdf/news_announcements.html"]
+    robots_txt: { fetched_at: "2026-10-25", result: "404 (nginx) — no robots.txt file; allow by convention." }
+    terms_of_use: { url: null, reviewed_at: null, note: "Not reviewed." }
+    verified_coverage: { earliest: "2018 (auditor resignation documents)", latest: "2019" }
+    verdict: "AVAILABLE"
+    verdict_reason: "Reachable with identifying UA; real auditor-resignation documents found and downloaded."
+    urls_opened:
+      - "https://www.vakrangee.in/robots.txt (404)"
+      - "https://www.vakrangee.in/pdf/news_announcements.html (200)"
+      - "https://www.vakrangee.in/pdf/News_and_Announcements/ResignLetter.pdf (200)"
+
+  jetairways_ir:
+    owner: "Jet Airways (India) Ltd"
+    base_url: "https://www.jetairways.com"
+    endpoints: ["Shareholding pattern PDFs under /information/Documents/"]
+    robots_txt: { fetched_at: "2026-10-25", result: "404 — no robots.txt file; allow by convention." }
+    terms_of_use: { url: null, reviewed_at: null, note: "Not reviewed." }
+    verified_coverage: { earliest: "2022-03-31", latest: "2022-03-31" }
+    verdict: "AVAILABLE"
+    verdict_reason: "Reachable with identifying UA; real shareholding-pattern PDF downloaded."
+    urls_opened:
+      - "https://www.jetairways.com/robots.txt (404)"
+      - "https://www.jetairways.com/ (200)"
+      - "https://www.jetairways.com/information/Documents/SHP_31032022.pdf (200)"
+
+  brightcom_ir:
+    owner: "Brightcom Group Ltd"
+    base_url: "https://www.brightcomgroup.com"
+    endpoints: ["Annual reports and results under /wp-content/uploads/"]
+    robots_txt: { fetched_at: "2026-10-23", quoted: "User-agent: *\nDisallow: /wp-admin/\nAllow: /wp-admin/admin-ajax.php" }
+    terms_of_use: { url: null, reviewed_at: null, note: "Not reviewed." }
+    verified_coverage: { earliest: "2019 (FY2018-19 annual report)", latest: "2023 (Q1 FY2023-24 result)" }
+    verdict: "AVAILABLE"
+    verdict_reason: "Open robots.txt (only wp-admin disallowed); real annual report PDF downloaded."
+    urls_opened:
+      - "https://www.brightcomgroup.com/robots.txt (200)"
+      - "https://www.brightcomgroup.com/wp-content/uploads/2021/03/Annual-Report-2018-2019.pdf (200)"
+
+  dhfl_own_site:
+    owner: "Dewan Housing Finance Corporation Ltd"
+    base_url: "https://www.dhfl.com"
+    robots_txt:
+      fetched_at: "2026-10-25"
+      quoted: "User-agent: *\nDisallow: /"
+    verdict: "BLOCKED"
+    verdict_reason: >-
+      The site itself is reachable (HTTP 200) but its own robots.txt explicitly disallows every
+      generic crawler (final catch-all 'User-agent: *' / 'Disallow: /'). Per our own policy
+      (ADR 0002), a robots.txt disallow is always honoured — we do not fetch from dhfl.com at all,
+      despite it being reachable. DHFL's CIRP-era documents in this project come from IBBI and CARE
+      instead (see docs/data/seed-universe.md).
+    urls_opened:
+      - "https://www.dhfl.com/robots.txt (200, full disallow)"
+      - "https://www.dhfl.com/ (200 — not fetched further once the disallow was read)"
+
+  # --- Control-group IR sites (docs/data/seed-universe.md documents the selection rule) ---
+  lichousing_ir: { owner: "LIC Housing Finance Ltd", base_url: "https://www.lichousing.com", robots_txt: { fetched_at: "2026-10-25", quoted: "User-agent: *\nAllow: /\nDisallow: /search?" }, verdict: "AVAILABLE", urls_opened: ["https://www.lichousing.com/robots.txt (200)", "https://cdn.lichousing.com/2025/07/lichfl_shareholders_pattern_q125.pdf (200)"] }
+  pnbhousing_ir: { owner: "PNB Housing Finance Ltd", base_url: "https://www.pnbhousing.com", robots_txt: { fetched_at: "2026-10-25", quoted: "User-agent: *\nDisallow: /login/\nDisallow: /c/blogs/find_entry\nDisallow: /group/guest/\n..." }, verdict: "AVAILABLE", urls_opened: ["https://www.pnbhousing.com/robots.txt (200)", "https://www.pnbhousing.com/investors/shareholding-pattern (200)"] }
+  spicejet_ir: { owner: "SpiceJet Ltd", base_url: "https://corporate.spicejet.com", robots_txt: { fetched_at: "2026-10-25", result: "permissive, named bots only, no blanket disallow" }, verdict: "AVAILABLE", urls_opened: ["https://www.spicejet.com/robots.txt (200)", "https://corporate.spicejet.com/robots.txt (200, empty User-agent:* rule)", "https://corporate.spicejet.com/Content/pdf/ShareholdingPatternQ3_24_25.pdf (200)"] }
+  dmart_ir: { owner: "Avenue Supermarts Ltd (DMart)", base_url: "https://www.dmartindia.com", robots_txt: { fetched_at: "2026-10-25", quoted: "User-agent: *\nDisallow:" }, verdict: "AVAILABLE", urls_opened: ["https://www.dmartindia.com/robots.txt (200)", "https://api.dmartindia.com/robots.txt (200, empty)", "https://api.dmartindia.com/corporate/content/file/... (200)"] }
+  thermax_ir: { owner: "Thermax Ltd", base_url: "https://www.thermaxglobal.com", robots_txt: { fetched_at: "2026-10-25", result: "permissive (template comment only, no disallow rules)" }, verdict: "AVAILABLE", urls_opened: ["https://www.thermaxglobal.com/robots.txt (200)", "https://www.thermaxglobal.com/sites/default/files/2026-04/Thermax_44-Annual-Report_0.pdf (200)"] }
+  suzlon_ir: { owner: "Suzlon Energy Ltd", base_url: "https://www.suzlon.com", robots_txt: { fetched_at: "2026-10-25", quoted: "User-agent: *\nAllow: /" }, verdict: "AVAILABLE", urls_opened: ["https://www.suzlon.com/robots.txt (200)", "https://www.suzlon.com/investors/shareholder-information/ (200)"] }
+  mastek_ir: { owner: "Mastek Ltd", base_url: "https://www.mastek.com", robots_txt: { fetched_at: "2026-10-25", quoted: "User-agent: *\nDisallow: /wp-admin/\nAllow: /wp-admin/admin-ajax.php" }, verdict: "AVAILABLE", urls_opened: ["https://www.mastek.com/robots.txt (200)", "https://www.mastek.com/wp-content/uploads/2022/08/Shareholding-Pattern-Q1-2017-18.pdf (200)"] }

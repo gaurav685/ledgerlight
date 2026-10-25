@@ -7,6 +7,7 @@ limits, size limits, and recording a manifest entry for every attempt.
 
 from __future__ import annotations
 
+import ssl
 import time
 import uuid
 from pathlib import Path
@@ -15,6 +16,7 @@ from urllib.parse import urlparse
 
 import httpx
 import structlog
+import truststore
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from ledgerlight.acquisition.manifest import CompanyIdentifiers, ManifestEntry, append_entry
@@ -47,6 +49,15 @@ class LoginRedirectError(RuntimeError):
     pass
 
 
+class HTTPStatusError(RuntimeError):
+    """Raised for a non-2xx, non-retried response (e.g. 404) — never written to disk."""
+
+    def __init__(self, status_code: int, url: str) -> None:
+        self.status_code = status_code
+        self.url = url
+        super().__init__(f"HTTP {status_code} for {url}")
+
+
 class PoliteFetcher:
     def __init__(
         self,
@@ -70,11 +81,20 @@ class PoliteFetcher:
         # follow_redirects so a normal CDN/attachment redirect works, but we
         # inspect the final URL below and refuse anything that looks like a
         # login page. cookies explicitly disabled (no session persistence).
+        #
+        # verify uses truststore (the OS trust store) rather than certifi's
+        # bundled roots: some sites (observed: vakrangee.in) don't send a
+        # complete certificate chain, which the OS verifier completes via
+        # AIA fetching (same as a browser) but a plain certifi-only verifier
+        # rejects. This is still full, real certificate verification — not
+        # a weakened check — just backed by the OS trust store instead of a
+        # bundled one.
         self._client = httpx.Client(
             follow_redirects=True,
             max_redirects=5,
             timeout=timeout_seconds,
             cookies=httpx.Cookies(),  # fresh, never reused across requests
+            verify=truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT),
         )
         self._robots = RobotsCache(self._user_agent, self._client)
         self._last_request_at: dict[str, float] = {}
@@ -158,6 +178,9 @@ class PoliteFetcher:
         if self._looks_like_login_url(str(resp.url)):
             raise LoginRedirectError(str(resp.url))
 
+        if not (200 <= resp.status_code < 300):
+            raise HTTPStatusError(resp.status_code, retrieval_url)
+
         content_length = resp.headers.get("content-length")
         if content_length is not None and int(content_length) > self._max_file_size_bytes:
             raise FileTooLargeError(
@@ -193,6 +216,7 @@ class PoliteFetcher:
             source_url=source_url,
             retrieval_url=retrieval_url,
             retrieved_at=utc_now_iso(),
+            retrieval_method="automated_fetch",
             http_status=resp.status_code,
             content_type=resp.headers.get("content-type"),
             bytes=len(body),

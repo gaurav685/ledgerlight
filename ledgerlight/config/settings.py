@@ -49,9 +49,13 @@ class Settings(BaseSettings):
     postgres_password: str = Field(default="changeme-local-only")
     postgres_db: str = Field(default="ledgerlight")
 
-    minio_endpoint: str = Field(default="127.0.0.1:59000")
-    minio_root_user: str = Field(default="ledgerlight")
-    minio_root_password: str = Field(default="changeme-local-only")
+    # Generic S3-compatible endpoint for local infra (Garage; see
+    # docs/adr/0003-object-storage.md). Credentials are provisioned
+    # dynamically per infra-check run (scripts/infra_check.py), not read
+    # from settings, because Garage issues keys via its admin CLI rather
+    # than accepting a static root user/password like MinIO did.
+    s3_endpoint: str = Field(default="127.0.0.1:59000")
+    s3_region: str = Field(default="garage")
 
     @field_validator("contact_email")
     @classmethod

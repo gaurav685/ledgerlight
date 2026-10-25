@@ -33,6 +33,9 @@ required).
 uv sync                # create .venv and install locked dependencies
 uv run pre-commit install --hook-type pre-commit --hook-type pre-push
 cp .env.example .env   # edit values as needed; .env is gitignored
+# Required before `infra-up`: generate local-only secrets for the object store
+echo "LEDGERLIGHT_GARAGE_RPC_SECRET=$(openssl rand -hex 32)" >> .env
+echo "LEDGERLIGHT_GARAGE_ADMIN_TOKEN=$(openssl rand -hex 16)" >> .env
 ```
 
 ## Commands
@@ -50,9 +53,10 @@ All commands are exposed as `uv run <script>` entry points (see
 | `uv run python scripts/verify_env.py` | Verify local environment |
 | `uv run python scripts/verify_manifests.py` | Validate data manifests against files on disk |
 | `uv run python scripts/acquire_seed.py` | Re-run the Phase 0 seed-dataset acquisition |
-| `docker compose -f infra/docker-compose.yml up -d` | Start local Postgres+pgvector / MinIO |
-| `uv run python scripts/infra_check.py` | Verify infra health (pgvector extension, MinIO bucket) |
-| `docker compose -f infra/docker-compose.yml down` | Stop local infra |
+| `uv run python scripts/import_local.py` | Import manually-downloaded documents from `data/inbox/` (see `docs/data/manual-download-checklist.md`) |
+| `docker compose --env-file .env -f infra/docker-compose.yml up -d` | Start local Postgres+pgvector / Garage (S3-compatible) — `--env-file .env` is required: Compose otherwise looks for `.env` next to the compose file, not at the repo root |
+| `uv run python scripts/infra_check.py` | Verify infra health (pgvector extension, S3 bucket round-trip) |
+| `docker compose --env-file .env -f infra/docker-compose.yml down` | Stop local infra |
 
 A `Makefile` wraps these as `make setup|lint|typecheck|test|verify-env|verify-manifests|acquire-seed|infra-up|infra-check|infra-down`.
 
@@ -67,17 +71,26 @@ A `Makefile` wraps these as `make setup|lint|typecheck|test|verify-env|verify-ma
 - Every acquisition respects the source's `robots.txt`, uses an identifying
   User-Agent, rate-limits per host, and never bypasses access controls
   (no CAPTCHA solving, no stealth automation, no credential sharing).
+- A small number of documents that are only available on BSE/NSE (both
+  BLOCKED for this tool — see below) can be added manually: drop the file
+  in `data/inbox/` with a `data/inbox/provenance.csv` row, then run
+  `scripts/import_local.py`. See
+  `docs/data/manual-download-checklist.md` for exactly which documents
+  this applies to (kept intentionally short).
 - See `docs/data/source-inventory.md` for the per-source access and
   redistribution findings, and `docs/adr/0002-data-acquisition-policy.md`
-  for the policy rationale.
+  for the policy rationale. BSE and NSE's main sites are BLOCKED for this
+  tool by edge bot-mitigation (not by robots.txt) — but NSE's bhavcopy
+  price archive is reachable via a separate, unblocked subdomain; see
+  `docs/data/source-inventory.md`.
 
 ## Repository layout
 
 ```
 ledgerlight/        Python package (config, acquisition, common)
-scripts/             verify_env, verify_manifests, acquire_seed, infra_check
+scripts/             verify_env, verify_manifests, acquire_seed, import_local, infra_check
 docs/                adr/, data/, phase-0/
-data/                raw/ interim/ processed/ (gitignored) + manifests/ (committed)
-infra/               docker-compose.yml (Postgres+pgvector, MinIO)
+data/                raw/ interim/ processed/ inbox/ (all gitignored) + manifests/ (committed)
+infra/               docker-compose.yml (Postgres+pgvector, Garage S3-compatible storage)
 tests/               unit tests (network tests marked and excluded by default)
 ```

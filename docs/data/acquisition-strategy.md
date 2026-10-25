@@ -13,27 +13,39 @@ it is never obtained.
   using an ordinary browser can reach the same pages our tool cannot, which
   only helps if a human is doing the downloading, not an automated pipeline.
 - **Indicative cost**: Not publicly stated; UNCLEAR.
-- **Best legitimate fallback**: Company investor-relations sites often
-  mirror the same announcements/annual reports BSE hosts, under different
-  (and likely less aggressive) bot-mitigation — untested in Phase 0, but
-  the most promising lead.
+- **Best legitimate fallback**: Company investor-relations sites. **Tried
+  in Correction 1**: several seed/control companies' own sites (Vakrangee,
+  Jet Airways, Brightcom, + 7 controls) were reachable and yielded real
+  documents — see `docs/data/source-inventory.md` §"Company
+  investor-relations sites". Not every company has a reachable or
+  complete IR site (DHFL's own robots.txt disallows all crawling; Reliance
+  Capital's and Gensol's sites were unreachable), so this fallback is
+  partial, not complete.
 - **Impact if never obtained**: Pledge/shareholding disclosures, XBRL
   results, and most governance-event announcements (auditor resignations,
-  KMP/ID exits, forensic audit disclosures) have no other confirmed
-  primary source in this inventory. This is the single largest open risk
-  to the whole project.
+  KMP/ID exits, forensic audit disclosures) for companies whose IR site is
+  unreachable or incomplete have no other confirmed primary source in this
+  inventory. Reduced from "the single largest open risk" (Phase 0) to "a
+  per-company risk" (Correction 1) now that IR sites have proven to work
+  for several companies.
 
-## NSE — BLOCKED
+## NSE (`www.nseindia.com`, `nsearchives.nseindia.com`) — BLOCKED
 
-- **What would be needed**: Same as BSE. NSE additionally blocks even a
-  browser-identified request to `www.nseindia.com` itself (not just our
-  tool), which suggests broader behavioural/IP-based controls, not purely
-  a User-Agent filter.
-- **Indicative cost**: UNCLEAR.
-- **Best legitimate fallback**: Same as BSE — company IR sites, untested.
-- **Impact if never obtained**: Same as BSE; NSE and BSE substantially
-  overlap in disclosure content for dual-listed companies, so losing both
-  is strictly worse than losing one.
+- **What would be needed**: Same as BSE for announcements/filings. NSE
+  additionally blocks even a browser-identified request to
+  `www.nseindia.com` itself (not just our tool), which suggests broader
+  behavioural/IP-based controls, not purely a User-Agent filter.
+- **Correction 1 resolved the price-data piece specifically**: a third NSE
+  subdomain, `archives.nseindia.com`, is reachable with our honest UA and
+  serves real bhavcopy files (see `docs/data/source-inventory.md`). This
+  does **not** resolve announcements/shareholding/XBRL, which still have
+  no confirmed NSE-side source.
+- **Indicative cost**: UNCLEAR for the still-blocked pieces.
+- **Best legitimate fallback**: Company IR sites (same as BSE) for
+  non-price content; `archives.nseindia.com` directly for price data.
+- **Impact if never obtained**: Announcement/XBRL/shareholding content
+  still has the same risk profile as BSE above. Price-data risk is now
+  largely closed.
 
 ## CRISIL Ratings — BLOCKED (judgment call, not a technical block)
 
@@ -97,17 +109,28 @@ it is never obtained.
 - **Impact if never obtained**: Minor — smaller agencies, narrower issuer
   coverage.
 
-## Price-data alternatives — UNCLEAR
+## Price data (Correction 1: largely resolved)
 
-- **What would be needed**: With BSE/NSE bhavcopy BLOCKED, Phase 1 needs to
-  identify and verify a specific licensed alternative (none was researched
-  in Phase 0 — this is a gap, not a conclusion that none exists).
-- **Indicative cost**: Unknown until a specific vendor is evaluated.
-- **Best legitimate fallback**: None identified yet.
-- **Impact if never obtained**: No price-based labels (large drawdown,
-  delisting detection via price history) and no price-based features for
-  modelling at all. This is a significant open risk alongside the
-  BSE/NSE announcement gap.
+- **Primary path, now working**: `archives.nseindia.com` (see NSE section
+  above) — real NSE equity bhavcopy, no account, no licence negotiation.
+  A 210-file sample (Jan 2017 - Sep 2025) was downloaded in Correction 1.
+- **Alpha Vantage — AWAITING_KEY**: free tier is very limited (25
+  req/day), reportedly BSE-only (NSE discontinued) per public docs not
+  independently re-verified, and requires creating a free API key.
+  `.env`/`.env.example` have no `PRICE_API_KEY` — checked via `grep`, no
+  match — so per instructions this was not used and no account was
+  created. Moot given `archives.nseindia.com` already works.
+- **Kaggle NSE/BSE datasets — REQUIRES_REGISTRATION**: several carry a
+  CC0 licence per their publisher's own tag (e.g. "NSE India Stock Data
+  1990-2021"), but downloading requires a Kaggle account, which ground
+  rules forbid creating. Not used.
+- **Indicative cost**: None for any of the above (Alpha Vantage free tier,
+  Kaggle, and `archives.nseindia.com` are all free).
+- **Impact if never using Alpha Vantage/Kaggle**: None identified — the
+  working `archives.nseindia.com` path covers the Phase 0 seed windows
+  already. Alpha Vantage/Kaggle remain documented options if BSE-specific
+  or pre-2016 coverage is needed later and `archives.nseindia.com` cannot
+  supply it.
 
 ## Commercial datasets (CMIE Prowess, Capitaline, ACE Equity, LSEG, Bloomberg) — REQUIRES_PAYMENT_OR_LICENCE
 
@@ -140,21 +163,20 @@ it is never obtained.
 1. **CRISIL**: disregard its AI-crawler-targeted robots.txt directives
    (our literal UA string isn't named, but the evident intent is clear),
    or treat it as BLOCKED like ICRA. Phase 0 defaulted to treating it as
-   BLOCKED pending your decision.
-2. **BSE/NSE**: whether to pursue an official data-licensing conversation
-   with either exchange (a business/legal step, not a Phase 1 engineering
-   task) rather than relying on company IR sites as a technical fallback.
-3. **MinIO image source**: MinIO's community edition was archived in Feb
-   2026 and removed from both Docker Hub and quay.io. The only verified
-   pullable image in Phase 0 was the community-maintained
-   `bitnamilegacy/minio` mirror, which carries an unpatched CVE
-   (CVE-2026-40344, auth bypass, CVSS 8.8) in the community edition with
-   no fix available. This is fine for a local, loopback-only, no-real-data
-   Phase 0 health check, but **Phase 1+ should not inherit this choice
-   without a deliberate decision** — alternatives include MinIO AIStor
-   (commercial), a different self-hosted S3-compatible store, or a managed
-   cloud object store.
-4. **Price data**: whether to scope a specific licensed vendor now, or
-   defer until the BSE/NSE access question (decision 2) is resolved, since
-   a successful exchange relationship might make a separate price vendor
-   unnecessary.
+   BLOCKED pending your decision. **Unchanged in Correction 1.**
+2. **BSE/NSE announcements/shareholding/XBRL** (not price data, which is
+   now resolved via `archives.nseindia.com`): whether to pursue an
+   official data-licensing conversation with either exchange (a
+   business/legal step, not an engineering task) rather than relying
+   solely on company IR sites, which Correction 1 showed work for some
+   companies but not all (DHFL's own robots.txt disallows crawling;
+   Reliance Capital's and Gensol's IR sites were unreachable).
+3. **Object storage for Phase 1+**: Correction 1 replaced MinIO (unpatched
+   CVE-2026-40344) with Garage for the local dev stack — see
+   `docs/adr/0003-object-storage.md`. This resolves the Phase 0 health
+   check; it is still a decision for you whether Phase 1+ keeps Garage,
+   uses a managed cloud object store, or something else.
+4. **Manual-download checklist** (`docs/data/manual-download-checklist.md`,
+   14 items): whether you want to retrieve any of these yourself via
+   `data/inbox/` + `scripts/import_local.py`, now that the list is small
+   and specific rather than "most of BSE/NSE."

@@ -54,6 +54,21 @@ project."
    their sha256 under `data/raw/<source>/<year>/`, and a repeat fetch of
    content already on disk is recorded as a skip, not a re-download.
 
+## Addendum (Correction 1, 2026-10-25): OS trust store for TLS verification
+
+`vakrangee.in` failed real downloads with
+`CERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate` — its
+server does not send a complete certificate chain. Browsers and `curl`
+(via Windows schannel) succeed by fetching the missing intermediate
+automatically (AIA chasing); a plain certifi-bundle verifier correctly
+refuses an incomplete chain. The fetcher now verifies TLS using
+`truststore` (the OS trust store, via `ssl.PROTOCOL_TLS_CLIENT`) instead
+of httpx's default certifi bundle. **This is not a weakened check** —
+certificates are still fully verified, just against the same trust
+anchors and chain-completion behaviour a browser uses on this machine,
+rather than a static bundled root list. Disabling verification outright
+was considered and rejected as a real security downgrade.
+
 ## Consequences
 - This policy is strict enough that it meaningfully reduced Phase 0's
   seed dataset (BSE/NSE/ICRA/MCA all BLOCKED; CRISIL avoided by choice).

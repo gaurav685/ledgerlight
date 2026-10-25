@@ -20,7 +20,11 @@ data/processed/**
 
 # --- infra volumes (Postgres / MinIO local state) ---
 infra/pgdata/
-infra/miniodata/
+infra/garagedata/
+infra/garagemeta/
+
+# --- manual-import inbox (local-only staging for exchange-only documents) ---
+data/inbox/
 infra/*.volume/
 
 # --- Python ---
@@ -41,7 +45,7 @@ build/
 node_modules/
 
 # --- Claude Code local settings ---
-.claude/settings.local.json
+.claude/
 
 # --- caches ---
 .cache/

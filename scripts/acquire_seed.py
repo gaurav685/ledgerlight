@@ -1,9 +1,14 @@
 """Re-run the Phase 0 seed-dataset acquisition reproducibly.
 
-Every item below was individually verified reachable (HTTP 200, correct
-content-type) with the project's identifying User-Agent before being added
-here — see docs/data/seed-universe.md and docs/data/source-inventory.md for
-the robots.txt / terms-of-use findings behind each source_id.
+Every SEED_ITEMS entry was individually verified reachable (HTTP 200,
+correct content-type) with the project's identifying User-Agent before
+being added here — see docs/data/seed-universe.md and
+docs/data/source-inventory.md for the robots.txt / terms-of-use findings
+behind each source_id. The generated bhavcopy series
+(_nse_archive_bhavcopy_items) was spot-checked on a sample of dates, not
+exhaustively verified one-by-one — a missing trading day (weekend/holiday
+mismatch) or an unavailable date raises HTTPStatusError, which main() below
+catches and reports as a normal skip, never a fatal error.
 
 This is Phase 0 scope only: a small, legitimately-sourced seed, not the
 Phase 1 ingestion pipeline.
@@ -11,6 +16,7 @@ Phase 1 ingestion pipeline.
 
 from __future__ import annotations
 
+import datetime as dt
 import sys
 from pathlib import Path
 from typing import Any
@@ -20,6 +26,7 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from ledgerlight.acquisition.fetcher import (  # noqa: E402
     FileTooLargeError,
+    HTTPStatusError,
     LoginRedirectError,
     PoliteFetcher,
     RobotsDisallowed,
@@ -148,14 +155,271 @@ SEED_ITEMS: list[dict[str, Any]] = [
         "redistribution_allowed": "unclear",
         "terms_url": "https://www.careratings.com/terms-condition",
     },
+    # --- Correction 1: documents obtained directly from company IR sites ---
+    # (Regulation 46 of SEBI LODR requires listed entities to publish annual
+    # reports, results, shareholding patterns and credit ratings on their own
+    # website — see docs/data/source-inventory.md §B2.)
+    {
+        "source_id": "vakrangee_ir",
+        "source_url": "https://www.vakrangee.in/pdf/news_announcements.html",
+        "retrieval_url": "https://www.vakrangee.in/pdf/News_and_Announcements/ResignLetter.pdf",
+        "document_type": "auditor_resignation_letter",
+        "company_identifiers": CompanyIdentifiers(nse_symbol="VAKRANGEE"),
+        "publication_time": "2018-04-27",
+        "coverage_note": (
+            "Price Waterhouse & Co resignation letter as statutory auditor, "
+            "from Vakrangee's own IR site"
+        ),
+        "licence_status": "public_no_explicit_licence",
+        "redistribution_allowed": "unclear",
+        "terms_url": None,
+    },
+    {
+        "source_id": "vakrangee_ir",
+        "source_url": "https://www.vakrangee.in/pdf/news_announcements.html",
+        "retrieval_url": (
+            "https://www.vakrangee.in/pdf/News_and_Announcements/"
+            "36Company%20Update%20on%20Resignation%20of%20Statutory%20Auditors.pdf"
+        ),
+        "document_type": "auditor_resignation_company_update",
+        "company_identifiers": CompanyIdentifiers(nse_symbol="VAKRANGEE"),
+        "publication_time": "2018",
+        "coverage_note": "Vakrangee's own company update on the 2018 statutory auditor resignation",
+        "licence_status": "public_no_explicit_licence",
+        "redistribution_allowed": "unclear",
+        "terms_url": None,
+    },
+    {
+        "source_id": "vakrangee_ir",
+        "source_url": "https://www.vakrangee.in/pdf/news_announcements.html",
+        "retrieval_url": (
+            "https://www.vakrangee.in/pdf/News_and_Announcements/"
+            "37Intimation%20to%20Stock%20Exchange%20regarding%20resignation%20of%20"
+            "Statutory%20Auditors%20%E2%80%93%20Reg.%2030%20SEBI%20LODR%20Regulations.pdf"
+        ),
+        "document_type": "reg30_intimation",
+        "company_identifiers": CompanyIdentifiers(nse_symbol="VAKRANGEE"),
+        "publication_time": "2018",
+        "coverage_note": (
+            "Vakrangee's Reg 30 SEBI LODR intimation to the exchange re auditor resignation"
+        ),
+        "licence_status": "public_no_explicit_licence",
+        "redistribution_allowed": "unclear",
+        "terms_url": None,
+    },
+    {
+        "source_id": "jetairways_ir",
+        "source_url": "https://www.jetairways.com/",
+        "retrieval_url": "https://www.jetairways.com/information/Documents/SHP_31032022.pdf",
+        "document_type": "shareholding_pattern",
+        "company_identifiers": CompanyIdentifiers(nse_symbol="JETAIRWAYS", bse_scrip_code="532617"),
+        "publication_time": "2022-03-31",
+        "coverage_note": (
+            "Jet Airways shareholding pattern as of 31 Mar 2022, from the company's own site"
+        ),
+        "licence_status": "public_no_explicit_licence",
+        "redistribution_allowed": "unclear",
+        "terms_url": None,
+    },
+    {
+        "source_id": "brightcom_ir",
+        "source_url": "https://www.brightcomgroup.com/",
+        "retrieval_url": (
+            "https://www.brightcomgroup.com/wp-content/uploads/2021/03/Annual-Report-2018-2019.pdf"
+        ),
+        "document_type": "annual_report",
+        "company_identifiers": CompanyIdentifiers(nse_symbol="BCG", bse_scrip_code="532368"),
+        "publication_time": "2019",
+        "coverage_note": "Brightcom Group FY2018-19 annual report, from the company's own site",
+        "licence_status": "public_no_explicit_licence",
+        "redistribution_allowed": "unclear",
+        "terms_url": None,
+    },
+    {
+        "source_id": "sebi",
+        "source_url": "https://www.sebi.gov.in/sebi_data/attachdocs/sep-2019/1568728579007.pdf",
+        "retrieval_url": "https://www.sebi.gov.in/sebi_data/attachdocs/sep-2019/1568728579007.pdf",
+        "document_type": "sebi_related_document",
+        "company_identifiers": CompanyIdentifiers(nse_symbol="CGPOWER"),
+        "publication_time": "2019-09",
+        "coverage_note": (
+            "SEBI-hosted document (Sep 2019) relevant to CG Power and Industrial "
+            "Solutions Ltd's board-disclosed forensic investigation into irregularities; "
+            "exact document type not machine-classified in Phase 0 (gap)."
+        ),
+        "licence_status": "public_no_explicit_licence",
+        "redistribution_allowed": "unclear",
+        "terms_url": "https://www.sebi.gov.in/website-policy.html",
+        "known_limitations": (
+            "Found via search, not SEBI's enforcement-orders listing; "
+            "content not reviewed to confirm exact document type."
+        ),
+    },
+    # --- Control group (docs/data/seed-universe.md documents the selection rule) ---
+    {
+        "source_id": "lichousing_ir",
+        "source_url": "https://www.lichousing.com/investors/shareholding-pattern",
+        "retrieval_url": "https://cdn.lichousing.com/2025/07/lichfl_shareholders_pattern_q125.pdf",
+        "document_type": "shareholding_pattern",
+        "company_identifiers": CompanyIdentifiers(nse_symbol="LICHSGFIN", bse_scrip_code="500253"),
+        "publication_time": "2025-07",
+        "coverage_note": (
+            "Control (housing finance, vs. DHFL): LIC Housing Finance shareholding pattern"
+        ),
+        "licence_status": "public_no_explicit_licence",
+        "redistribution_allowed": "unclear",
+        "terms_url": None,
+    },
+    {
+        "source_id": "pnbhousing_ir",
+        "source_url": "https://www.pnbhousing.com/investors/shareholding-pattern",
+        "retrieval_url": "https://www.pnbhousing.com/investors/shareholding-pattern",
+        "document_type": "ir_page",
+        "company_identifiers": CompanyIdentifiers(nse_symbol="PNBHOUSING"),
+        "publication_time": None,
+        "coverage_note": (
+            "Control (housing finance, vs. DHFL): PNB Housing Finance IR shareholding page"
+        ),
+        "licence_status": "public_no_explicit_licence",
+        "redistribution_allowed": "unclear",
+        "terms_url": None,
+    },
+    {
+        "source_id": "spicejet_ir",
+        "source_url": "https://corporate.spicejet.com/investorsnotices.aspx",
+        "retrieval_url": "https://corporate.spicejet.com/Content/pdf/ShareholdingPatternQ3_24_25.pdf",
+        "document_type": "shareholding_pattern",
+        "company_identifiers": CompanyIdentifiers(nse_symbol="SPICEJET"),
+        "publication_time": "2024-12-31",
+        "coverage_note": "Control (aviation, vs. Jet Airways): SpiceJet shareholding pattern",
+        "licence_status": "public_no_explicit_licence",
+        "redistribution_allowed": "unclear",
+        "terms_url": None,
+    },
+    {
+        "source_id": "dmart_ir",
+        "source_url": "https://www.dmartindia.com/investor-relationship",
+        "retrieval_url": (
+            "https://api.dmartindia.com/corporate/content/file/v1/2/"
+            "3uvHxSiASSCtZ94xNwxwjgea1714823973/"
+            "Investor%20Presentation%20for%20the%20year%20ended%2031st%20March,%202024.pdf"
+        ),
+        "document_type": "investor_presentation",
+        "company_identifiers": CompanyIdentifiers(nse_symbol="DMART", bse_scrip_code="540376"),
+        "publication_time": "2024-03-31",
+        "coverage_note": (
+            "Control (retail, vs. Future Retail): Avenue Supermarts (DMart) investor presentation"
+        ),
+        "licence_status": "public_no_explicit_licence",
+        "redistribution_allowed": "unclear",
+        "terms_url": None,
+    },
+    {
+        "source_id": "thermax_ir",
+        "source_url": "https://www.thermaxglobal.com/investors/annual-reports",
+        "retrieval_url": "https://www.thermaxglobal.com/sites/default/files/2026-04/Thermax_44-Annual-Report_0.pdf",
+        "document_type": "annual_report",
+        "company_identifiers": CompanyIdentifiers(nse_symbol="THERMAX", bse_scrip_code="500411"),
+        "publication_time": "2025",
+        "coverage_note": "Control (power equipment, vs. CG Power): Thermax 44th annual report",
+        "licence_status": "public_no_explicit_licence",
+        "redistribution_allowed": "unclear",
+        "terms_url": None,
+    },
+    {
+        "source_id": "suzlon_ir",
+        "source_url": "https://www.suzlon.com/investors/shareholder-information/",
+        "retrieval_url": "https://www.suzlon.com/investors/shareholder-information/",
+        "document_type": "ir_page",
+        "company_identifiers": CompanyIdentifiers(nse_symbol="SUZLON"),
+        "publication_time": None,
+        "coverage_note": "Control (renewables, vs. Gensol Engineering): Suzlon Energy IR page",
+        "licence_status": "public_no_explicit_licence",
+        "redistribution_allowed": "unclear",
+        "terms_url": None,
+    },
+    {
+        "source_id": "mastek_ir",
+        "source_url": "https://www.mastek.com/",
+        "retrieval_url": "https://www.mastek.com/wp-content/uploads/2022/08/Shareholding-Pattern-Q1-2017-18.pdf",
+        "document_type": "shareholding_pattern",
+        "company_identifiers": CompanyIdentifiers(nse_symbol="MASTEK", bse_scrip_code="523704"),
+        "publication_time": "2017",
+        "coverage_note": (
+            "Control (IT services, vs. Vakrangee): Mastek shareholding pattern Q1 2017-18"
+        ),
+        "licence_status": "public_no_explicit_licence",
+        "redistribution_allowed": "unclear",
+        "terms_url": None,
+    },
 ]
+
+
+def _nse_archive_bhavcopy_items() -> list[dict[str, Any]]:
+    """Twice-monthly NSE equity bhavcopy snapshots, Jan 2017 - Sep 2025.
+
+    archives.nseindia.com (distinct from the blocked nsearchives.nseindia.com
+    and www.nseindia.com — see docs/data/source-inventory.md §B1) serves both
+    the legacy per-date CSV format (through 2024-07-05) and the newer UDiFF
+    format (from 2024-07-08). This covers the union of all seed-company event
+    windows and doubles as the survivorship-bias check (DHFL/Jet Airways/
+    Reliance Capital/Future Retail all have snapshots after their respective
+    suspension/CIRP dates).
+    """
+    items: list[dict[str, Any]] = []
+    udiff_cutover = dt.date(2024, 7, 8)
+    month_days = (5, 20)
+
+    year, month = 2017, 1
+    while (year, month) <= (2025, 9):
+        for day in month_days:
+            try:
+                date = dt.date(year, month, day)
+            except ValueError:
+                continue
+            while date.weekday() >= 5:  # Sat/Sun -> following Monday
+                date += dt.timedelta(days=1)
+
+            if date < udiff_cutover:
+                mon = date.strftime("%b").upper()
+                retrieval_url = (
+                    f"https://archives.nseindia.com/content/historical/EQUITIES/"
+                    f"{date.year}/{mon}/cm{date.day:02d}{mon}{date.year}bhav.csv.zip"
+                )
+            else:
+                retrieval_url = (
+                    f"https://archives.nseindia.com/content/cm/"
+                    f"BhavCopy_NSE_CM_0_0_0_{date.strftime('%Y%m%d')}_F_0000.csv.zip"
+                )
+
+            items.append(
+                {
+                    "source_id": "nse_archives",
+                    "source_url": "https://archives.nseindia.com/",
+                    "retrieval_url": retrieval_url,
+                    "document_type": "equity_bhavcopy",
+                    "publication_time": date.isoformat(),
+                    "coverage_note": (
+                        f"NSE equity bhavcopy for {date.isoformat()} (twice-monthly seed sample)"
+                    ),
+                    "licence_status": "public_no_explicit_licence",
+                    "redistribution_allowed": "unclear",
+                    "terms_url": None,
+                }
+            )
+        month += 1
+        if month > 12:
+            month = 1
+            year += 1
+    return items
 
 
 def main() -> int:
     settings = load_settings()
     manifest_path = settings.data_dir / "manifests" / "seed.jsonl"
 
-    results = {"fetched": 0, "skipped_duplicate": 0, "blocked": 0, "errors": 0}
+    all_items = SEED_ITEMS + _nse_archive_bhavcopy_items()
+    results = {"fetched": 0, "skipped_duplicate": 0, "blocked": 0, "not_found": 0, "errors": 0}
 
     with PoliteFetcher(
         contact_email=settings.contact_email,
@@ -166,7 +430,7 @@ def main() -> int:
         max_retries=settings.fetch_max_retries,
         max_file_size_bytes=settings.fetch_max_file_size_bytes,
     ) as fetcher:
-        for item in SEED_ITEMS:
+        for item in all_items:
             label = f"{item['source_id']}: {item['retrieval_url']}"
             try:
                 entry = fetcher.fetch(**item)
@@ -189,11 +453,15 @@ def main() -> int:
             except FileTooLargeError as exc:
                 print(f"BLOCKED (size guard: {exc}): {label}")
                 results["blocked"] += 1
+            except HTTPStatusError as exc:
+                print(f"NOT FOUND (HTTP {exc.status_code}, likely non-trading day): {label}")
+                results["not_found"] += 1
             except Exception as exc:  # noqa: BLE001
                 print(f"ERROR ({exc.__class__.__name__}: {exc}): {label}")
                 results["errors"] += 1
 
     print("---")
+    print(f"Total items attempted: {len(all_items)}")
     print(f"Summary: {results}")
     return 0 if results["errors"] == 0 else 1
 

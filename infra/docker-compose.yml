@@ -23,39 +23,35 @@ services:
       timeout: 5s
       retries: 10
 
-  minio:
-    # MinIO's community edition was archived (Feb 2026) and its images were
-    # removed from BOTH Docker Hub and quay.io (confirmed here: quay.io pull
-    # returns 401, not 404). The only verified-pullable image at write time
-    # is the community-maintained Bitnami legacy mirror. IMPORTANT: the last
-    # free MinIO community release carries CVE-2026-40344 (auth bypass,
-    # CVSS 8.8) with no community-edition fix available. Acceptable for this
-    # Phase 0 loopback-only, no-real-data health check; NOT a decision about
-    # what Phase 1+ object storage should use — see
-    # docs/data/acquisition-strategy.md "Decisions needing approval".
-    image: bitnamilegacy/minio:2025.7.23-debian-12-r5
-    # Bitnami's image runs as a non-root UID by default; on this host the
-    # named volume is created root-owned and the entrypoint's own chown
-    # step is denied, so MinIO fails to start ("file access denied").
-    # Running as root lets Bitnami's entrypoint fix ownership itself —
-    # acceptable for this local, loopback-only Phase 0 health check.
-    user: root
+  garage:
+    # Object storage. MinIO's community edition carries an unpatched
+    # auth-bypass CVE (CVE-2026-40344) with the fix shipped only in the
+    # commercial AIStor product — no community-edition patch exists to
+    # build from source. Garage is an actively maintained, S3-native,
+    # officially-published image with no equivalent open CVE at pin time.
+    # See docs/adr/0003-object-storage.md.
+    image: dxflrs/garage:v2.4.1
     restart: "no"
-    command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${LEDGERLIGHT_MINIO_ROOT_USER:-ledgerlight}
-      MINIO_ROOT_PASSWORD: ${LEDGERLIGHT_MINIO_ROOT_PASSWORD:-changeme-local-only}
-    ports:
-      - "127.0.0.1:59000:9000"
-      - "127.0.0.1:59001:9001"
+      # Local-only, loopback-bound, no real data behind these — generate
+      # with `openssl rand -hex 32` (rpc_secret) and any string (admin
+      # token) and put them in .env (gitignored). See .env.example.
+      GARAGE_RPC_SECRET: ${LEDGERLIGHT_GARAGE_RPC_SECRET:?set LEDGERLIGHT_GARAGE_RPC_SECRET in .env, e.g. via `openssl rand -hex 32`}
+      GARAGE_ADMIN_TOKEN: ${LEDGERLIGHT_GARAGE_ADMIN_TOKEN:?set LEDGERLIGHT_GARAGE_ADMIN_TOKEN in .env, e.g. via `openssl rand -hex 16`}
     volumes:
-      - miniodata:/data
+      - garagedata:/data
+      - garagemeta:/data/meta
+      - ./garage/garage.toml:/etc/garage.toml:ro
+    ports:
+      - "127.0.0.1:59000:3900"
+      - "127.0.0.1:59003:3903"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      test: ["CMD", "/garage", "status"]
       interval: 5s
       timeout: 5s
       retries: 10
 
 volumes:
   pgdata:
-  miniodata:
+  garagedata:
+  garagemeta:

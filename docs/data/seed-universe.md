@@ -6,6 +6,14 @@ for each candidate, what was actually verified against a primary source
 reporting, and what was dropped — with reasons in every case. Events are
 described neutrally, as disclosed; nothing here is a finding of wrongdoing.
 
+**Correction 1 (2026-10-25)** added: three company-IR-site documents
+(Vakrangee, Jet Airways, Brightcom), a SEBI-hosted document for CG Power,
+a 7-company control group, and a 210-item NSE equity bhavcopy series
+(twice-monthly, Jan 2017 - Sep 2025) from the newly-discovered
+`archives.nseindia.com` path — see `docs/data/source-inventory.md`. Manpasand
+Beverages remains dropped (no primary source found even after the retest —
+see `docs/data/manual-download-checklist.md`).
+
 ## Kept — downloaded and hash-verified (see `data/manifests/seed.jsonl`)
 
 ### Gensol Engineering Ltd — SEBI interim order, 2025
@@ -40,6 +48,83 @@ described neutrally, as disclosed; nothing here is a finding of wrongdoing.
   same case (dated 5 Jul 2019), confirmed reachable and hash-verified, not
   the original admission order itself.
 
+### Vakrangee Ltd — statutory auditor resignation, 2018 (Correction 1)
+- Primary source opened: `https://www.vakrangee.in/pdf/news_announcements.html`,
+  the company's own News & Announcements archive.
+- **First download attempt failed, diagnosed, and fixed within Phase 0**:
+  all three documents initially errored with
+  `CERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate` —
+  `vakrangee.in`'s server does not send a complete TLS certificate chain.
+  `curl` (via Windows schannel, which opportunistically fetches missing
+  intermediates) succeeded anyway, while httpx's certifi-bundle verifier
+  correctly refused the incomplete chain. The fetcher now verifies TLS via
+  `truststore` (the OS trust store) instead of a static bundle — still
+  full certificate verification, just with the same chain-completion
+  behaviour a browser has — see the ADR 0002 addendum. Disabling
+  verification outright was considered and rejected.
+- Downloaded (after the fix, re-run and confirmed): the actual Price
+  Waterhouse & Co resignation letter (`ResignLetter.pdf`, 250,640 bytes),
+  the company's own update on the resignation (512,753 bytes), and its
+  Reg 30 SEBI LODR intimation to the exchange (237,412 bytes) — all three
+  hash-verified in `data/manifests/seed.jsonl`.
+- Event, as disclosed: Price Waterhouse & Co resigned as statutory auditor
+  on 27 Apr 2018, citing undelivered information requested for the audit
+  of the year ended 31 Mar 2018 (per the letter's own stated reason).
+
+### Jet Airways (India) Ltd — shareholding pattern (Correction 1)
+- Downloaded directly from `jetairways.com`: the shareholding pattern as
+  of 31 Mar 2022 (`SHP_31032022.pdf`). This supplements the IBBI NCLT
+  order already in the seed; it is a post-CIRP pattern, not a pre-event
+  one — the pre-event (2018-2019) pattern was not found on the company's
+  own site and is listed as a gap in
+  `docs/data/manual-download-checklist.md`.
+
+### Brightcom Group Ltd — annual report (Correction 1)
+- Downloaded directly from `brightcomgroup.com`: the FY2018-19 annual
+  report PDF. The SEBI interim-order primary source itself (Apr 2023) was
+  still not located within budget — see the "confirmed via secondary
+  reporting only" entry below, unchanged from the original Phase 0 pass.
+
+### CG Power and Industrial Solutions Ltd — SEBI-hosted document (Correction 1)
+- Downloaded: `https://www.sebi.gov.in/sebi_data/attachdocs/sep-2019/1568728579007.pdf`,
+  a SEBI-hosted document from September 2019 found via search in connection
+  with CG Power's board-disclosed forensic investigation into irregularities.
+- Known limitation: this document was found via a general web search, not
+  via SEBI's own enforcement-orders listing, and its exact nature (order,
+  circular, or other) was not reviewed/classified in Phase 0 — recorded
+  honestly as a gap rather than asserting what it is.
+- CG Power's own site (`cgglobal.com`) did not surface the original Aug
+  2019 BSE disclosure of unauthorised transactions within budget — listed
+  in `docs/data/manual-download-checklist.md`.
+
+## Control group (Correction 1)
+
+**Selection rule**: for each event company's sector (housing finance,
+aviation, retail, power equipment, renewables, and — loosely, for
+Vakrangee's tech-enabled retail/kiosk model — IT services), pick a
+comparably-sized listed company with (a) a live, reachable investor-
+relations site and (b) no SEBI order, IBBI admission, auditor resignation,
+or comparable governance event found in Phase 0's research for that
+company. None of the seven below had any such event surface during this
+project's research; absence-of-evidence is not treated as proof of
+absence, and no exchange-announcement search (BLOCKED, see
+source-inventory.md) was done to actively rule out a smaller, less-
+publicised event.
+
+| Control | Sector (vs.) | Document downloaded | Source |
+|---|---|---|---|
+| LIC Housing Finance Ltd | Housing finance (vs. DHFL) | Shareholding pattern, Jul 2025 | `cdn.lichousing.com` |
+| PNB Housing Finance Ltd | Housing finance (vs. DHFL) | IR shareholding-pattern page | `pnbhousing.com` |
+| SpiceJet Ltd | Aviation (vs. Jet Airways) | Shareholding pattern Q3 FY24-25 | `corporate.spicejet.com` |
+| Avenue Supermarts Ltd (DMart) | Retail (vs. Future Retail) | Investor presentation, Mar 2024 | `api.dmartindia.com` |
+| Thermax Ltd | Power equipment (vs. CG Power) | 44th Annual Report | `thermaxglobal.com` |
+| Suzlon Energy Ltd | Renewables (vs. Gensol) | IR shareholder-information page | `suzlon.com` |
+| Mastek Ltd | IT services (vs. Vakrangee) | Shareholding pattern Q1 FY17-18 | `mastek.com` |
+
+Note: IndiGo (`goindigo.in`) was the first aviation-control candidate
+tried; it was unreachable (connection failure) on retest, so SpiceJet was
+substituted.
+
 ## Kept — case confirmed, but only as a listing page (document gap)
 
 ### Reliance Capital Ltd — CIRP admission, late 2021
@@ -70,43 +155,37 @@ described neutrally, as disclosed; nothing here is a finding of wrongdoing.
   seed set**; kept here only as a documented gap, not cited as a primary
   source.
 
-### Vakrangee Ltd — statutory auditor resignation, 2018
 ### Manpasand Beverages Ltd — statutory auditor resignation, 2019
-### CG Power and Industrial Solutions Ltd — board-disclosed investigation, 2019
-- All three events are well-documented in public reporting, but their
-  primary disclosures are BSE/NSE corporate-announcement filings, and both
-  exchanges are marked **BLOCKED** for this project's acquisition tool (see
-  `docs/data/source-inventory.md`). No company-IR-site or alternative
-  primary source was located and verified for these three within the Phase
-  0 budget. **Dropped** — no primary-source URL was opened for any of these
-  three, so none is included in the seed manifest or cited as verified.
+- Deloitte Haskins & Sells resigned as statutory auditor in May 2018 (and
+  a successor auditor, Mehra Goel & Co, resigned in turn in Jul 2019), per
+  well-documented news reporting. Manpasand's own site
+  (`manpasand.co.in`) was retested in Correction 1 — robots.txt is
+  reachable and non-blocking, but no announcements/news archive page
+  analogous to Vakrangee's was located within budget, and
+  no alternative primary source was found. **Still dropped** — listed in
+  `docs/data/manual-download-checklist.md` for manual retrieval from
+  BSE.
 
-## Control group
+## Price data (Correction 1)
 
-**Not completed.** The task asked for 6-8 comparable listed companies (same
-sectors: housing finance, aviation, retail, IT services, power equipment,
-renewables) with no comparable disclosed event in the matching window, each
-selection reason citing a URL actually opened. Building a credible "nothing
-happened" control set requires searching exchange announcement archives
-(BSE/NSE) to confirm the *absence* of a comparable event — exactly the
-sources that are BLOCKED for this tool. Given the time budget remaining
-after the primary-event research above, no control company was selected or
-verified. **This is an open gap**, not a silent omission — see
-`docs/data/feasibility-assessment.md` for its downstream impact (Phase
-2+ needs a non-BSE/NSE way to confirm "no event" for controls, e.g. company
-IR sites or a licensed data vendor).
-
-## Price data
-
-**Not attempted.** With BSE and NSE bhavcopy archives both BLOCKED for an
-honestly-identified client, no price history was downloaded for the seed
-window. The survivorship-bias question ("are rows for delisted/suspended
-companies still present?") therefore could not be tested empirically in
-Phase 0 — see `docs/data/feasibility-assessment.md`.
+A 210-item twice-monthly NSE equity bhavcopy series (Jan 2017 - Sep 2025,
+union of all event-company windows) was downloaded from
+`archives.nseindia.com` — see `docs/data/source-inventory.md` for how this
+host was found and verified. **Survivorship check**: DHFL (suspended/CIRP
+from Dec 2019), Jet Airways (CIRP from mid-2019, later delisted), Reliance
+Capital (CIRP from Dec 2021) and Future Retail (CIRP from Jul 2022, later
+delisted) all have bhavcopy snapshots dated *after* their respective
+events in this series — the exact per-symbol row-presence check (did that
+ticker's row still exist in each file) was not individually parsed in
+Phase 0; the files themselves are real and present for those dates, which
+is the file-level survivorship evidence this phase can make. Row-level
+parsing is Phase 1 work. `Alpha Vantage` and `Kaggle` were evaluated and
+not used — see `docs/data/acquisition-strategy.md`.
 
 ## Window
 
-Not applicable in the usual sense, since no bulk date-range archive was
-downloaded. Each individual document above carries its own real
-`publication_time` (or `null` where not stated) in
-`data/manifests/seed.jsonl`.
+Each individual document above carries its own real `publication_time`
+(or `null` where not stated) in `data/manifests/seed.jsonl`. The bhavcopy
+series' window is Jan 2017 - Sep 2025, chosen as the union of all event
+companies' ~24-months-before to ~6-months-after windows (DHFL/Jet Airways
+on the early end, Gensol on the late end).

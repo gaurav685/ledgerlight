@@ -7,6 +7,7 @@ import respx
 
 from ledgerlight.acquisition.fetcher import (
     FileTooLargeError,
+    HTTPStatusError,
     PoliteFetcher,
     RobotsDisallowed,
 )
@@ -142,3 +143,22 @@ def test_oversized_file_is_rejected(tmp_path: Path) -> None:
             raised = True
 
     assert raised
+
+
+@respx.mock
+def test_404_is_not_written_to_disk_or_manifest(tmp_path: Path) -> None:
+    respx.get(ROBOTS_URL).mock(return_value=httpx.Response(404))
+    respx.get(PDF_URL).mock(return_value=httpx.Response(404, text="not found"))
+
+    manifest_path = tmp_path / "data" / "manifests" / "test.jsonl"
+    with _make_fetcher(tmp_path, manifest_path=manifest_path) as fetcher:
+        raised = False
+        try:
+            fetcher.fetch(**_common_fetch_kwargs())
+        except HTTPStatusError as exc:
+            raised = True
+            assert exc.status_code == 404
+
+    assert raised
+    assert not manifest_path.exists()
+    assert list((tmp_path / "data" / "raw").glob("**/*")) == []

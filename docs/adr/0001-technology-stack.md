@@ -35,13 +35,16 @@ Docker Compose for Postgres+pgvector and MinIO.
    pydantic-settings, httpx, tenacity, structlog, pytest, ruff, mypy all
    installed and ran exactly as specified; `uv.lock` is committed.
 4. **Docker image pins required real research, not the originally
-   assumed tags** (see ADR 0002 for the MinIO finding specifically): the
-   brief asked for "pinned tags," and two separate attempts at guessing a
-   plausible-looking tag/digest were caught and corrected before being
-   used, in favour of tags actually confirmed pullable.
-5. **Dev-only dependencies added beyond the original list**: `psycopg[binary]`
-   and `boto3` were added (dev group) because `scripts/infra_check.py`
-   needs them to actually talk to Postgres and MinIO — this is "Phase 0
+   assumed tags** (see ADR 0003 for the object-storage finding
+   specifically — MinIO was later replaced with Garage in Correction 1):
+   the brief asked for "pinned tags," and two separate attempts at
+   guessing a plausible-looking tag/digest were caught and corrected
+   before being used, in favour of tags actually confirmed pullable.
+5. **Dev-only dependencies added beyond the original list**: `psycopg[binary]`,
+   `boto3` and (Correction 1) `truststore` were added (dev/main groups) because
+   `scripts/infra_check.py` needs the first two to actually talk to
+   Postgres and the object store, and `truststore` fixes a real TLS chain
+   issue — this is "Phase 0
    code actually uses it," not speculative tooling.
 
 ## Consequences
