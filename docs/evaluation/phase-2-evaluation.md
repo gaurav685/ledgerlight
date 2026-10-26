@@ -35,18 +35,54 @@ dominates one group; not forced to look even).
 
 ## Classification (silver, validation then once on test)
 
-See `docs/phase-2/phase-2-report.md` §7 for the full per-class
-precision/recall/F1/support tables and confusion matrices for all three
-methods (rules baseline, TF-IDF+LR, DeBERTa zero-shot) — printed there
-with raw command output, not summarized here. Headline finding: the
-rules baseline trivially scores macro_f1=1.0 on validation, because it
-IS the function that generated the silver labels in the first place —
-reported as a known circularity, not real accuracy, until gold review
-exists.
+Validation (n=112), macro_f1 by method:
+
+| method | macro_f1 | note |
+|---|---|---|
+| rules_baseline | 1.000 | circular -- it IS the function that generated the silver labels |
+| tfidf_lr | 0.243 | trained on `dev` (115 items), independent of the proposer |
+| deberta_zero_shot | 0.175 | zero-shot NLI, no fine-tuning, worse than both others on this corpus |
+
+**Selected production classifier (by validation macro_f1): `rules_baseline`**
+— selected mechanically by the evaluation script, but flagged explicitly
+as a circularity, not a real accuracy claim, pending gold review.
+
+Test (n=14, reported once, selected method only): `rules_baseline_TEST`
+macro_f1 = 1.000 (4 AUD_RESIGN, 2 PLEDGE_UP, 1 ID_EXIT, 7 none, all
+correct) -- same circularity caveat applies.
+
+DeBERTa confidence distribution on validation: min=0.159, max=0.874,
+mean=0.343. Per-class calibration not computed -- sample sizes (2-28
+positives) are too small for a reliable curve.
+
+Full per-class precision/recall/F1/support tables and confusion
+matrices for all three methods are in
+`docs/phase-2/phase-2-report.md` §7b/§7c, with the raw command output in
+`docs/phase-2/evidence/evaluate-run-final.log`.
 
 **Fine-tuning decision:** not attempted. Brief's own threshold is ≥50
 positives/class to even consider it; the real corpus's largest
 non-'none' class (PLEDGE_UP) has 28.
+
+**Reproducibility:** `rules_baseline` and `tfidf_lr` are both fully
+deterministic (pure pattern matching; TF-IDF + `LogisticRegression`
+with a fixed `random_state=42` and the deterministic `lbfgs` solver) --
+re-running the validation evaluation for both reproduced byte-identical
+metrics (`docs/phase-2/evidence/evaluate-reproducibility-check.log`).
+`deberta_zero_shot` is frozen-weight, non-stochastic greedy inference,
+so it is expected to reproduce identically too, but was not re-run a
+second time given its real cost in this environment (~1.5 hours after
+fixing the `TOKENIZERS_PARALLELISM` bug below) -- disclosed as a
+pragmatic, not a correctness, limitation.
+
+**Real bug found and fixed during this evaluation run:** with
+`TOKENIZERS_PARALLELISM` unset, the DeBERTa zero-shot pipeline's
+Rust tokenizer spawned a multiprocessing worker that resolved to an
+unrelated Python 3.11 interpreter on this machine, turning the expected
+~20-minute run into a 13+ hour stall. Fixed in
+`ledgerlight/knowledge/classifier.py` by setting
+`TOKENIZERS_PARALLELISM=false` before constructing the pipeline; see
+`docs/phase-2/phase-2-report.md` §1 and §10.
 
 ## Extraction (AUD_RESIGN, the one real worked extractor)
 
