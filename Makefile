@@ -101,7 +101,7 @@ labels-propose:
 
 # usage: make label-review REVIEWER="your name" [LIMIT=20]
 label-review:
-	uv run python scripts/label_review.py --reviewer "$(REVIEWER)" --limit "$(LIMIT)"
+	uv run python scripts/label_review.py --reviewer "$(REVIEWER)" $(if $(LIMIT),--limit $(LIMIT),)
 
 labels-split:
 	uv run python scripts/labels_split.py
@@ -121,6 +121,7 @@ resolve-entities:
 retrieval-eval:
 	uv run python scripts/retrieval_eval.py
 
+# usage: make review-queue CMD="summary" (or "list", "resolve --id ... --resolution ... --reviewer ...", "dismiss --id ... --reason ... --reviewer ...")
 review-queue:
 	uv run python scripts/review_queue.py $(CMD)
 
