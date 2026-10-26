@@ -179,9 +179,106 @@ def bhavcopy_daily_schedule(context: ScheduleEvaluationContext) -> dg.RunRequest
     return dg.RunRequest(partition_key=partition_key)
 
 
+# --- Phase 2 knowledge pipeline: chunk -> embed -> extract -> resolve
+# entities. Each op wraps the same idempotent function the standalone
+# scripts/*.py CLIs call directly -- one implementation, two ways to run
+# it (ad-hoc via the script, or orchestrated here with retries/run IDs).
+_KNOWLEDGE_RETRY_POLICY = dg.RetryPolicy(max_retries=2, delay=5)
+
+
+@dg.op(retry_policy=_KNOWLEDGE_RETRY_POLICY)
+def chunk_corpus_op(context: OpExecutionContext) -> None:
+    from sqlalchemy import select
+
+    from ledgerlight.db.models import DocumentVersion
+    from ledgerlight.knowledge.chunking import chunk_version
+
+    settings = load_settings()
+    session_factory = make_session_factory(settings)
+    with session_factory() as session:
+        versions = session.scalars(
+            select(DocumentVersion).where(
+                DocumentVersion.mime_type.in_(["application/pdf", "text/html"])
+            )
+        ).all()
+        chunks_created = sum(chunk_version(session, v).chunks_created for v in versions)
+    context.log.info(f"chunk_corpus: versions={len(versions)} chunks_created={chunks_created}")
+
+
+@dg.op(retry_policy=_KNOWLEDGE_RETRY_POLICY, ins={"after": dg.In(dg.Nothing)})
+def embed_chunks_op(context: OpExecutionContext) -> None:
+    from sqlalchemy import select
+
+    from ledgerlight.knowledge.embedding import (
+        EMBEDDING_MODEL_NAME,
+        EMBEDDING_MODEL_VERSION,
+        embed_texts,
+    )
+    from ledgerlight.knowledge.models import Chunk
+
+    settings = load_settings()
+    session_factory = make_session_factory(settings)
+    with session_factory() as session:
+        chunks = session.scalars(select(Chunk).where(Chunk.embedding.is_(None))).all()
+        for i in range(0, len(chunks), 32):
+            batch = chunks[i : i + 32]
+            vectors = embed_texts([c.text for c in batch])
+            for chunk, vector in zip(batch, vectors, strict=True):
+                chunk.embedding = vector
+                chunk.embedding_model_name = EMBEDDING_MODEL_NAME
+                chunk.embedding_model_version = EMBEDDING_MODEL_VERSION
+            session.commit()
+    context.log.info(f"embed_chunks: embedded={len(chunks)}")
+
+
+@dg.op(retry_policy=_KNOWLEDGE_RETRY_POLICY, ins={"after": dg.In(dg.Nothing)})
+def extract_aud_resign_op(context: OpExecutionContext) -> None:
+    from sqlalchemy import select
+
+    from ledgerlight.knowledge.classifier import rules_baseline_predict
+    from ledgerlight.knowledge.extraction_pipeline import run_aud_resign_extraction
+    from ledgerlight.knowledge.models import Chunk
+
+    settings = load_settings()
+    session_factory = make_session_factory(settings)
+    with session_factory() as session:
+        chunks = session.scalars(select(Chunk).order_by(Chunk.id)).all()
+        candidate_ids = [c.id for c in chunks if rules_baseline_predict(c.text) == "AUD_RESIGN"]
+        stats = run_aud_resign_extraction(session, candidate_ids)
+    context.log.info(
+        f"extract: events_created={stats.events_created} fields_created={stats.fields_created}"
+    )
+
+
+@dg.op(retry_policy=_KNOWLEDGE_RETRY_POLICY, ins={"after": dg.In(dg.Nothing)})
+def resolve_entities_op(context: OpExecutionContext) -> None:
+    from ledgerlight.knowledge.entity_bootstrap import (
+        bootstrap_audit_firm_entities,
+        bootstrap_company_entities,
+    )
+
+    settings = load_settings()
+    session_factory = make_session_factory(settings)
+    with session_factory() as session:
+        company_stats = bootstrap_company_entities(session)
+        audit_stats = bootstrap_audit_firm_entities(session)
+    context.log.info(
+        f"resolve_entities: companies={company_stats.company_entities_created} "
+        f"audit_links={audit_stats.audit_firm_links_created}"
+    )
+
+
+@dg.job
+def knowledge_pipeline_job() -> None:
+    chunked = chunk_corpus_op()
+    embedded = embed_chunks_op(after=chunked)
+    extracted = extract_aud_resign_op(after=embedded)
+    resolve_entities_op(after=extracted)
+
+
 defs = dg.Definitions(
     assets=[bhavcopy_daily],
-    jobs=[bhavcopy_job, inbox_import_job, *known_items_jobs.values()],
+    jobs=[bhavcopy_job, inbox_import_job, knowledge_pipeline_job, *known_items_jobs.values()],
     schedules=[bhavcopy_daily_schedule],
     sensors=[inbox_sensor],
 )

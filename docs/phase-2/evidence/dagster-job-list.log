@@ -1,0 +1,77 @@
+﻿2026-10-26 13:48:16 +0530 - dagster.code_server - INFO - Starting Dagster code server for module ledgerlight.orchestration.definitions on port 59242 in process 3492
+2026-10-26 13:48:16 +0530 - dagster - INFO - Loaded environment variables from .env file: LEDGERLIGHT_CONTACT_EMAIL,LEDGERLIGHT_DATA_DIR,LEDGERLIGHT_FETCH_RATE_LIMIT_SECONDS,LEDGERLIGHT_FETCH_TIMEOUT_SECONDS,LEDGERLIGHT_FETCH_MAX_RETRIES,LEDGERLIGHT_FETCH_MAX_FILE_SIZE_BYTES,LEDGERLIGHT_POSTGRES_HOST,LEDGERLIGHT_POSTGRES_PORT,LEDGERLIGHT_POSTGRES_USER,LEDGERLIGHT_POSTGRES_PASSWORD,LEDGERLIGHT_POSTGRES_DB,LEDGERLIGHT_S3_ENDPOINT,LEDGERLIGHT_S3_REGION,LEDGERLIGHT_GARAGE_RPC_SECRET,LEDGERLIGHT_GARAGE_ADMIN_TOKEN,LEDGERLIGHT_S3_ACCESS_KEY_ID,LEDGERLIGHT_S3_SECRET_ACCESS_KEY
+2026-10-26 13:48:20 +0530 - dagster.code_server - INFO - Started Dagster code server for module ledgerlight.orchestration.definitions on port 59242 in process 3492
+Repository __repository__
+*************************
+Job: __ASSET_JOB
+Ops: (Execution Order)
+    bhavcopy_daily
+*****************
+Job: bhavcopy_job
+Ops: (Execution Order)
+    bhavcopy_daily
+*********************
+Job: brightcom_ir_job
+Ops: (Execution Order)
+    ingest_brightcom_ir
+*************
+Job: care_job
+Ops: (Execution Order)
+    ingest_care
+*****************
+Job: dmart_ir_job
+Ops: (Execution Order)
+    ingest_dmart_ir
+*************
+Job: ibbi_job
+Ops: (Execution Order)
+    ingest_ibbi
+*********************
+Job: inbox_import_job
+Ops: (Execution Order)
+    import_inbox_op
+**********************
+Job: jetairways_ir_job
+Ops: (Execution Order)
+    ingest_jetairways_ir
+***************************
+Job: knowledge_pipeline_job
+Ops: (Execution Order)
+    chunk_corpus_op
+    embed_chunks_op
+    extract_aud_resign_op
+    resolve_entities_op
+**********************
+Job: lichousing_ir_job
+Ops: (Execution Order)
+    ingest_lichousing_ir
+******************
+Job: mastek_ir_job
+Ops: (Execution Order)
+    ingest_mastek_ir
+**********************
+Job: pnbhousing_ir_job
+Ops: (Execution Order)
+    ingest_pnbhousing_ir
+*************
+Job: sebi_job
+Ops: (Execution Order)
+    ingest_sebi
+********************
+Job: spicejet_ir_job
+Ops: (Execution Order)
+    ingest_spicejet_ir
+******************
+Job: suzlon_ir_job
+Ops: (Execution Order)
+    ingest_suzlon_ir
+*******************
+Job: thermax_ir_job
+Ops: (Execution Order)
+    ingest_thermax_ir
+*********************
+Job: vakrangee_ir_job
+Ops: (Execution Order)
+    ingest_vakrangee_ir
+2026-10-26 13:48:21 +0530 - dagster.code_server - INFO - Stopping server once all current RPC calls terminate or 60 seconds pass
+2026-10-26 13:48:21 +0530 - dagster.code_server - INFO - Shutting down Dagster code server for module ledgerlight.orchestration.definitions on port 59242 in process 3492

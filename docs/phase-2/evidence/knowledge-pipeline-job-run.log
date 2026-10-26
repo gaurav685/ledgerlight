@@ -1,0 +1,77 @@
+﻿python.exe : 2026-10-26 13:49:07 +0530 - dagster - DEBUG - knowledge_pipeline_job 
+- ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - RUN_START - Started execution of 
+run for "knowledge_pipeline_job".
+At line:7 char:1
++ & ".\.venv\Scripts\python.exe" "C:\Users\gmalh\AppData\Local\Temp\cla ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (2026-10-26 13:4..._pipeline_job".:Str 
+   ing) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+2026-10-26 13:49:07 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - ENGINE_EVENT - Executing steps in 
+process (pid: 9836)
+2026-10-26 13:49:07 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - RESOURCE_INIT_STARTED - Starting 
+initialization of resources [io_manager].
+2026-10-26 13:49:07 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - RESOURCE_INIT_SUCCESS - Finished 
+initialization of resources [io_manager].
+2026-10-26 13:49:07 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - LOGS_CAPTURED - Capturing logs for 
+process (pid: 9836).
+2026-10-26 13:49:07 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - chunk_corpus_op - STEP_START - 
+Started execution of step "chunk_corpus_op".
+2026-10-26 13:49:12 +0530 - dagster - INFO - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - chunk_corpus_op - chunk_corpus: versions=34 
+chunks_created=0
+2026-10-26 13:49:12 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - chunk_corpus_op - STEP_OUTPUT - 
+Yielded output "result" of type "Nothing". (Type check passed).
+2026-10-26 13:49:12 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - chunk_corpus_op - STEP_SUCCESS - 
+Finished execution of step "chunk_corpus_op" in 4.1s.
+2026-10-26 13:49:12 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - embed_chunks_op - STEP_START - 
+Started execution of step "embed_chunks_op".
+2026-10-26 13:49:12 +0530 - dagster - INFO - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - embed_chunks_op - embed_chunks: embedded=0
+2026-10-26 13:49:12 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - embed_chunks_op - STEP_OUTPUT - 
+Yielded output "result" of type "Nothing". (Type check passed).
+2026-10-26 13:49:12 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - embed_chunks_op - STEP_SUCCESS - 
+Finished execution of step "embed_chunks_op" in 167ms.
+2026-10-26 13:49:12 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - extract_aud_resign_op - STEP_START - 
+Started execution of step "extract_aud_resign_op".
+2026-10-26 13:49:13 +0530 - dagster - INFO - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - extract_aud_resign_op - extract: 
+events_created=0 fields_created=0
+2026-10-26 13:49:13 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - extract_aud_resign_op - STEP_OUTPUT 
+- Yielded output "result" of type "Nothing". (Type check passed).
+2026-10-26 13:49:13 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - extract_aud_resign_op - STEP_SUCCESS 
+- Finished execution of step "extract_aud_resign_op" in 1.1s.
+2026-10-26 13:49:13 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - resolve_entities_op - STEP_START - 
+Started execution of step "resolve_entities_op".
+2026-10-26 13:49:13 +0530 - dagster - INFO - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - resolve_entities_op - resolve_entities: 
+companies=0 audit_links=0
+2026-10-26 13:49:14 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - resolve_entities_op - STEP_OUTPUT - 
+Yielded output "result" of type "Nothing". (Type check passed).
+2026-10-26 13:49:14 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - resolve_entities_op - STEP_SUCCESS - 
+Finished execution of step "resolve_entities_op" in 173ms.
+2026-10-26 13:49:14 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - ENGINE_EVENT - Finished steps in 
+process (pid: 9836) in 7.27s
+2026-10-26 13:49:15 +0530 - dagster - DEBUG - knowledge_pipeline_job - 
+ae693c22-6f1c-4f05-87e4-f7ff9e13c77d - 9836 - RUN_SUCCESS - Finished execution of 
+run for "knowledge_pipeline_job".
+run_id: ae693c22-6f1c-4f05-87e4-f7ff9e13c77d
+success: True

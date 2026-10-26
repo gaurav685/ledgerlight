@@ -36,6 +36,26 @@ features/models, API or frontend. See `docs/phase-1/phase-1-report.md`
 for the full Phase 1 report and `docs/ingestion/architecture.md` /
 `docs/ingestion/runbook.md` for the pipeline design and day-to-day usage.
 
+**Phase 2 — knowledge store, classification, extraction and entity
+resolution.** This phase adds the knowledge schema (companies/filings,
+chunks, taxonomy, events/fields, entities/mentions/links/merges, review
+queue, labels, model registry), a versioned taxonomy (v1.0) with
+boundary-tested rule thresholds, three event classifiers (rules
+baseline, TF-IDF+LR, DeBERTa-v3 zero-shot NLI) compared on a real
+silver-labelled split, one real worked structured extractor (AUD_RESIGN)
+with evidence verification against cited spans, entity resolution
+(deterministic identifiers → normalization → fuzzy matching, with
+conflict detection and reversible merges), and hybrid retrieval (true
+BM25 + a local embedding model + reciprocal rank fusion, point-in-time
+filtered). It does **not** include GUIDANCE_MISS detection, features,
+risk models/scores, the investigation agent, API endpoints or frontend.
+All classification/extraction/entity-resolution/retrieval metrics are
+against SILVER labels — gold review is pending human review (see
+`docs/phase-2/phase-2-report.md` §13). See
+`docs/phase-2/phase-2-report.md` for the full Phase 2 report and
+`docs/knowledge/` / `docs/evaluation/phase-2-evaluation.md` for the
+schema, taxonomy, extraction, entity-resolution and retrieval design.
+
 ## Setup
 
 Requires [uv](https://docs.astral.sh/uv/) (Python 3.12 is fetched

@@ -75,3 +75,54 @@ test-integration:
 
 test-corpus:
 	uv run pytest -m corpus
+
+# --- Phase 2: knowledge store, classification, extraction, entity resolution ---
+
+taxonomy-load:
+	uv run python scripts/taxonomy_load.py data/taxonomy/taxonomy-v1.0.yaml
+
+bootstrap-companies:
+	uv run python scripts/bootstrap_companies.py
+
+link-filings:
+	uv run python scripts/link_filings.py
+
+chunk-corpus:
+	uv run python scripts/chunk_corpus.py
+
+embed-chunks:
+	uv run python scripts/embed_chunks.py
+
+build-bm25-index:
+	uv run python scripts/build_bm25_index.py
+
+labels-propose:
+	uv run python scripts/labels_propose.py
+
+# usage: make label-review REVIEWER="your name" [LIMIT=20]
+label-review:
+	uv run python scripts/label_review.py --reviewer "$(REVIEWER)" --limit "$(LIMIT)"
+
+labels-split:
+	uv run python scripts/labels_split.py
+
+train-classifier:
+	uv run python scripts/train_classifier.py
+
+evaluate:
+	uv run python scripts/evaluate.py
+
+extract:
+	uv run python scripts/extract.py
+
+resolve-entities:
+	uv run python scripts/resolve_entities.py
+
+retrieval-eval:
+	uv run python scripts/retrieval_eval.py
+
+review-queue:
+	uv run python scripts/review_queue.py $(CMD)
+
+knowledge-pipeline:
+	$(DAGSTER_ENV) uv run dagster job execute -m ledgerlight.orchestration.definitions -j knowledge_pipeline_job
