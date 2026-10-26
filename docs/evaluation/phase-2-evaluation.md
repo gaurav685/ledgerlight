@@ -6,6 +6,27 @@ labels exist yet — see §13 (human-gold-review checkpoint) of
 `docs/phase-2/phase-2-report.md` for the exact command and item counts
 to review them.
 
+## Gold-evaluation re-check (completion pass)
+
+Re-verified directly against the real database (not assumed from a
+prior report): `label_items` by `label_source` is still
+`{'ai_assisted_unreviewed': 241}` — 0 `human_reviewed`, 0 `rejected`,
+241 `review_status='pending'`, 0 rows with `reviewer`/`reviewed_at` set
+at all. Every event class has 0 gold positives. No labelled
+entity-pairs and no gold retrieval queries exist either (retrieval
+queries are `ai_constructed_unreviewed` silver only).
+
+Per the brief's own rule ("if gold items number fewer than 100 in
+total, or any event class has 0 gold positives, still continue, but
+flag every affected metric as low-support"): every gold-dependent
+metric below is **PENDING_HUMAN_REVIEW / insufficient support (0
+gold)** — not computed, not estimated, not fabricated. A request to
+run the human-only `label_review.py` CLI on the model's own behalf was
+declined this session (that would be self-review of AI-generated
+labels, which the brief explicitly forbids) — see
+`docs/phase-2/phase-2-report.md` §13 for the exact command for a human
+to run.
+
 ## Label counts (silver)
 
 241 silver label items over the real corpus, from
@@ -64,16 +85,16 @@ matrices for all three methods are in
 positives/class to even consider it; the real corpus's largest
 non-'none' class (PLEDGE_UP) has 28.
 
-**Reproducibility:** `rules_baseline` and `tfidf_lr` are both fully
-deterministic (pure pattern matching; TF-IDF + `LogisticRegression`
-with a fixed `random_state=42` and the deterministic `lbfgs` solver) --
-re-running the validation evaluation for both reproduced byte-identical
-metrics (`docs/phase-2/evidence/evaluate-reproducibility-check.log`).
-`deberta_zero_shot` is frozen-weight, non-stochastic greedy inference,
-so it is expected to reproduce identically too, but was not re-run a
-second time given its real cost in this environment (~1.5 hours after
-fixing the `TOKENIZERS_PARALLELISM` bug below) -- disclosed as a
-pragmatic, not a correctness, limitation.
+**Reproducibility:** confirmed for all three methods. `rules_baseline` and `tfidf_lr` are
+fully deterministic (pure pattern matching; TF-IDF + `LogisticRegression` with a fixed
+`random_state=42` and the deterministic `lbfgs` solver) -- re-running the validation
+evaluation for both reproduced byte-identical metrics
+(`docs/phase-2/evidence/evaluate-reproducibility-check.log`). A full second run of
+`evaluate.py` including `deberta_zero_shot` (frozen weights, non-stochastic greedy inference)
+was also completed and diffed against the first full run: every metric, confusion matrix, and
+the production-classifier selection are byte-identical; the only diff line is the
+weight-loading progress bar's own throughput readout, a timing artifact, not a metric
+(`docs/phase-2/evidence/evaluate-full-rerun-diff.log`).
 
 **Real bug found and fixed during this evaluation run:** with
 `TOKENIZERS_PARALLELISM` unset, the DeBERTa zero-shot pipeline's

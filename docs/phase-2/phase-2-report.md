@@ -369,10 +369,10 @@ not a genuine accuracy claim. `tfidf_lr` (trained independently on `dev`, macro_
 `deberta_zero_shot` (zero-shot, no fine-tuning, macro_f1=0.175) are the two methods that give
 an actually independent read on this corpus, and both are far from 1.0 -- consistent with a
 small, imbalanced corpus (6 of 9 non-"none" classes have under 10 validation examples).
-`rules_baseline` and `tfidf_lr` reproduced byte-identical metrics on a second run
-(`docs/phase-2/evidence/evaluate-reproducibility-check.log`); `deberta_zero_shot` was not
-re-run a second time given its real ~1.5-hour cost in this environment, but is deterministic
-(frozen weights, greedy decoding) so is expected to reproduce identically too.
+All three methods reproduced byte-identical metrics on a second run -- `rules_baseline`/
+`tfidf_lr` individually (`docs/phase-2/evidence/evaluate-reproducibility-check.log`), and all
+three together via a full second `evaluate.py` run including `deberta_zero_shot`
+(`docs/phase-2/evidence/evaluate-full-rerun-diff.log`, see §17.4).
 
 ### 7d. Extraction (AUD_RESIGN)
 
@@ -551,3 +551,218 @@ pasted in full in the session's final message (§16) and in `git bundle verify`'
 ## 16. Final report
 
 This document. Also printed in full in the session's final message.
+
+## 17. Phase 2 Completion Pass (gold evaluation attempt, evidence, reproducibility)
+
+### 17.1 Label status (re-verified against the real database)
+
+```sql
+SELECT label_source, COUNT(*) FROM label_items GROUP BY label_source;
+ -> ('ai_assisted_unreviewed', 241)
+SELECT review_status, COUNT(*) FROM label_items GROUP BY review_status;
+ -> ('pending', 241)
+SELECT COUNT(*) FROM label_items WHERE reviewer IS NOT NULL OR reviewed_at IS NOT NULL;
+ -> 0
+```
+
+0 `human_reviewed`, 0 `rejected`, 0 rows with any reviewer/review timestamp set. Per-class gold
+counts: **every one of the 9 non-"none" event classes has 0 gold positives** (241/241 silver,
+0/241 gold). Field-level gold labels: 0 (`label_item_fields` is empty). Entity-pair gold
+labels: 0 (no labelled mention-pair table has ever been populated). Retrieval-query gold
+labels: 0 (the 30-query set is `ai_constructed_unreviewed` silver, see §7f).
+
+**A request to run `scripts/label_review.py` on the model's own behalf was declined.** That
+script's own docstring and §4/§13 of this report are explicit: only a human running it may set
+`label_source=human_reviewed`; "Claude/any automated process must never run this on your
+behalf." Having the model review its own AI-generated silver labels would be exactly the
+self-review the brief forbids, and would defeat the entire purpose of the silver/gold
+distinction. The user agreed to proceed with every part of this completion pass that does not
+require gold labels; gold evaluation (§17.2 below) stays honestly unresolved.
+
+### 17.2 Gold evaluation
+
+**Not run.** 0 gold labels of any kind exist (§17.1), so there is no held-out gold split to
+evaluate classification, extraction, entity resolution, or retrieval against. No table below
+is fabricated or estimated from silver data relabelled as gold. All existing silver-vs-silver
+numbers (classification, extraction, entity resolution, retrieval) are unchanged from §6/§7 of
+this report and `docs/evaluation/phase-2-evaluation.md` — re-run once more for reproducibility
+only (§17.4), not re-evaluated against anything new. Gate 9 stays
+**PENDING_HUMAN_REVIEW**, not PARTIAL: PARTIAL would imply partial gold coverage exists to
+report a number against, and none does.
+
+### 17.3 Evidence not yet shown
+
+**PDF pages per version, 15 largest PDFs (PyMuPDF vs stored, real query against this branch's
+database):**
+```
+source_id       doc_type                              bytes  stored_pages
+thermax_ir      annual_report                       13358993           217
+dmart_ir        investor_presentation                3564259            13
+mastek_ir       shareholding_pattern                 2259252             5
+brightcom_ir    annual_report                         1932129           122
+sebi            sebi_interim_order                    1247907            29
+sebi            sebi_confirmatory_order                978834            33
+sebi            sebi_related_document                  907087            32
+spicejet_ir     shareholding_pattern                   848284             4
+vakrangee_ir    auditor_resignation_company_update     512753             2
+jetairways_ir   shareholding_pattern                   503265             7
+care            rating_rationale                       495362            17
+lichousing_ir   shareholding_pattern                   492014             8
+vakrangee_ir    auditor_resignation_letter              250640             1
+vakrangee_ir    reg30_intimation                        237412             1
+ibbi            nclt_order                              178066            22
+```
+Identical to the PyMuPDF-vs-stored preflight check already run in §4a (0 mismatches) — these
+are the same 15 PDFs, re-confirmed by direct SQL this session.
+
+**Zero-page versions by mime type:**
+```sql
+SELECT dv.mime_type, COUNT(*) FROM document_versions dv
+LEFT JOIN document_pages dp ON dp.version_id = dv.id WHERE dp.id IS NULL
+GROUP BY dv.mime_type;
+ -> ('application/zip', 434)
+```
+Expected, not a defect: bhavcopy ZIP content is parsed into `price_bars`, never
+`document_pages` (documented in the Phase 1 report, lines 336/564). No other mime type has any
+zero-page version.
+
+**Version-churn fix test results (raw, re-printed from `docs/phase-2/evidence/`):**
+```
+tests/test_content_identity.py::test_same_inner_content_different_zip_timestamp_has_same_identity_hash PASSED
+tests/test_content_identity.py::test_genuinely_different_inner_content_has_different_identity_hash PASSED
+tests/test_content_identity.py::test_non_zip_non_html_content_identity_is_the_raw_bytes PASSED
+tests/test_content_identity.py::test_multi_entry_zip_falls_back_to_raw_bytes PASSED
+tests/test_content_identity.py::test_malformed_zip_falls_back_to_raw_bytes PASSED
+tests/test_content_identity.py::test_csrf_token_and_randomized_dom_id_do_not_change_identity_hash PASSED
+tests/test_content_identity.py::test_duplicated_title_text_in_body_does_not_change_identity_hash PASSED
+tests/test_content_identity.py::test_genuinely_different_html_text_has_different_identity_hash PASSED
+tests/test_content_identity.py::test_script_and_style_tags_are_fully_excluded_from_html_identity PASSED
+9 passed in 0.58s
+
+tests/test_upsert_content_identity.py::test_jittered_zip_timestamp_does_not_create_a_second_version PASSED
+tests/test_upsert_content_identity.py::test_churning_html_csrf_token_does_not_create_a_second_version PASSED
+2 passed in 3.91s
+```
+
+**Phase 1 §18 items and current status:**
+
+| # | Phase 1 §18 item | Current status |
+|---|---|---|
+| 1 | 11 spurious ZIP-jitter `DocumentVersion` rows left in place, not merged/cleaned up | **Unchanged** — still not merged; still a pending decision, not made unilaterally, since it has FK implications |
+| 2 | 4 dynamic-HTML-token duplicate versions, not fixed, "unlikely to be fixable generically" | **RESOLVED in Phase 2 preflight** — fixed in commit `22c41bb` (§4b); all 4 real documents now collapse to 1 distinct hash each |
+| 3 | Retry/dead-letter attempt-tracking proven correct but not wired per-item into live ingestion jobs | **Unchanged** — Phase 2 did not touch ingestion jobs; still deferred |
+| 4 | pre-commit `mypy`/`pytest-fast` hooks hardcode the Windows venv path | **Unchanged** — same caveat stands; this environment is still Windows-only |
+
+**Knowledge statistics (events by type/status, fields by validation_status, entities by type,
+auto-links vs review items — re-queried this session):**
+```
+events:        AUD_RESIGN / candidate: 4
+event_fields:  validated: 7
+entities:      company: 12, audit_firm: 1
+entity_links:  normalized_name/active: 2, manual/active: 1   (3 auto-links, 0 in review)
+review_queue:  0 open items of any reason_code
+```
+
+**Model choices, checkpoints, licences, fine-tuning decision:** unchanged from §8 — repeated
+here for completeness: `BAAI/bge-small-en-v1.5` (MIT, embeddings), `rank_bm25.BM25Okapi`
+(Apache-2.0, lexical), `MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli` (MIT, zero-shot),
+`tfidf-logreg-event-classifier` v1 (locally trained, in `model_registry`),
+`rapidfuzz.fuzz.token_sort_ratio` (MIT, entity fuzzy scoring). Fine-tuning: not attempted,
+28 max positives/class vs a 50 threshold (§7a).
+
+**LLM extractor status:** not run. `status="not_run"`, 0 calls, $0.00 cost -- no `LLM_PROVIDER`
+key configured in this environment (§9, unchanged).
+
+**Adversarial test names and results (re-run this session):**
+```
+tests/test_extraction_adversarial.py::test_injected_instructions_yield_no_extra_fields PASSED
+tests/test_extraction_adversarial.py::test_injected_instructions_do_not_bypass_evidence_verification PASSED
+tests/test_extraction_adversarial.py::test_invented_value_not_present_in_span_is_rejected_name PASSED
+tests/test_extraction_adversarial.py::test_invented_value_not_present_in_span_is_rejected_date PASSED
+tests/test_extraction_adversarial.py::test_invented_value_not_present_in_span_is_rejected_number PASSED
+tests/test_extraction_adversarial.py::test_extractor_never_executes_html_or_script_content_as_instructions PASSED
+6 passed in 0.30s
+```
+
+**Open review_queue count by reason_code:** 0 open items of any reason_code (table re-queried
+directly this session; empty result set).
+
+### 17.4 Reproducibility: re-running `evaluate.py` on the same snapshot
+
+`scripts/evaluate.py` re-run in full (rules_baseline, tfidf_lr, DeBERTa zero-shot, production
+selection, test report) against the identical validation/test split and the identical
+`tfidf_lr` model (`data/models/tfidf_lr_v1.pkl`, unchanged). Diffed against the prior full run
+(`docs/phase-2/evidence/evaluate-run-final.log` vs
+`docs/phase-2/evidence/evaluate-run-rerun-for-reproducibility.log`):
+
+```
+$ diff docs/phase-2/evidence/evaluate-run-final.log docs/phase-2/evidence/evaluate-run-rerun-for-reproducibility.log
+52c52
+< Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]Loading weights:  19%|#9        | 39/202 [00:00<00:00, 364.92it/s]Loading weights:  38%|###8      | 77/202 [00:00<00:00, 371.23it/s]Loading weights: 100%|##########| 202/202 [00:00<00:00, 915.10it/s]
+---
+> Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]Loading weights:  29%|##9       | 59/202 [00:00<00:00, 576.72it/s]Loading weights:  58%|#####7    | 117/202 [00:00<00:00, 438.19it/s]Loading weights: 100%|##########| 202/202 [00:00<00:00, 769.96it/s]
+```
+
+The only diff line is the weight-loading progress bar's own throughput readout (`it/s`, a
+timing artifact of that one run, not a metric) -- every substantive line (fine-tuning
+decision, all three methods' per-class precision/recall/F1/support, all three confusion
+matrices, the DeBERTa confidence range, the selected production classifier, and the test-set
+report) is byte-identical across both runs, confirming full reproducibility including
+`deberta_zero_shot` (frozen weights, non-stochastic greedy decoding), not just the two
+already-deterministic methods checked in the prior session
+(`docs/phase-2/evidence/evaluate-reproducibility-check.log`).
+
+### 17.5 Final checks (this completion pass)
+
+```
+ruff check .           -> All checks passed!
+ruff format --check .  -> 137 files already formatted
+mypy                    -> Success: no issues found in 73 source files
+pytest -q               -> 183 passed, 49 deselected
+pytest -q -m integration -> 47 passed, 185 deselected
+pytest -q -m corpus      -> 2 passed, 230 deselected
+```
+Total: 232 passing, 0 failing.
+
+```
+pre-commit run --all-files:
+ruff...................................................................................Passed
+ruff-format.............................................................................Passed
+Detect hardcoded secrets.................................................................Passed
+check for added large files..............................................................Passed
+reject staged files under data/raw, data/interim, data/processed........................Passed
+mypy (project venv -- avoids a second, heavy isolated env)...............................Passed
+```
+
+```
+gitleaks detect --source . --log-opts="--all":
+28 commits scanned.
+scan completed in 1.43s
+no leaks found
+```
+
+```
+alembic check:
+No new upgrade operations detected.
+```
+
+### 17.6 Exit gates, re-marked (completion pass)
+
+| # | Gate | Status | Evidence |
+|---|---|---|---|
+| 1 | Preflight (branch, baseline checks, PDF integrity, HTML churn fix) | PASS | §4, §17.3 |
+| 2 | Migrations apply from empty and match models with 0 drift | PASS | §17.5 |
+| 3 | Taxonomy v1.0 loaded from file, never hand-inserted, boundary-tested | PASS | §1, 23 threshold tests |
+| 4 | 3 classifiers compared on validation, once on test, support counts + fine-tuning justification | PASS (silver only) | §7a-c, §17.4 |
+| 5 | Span-cited extraction with verified evidence, failures queued not promoted | PASS (silver only) | §7d, §17.3 |
+| 6 | Entity resolution: conflicts queued, merges reversible, evaluated (or honestly not run) | PASS, pairwise eval honestly not run | §7e, §17.3 |
+| 7 | Point-in-time-correct hybrid retrieval, evaluated on all 3 methods | PASS (silver only) | §7f |
+| 8 | Idempotent/reproducible pipeline, model_registry populated | PASS | §17.1 model_registry row, §17.4 |
+| 9 | Gold metrics OR PENDING_HUMAN_REVIEW | **PENDING_HUMAN_REVIEW** -- 0 gold items exist, every class 0 positives; not PARTIAL (no partial gold coverage to report) | §17.1, §17.2 |
+| 10 | All tests/checks/adversarial tests passing, clean secret scan | PASS -- 232 tests, 6 adversarial tests, clean gitleaks | §17.3, §17.5 |
+| 11 | Committed locally, no AI attribution, bundle verified, nothing pushed | PASS | §14, this section's own commit |
+
+No gate regressed. Gate 9 is unchanged from the original report (`PENDING_HUMAN_REVIEW`) --
+this completion pass could not move it to PASS or PARTIAL because the one and only thing that
+would have moved it (a real human running `label_review.py`) did not happen in this session,
+and the model correctly declined to perform that step itself.
