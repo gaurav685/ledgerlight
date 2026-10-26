@@ -1,0 +1,28 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.15, pytest-8.4.2, pluggy-1.7.0 -- C:\ledger light\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\ledger light
+configfile: pyproject.toml
+plugins: anyio-4.15.1, platformdirs-4.13.5, cov-5.0.0, respx-0.21.1
+collecting ... collected 18 items
+
+tests/test_entity_resolution.py::test_normalize_strips_legal_suffix_limited PASSED [  5%]
+tests/test_entity_resolution.py::test_normalize_strips_pvt_ltd PASSED    [ 11%]
+tests/test_entity_resolution.py::test_normalize_strips_llp_and_co PASSED [ 16%]
+tests/test_entity_resolution.py::test_normalize_strips_honorific PASSED  [ 22%]
+tests/test_entity_resolution.py::test_normalize_collapses_punctuation_and_whitespace PASSED [ 27%]
+tests/test_entity_resolution.py::test_normalize_is_case_insensitive PASSED [ 33%]
+tests/test_entity_resolution.py::test_exact_identifier_match_wins_even_with_different_surface_name PASSED [ 38%]
+tests/test_entity_resolution.py::test_normalized_name_exact_match_when_no_identifier PASSED [ 44%]
+tests/test_entity_resolution.py::test_fuzzy_match_above_auto_link_threshold PASSED [ 50%]
+tests/test_entity_resolution.py::test_fuzzy_match_in_review_band PASSED  [ 55%]
+tests/test_entity_resolution.py::test_fuzzy_match_below_review_threshold_is_rejected PASSED [ 61%]
+tests/test_entity_resolution.py::test_no_candidates_at_all_is_rejected_not_linked PASSED [ 66%]
+tests/test_entity_resolution.py::test_ambiguous_identifier_match_goes_to_review_never_auto_link PASSED [ 72%]
+tests/test_entity_resolution.py::test_identifier_conflict_detected_for_mismatched_name PASSED [ 77%]
+tests/test_entity_resolution.py::test_no_conflict_when_name_matches_after_normalization PASSED [ 83%]
+tests/test_entity_resolution.py::test_merge_then_unmerge_is_reversible PASSED [ 88%]
+tests/test_entity_resolution.py::test_cannot_unmerge_twice PASSED        [ 94%]
+tests/test_entity_resolution.py::test_unmerge_unknown_merge_id_raises PASSED [100%]
+
+============================= 18 passed in 2.04s ==============================

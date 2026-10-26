@@ -1,0 +1,26 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.15, pytest-8.4.2, pluggy-1.7.0 -- C:\ledger light\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\ledger light
+configfile: pyproject.toml
+plugins: anyio-4.15.1, platformdirs-4.13.5, cov-5.0.0, respx-0.21.1
+collecting ... collected 16 items
+
+tests/test_evidence.py::test_name_verifies_against_real_corpus_shaped_span PASSED [  6%]
+tests/test_evidence.py::test_name_verification_is_case_insensitive PASSED [ 12%]
+tests/test_evidence.py::test_name_verification_collapses_whitespace PASSED [ 18%]
+tests/test_evidence.py::test_name_not_in_span_fails PASSED               [ 25%]
+tests/test_evidence.py::test_name_invented_value_not_present_anywhere_fails PASSED [ 31%]
+tests/test_evidence.py::test_empty_span_is_unverifiable PASSED           [ 37%]
+tests/test_evidence.py::test_date_verifies_against_dd_mon_yyyy_format PASSED [ 43%]
+tests/test_evidence.py::test_date_verifies_against_iso_format PASSED     [ 50%]
+tests/test_evidence.py::test_date_mismatch_fails PASSED                  [ 56%]
+tests/test_evidence.py::test_date_with_no_date_in_span_is_unverifiable PASSED [ 62%]
+tests/test_evidence.py::test_number_exact_match_validates PASSED         [ 68%]
+tests/test_evidence.py::test_number_within_tolerance_validates PASSED    [ 75%]
+tests/test_evidence.py::test_number_outside_tolerance_fails PASSED       [ 81%]
+tests/test_evidence.py::test_number_handles_thousands_separators PASSED  [ 87%]
+tests/test_evidence.py::test_number_no_numbers_in_span_is_unverifiable PASSED [ 93%]
+tests/test_evidence.py::test_number_invented_value_not_present_fails PASSED [100%]
+
+============================= 16 passed in 0.19s ==============================

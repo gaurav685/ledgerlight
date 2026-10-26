@@ -63,6 +63,7 @@ node_modules/
 
 # --- Phase 2 knowledge-pipeline artifacts (rebuildable, never committed) ---
 data/indexes/
+data/models/
 .hf_cache/
 
 # --- OS / editor ---

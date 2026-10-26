@@ -1,0 +1,38 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.15, pytest-8.4.2, pluggy-1.7.0 -- C:\ledger light\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\ledger light
+configfile: pyproject.toml
+plugins: anyio-4.15.1, platformdirs-4.13.5, cov-5.0.0, respx-0.21.1
+collecting ... collected 28 items
+
+tests/test_extraction_schemas.py::test_all_nine_non_deferred_event_types_have_a_schema PASSED [  3%]
+tests/test_extraction_schemas.py::test_schema_allows_all_fields_missing[AudResignFields] PASSED [  7%]
+tests/test_extraction_schemas.py::test_schema_allows_all_fields_missing[KmpExitFields] PASSED [ 10%]
+tests/test_extraction_schemas.py::test_schema_allows_all_fields_missing[IdExitFields] PASSED [ 14%]
+tests/test_extraction_schemas.py::test_schema_allows_all_fields_missing[PledgeUpFields] PASSED [ 17%]
+tests/test_extraction_schemas.py::test_schema_allows_all_fields_missing[RatingActFields] PASSED [ 21%]
+tests/test_extraction_schemas.py::test_schema_allows_all_fields_missing[AuditQualFields] PASSED [ 25%]
+tests/test_extraction_schemas.py::test_schema_allows_all_fields_missing[ForensicFields] PASSED [ 28%]
+tests/test_extraction_schemas.py::test_schema_allows_all_fields_missing[RptGrowthFields] PASSED [ 32%]
+tests/test_extraction_schemas.py::test_schema_allows_all_fields_missing[ResultDelayFields] PASSED [ 35%]
+tests/test_extraction_schemas.py::test_schema_rejects_unknown_extra_field[AudResignFields] PASSED [ 39%]
+tests/test_extraction_schemas.py::test_schema_rejects_unknown_extra_field[KmpExitFields] PASSED [ 42%]
+tests/test_extraction_schemas.py::test_schema_rejects_unknown_extra_field[IdExitFields] PASSED [ 46%]
+tests/test_extraction_schemas.py::test_schema_rejects_unknown_extra_field[PledgeUpFields] PASSED [ 50%]
+tests/test_extraction_schemas.py::test_schema_rejects_unknown_extra_field[RatingActFields] PASSED [ 53%]
+tests/test_extraction_schemas.py::test_schema_rejects_unknown_extra_field[AuditQualFields] PASSED [ 57%]
+tests/test_extraction_schemas.py::test_schema_rejects_unknown_extra_field[ForensicFields] PASSED [ 60%]
+tests/test_extraction_schemas.py::test_schema_rejects_unknown_extra_field[RptGrowthFields] PASSED [ 64%]
+tests/test_extraction_schemas.py::test_schema_rejects_unknown_extra_field[ResultDelayFields] PASSED [ 67%]
+tests/test_extraction_schemas.py::test_aud_resign_accepts_real_shaped_values PASSED [ 71%]
+tests/test_extraction_schemas.py::test_kmp_exit_din_as_string_not_coerced_to_int PASSED [ 75%]
+tests/test_extraction_schemas.py::test_id_exit_defaults PASSED           [ 78%]
+tests/test_extraction_schemas.py::test_pledge_up_decimal_precision_preserved PASSED [ 82%]
+tests/test_extraction_schemas.py::test_rating_act_fields PASSED          [ 85%]
+tests/test_extraction_schemas.py::test_audit_qual_opinion_type_is_free_text_not_an_enum PASSED [ 89%]
+tests/test_extraction_schemas.py::test_forensic_fields PASSED            [ 92%]
+tests/test_extraction_schemas.py::test_rpt_growth_decimal_amount PASSED  [ 96%]
+tests/test_extraction_schemas.py::test_result_delay_fields PASSED        [100%]
+
+============================= 28 passed in 0.83s ==============================
