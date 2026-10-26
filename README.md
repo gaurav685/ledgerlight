@@ -100,7 +100,7 @@ All commands are exposed as `uv run <script>` entry points (see
 | `uv run python scripts/ingest_report.py` | Per-source health / dead-letter / failure-class report |
 | `uv run dagster dev -m ledgerlight.orchestration.definitions` | Dagster webserver (needs `DAGSTER_HOME`, see `docs/ingestion/runbook.md`) |
 
-A `Makefile` wraps these as `make setup|lint|typecheck|test|verify-env|verify-manifests|acquire-seed|infra-up|infra-check|infra-down|db-upgrade|sources-sync|store-backfill|ingest|backfill|process|reprocess|ingest-report|dagster-dev|test-integration|test-corpus`.
+A `Makefile` wraps these as `make setup|lint|typecheck|test|verify-env|verify-manifests|acquire-seed|infra-up|infra-check|infra-down|db-upgrade|sources-sync|store-backfill|ingest|backfill|process|reprocess|ingest-report|dagster-dev|test-integration|test-corpus`, plus the Phase 2 targets `taxonomy-load|bootstrap-companies|link-filings|chunk-corpus|embed-chunks|build-bm25-index|labels-propose|label-review|labels-split|train-classifier|evaluate|extract|resolve-entities|retrieval-eval|review-queue|knowledge-pipeline` (see `docs/phase-2/phase-2-report.md`).
 
 ## Data policy
 
@@ -131,7 +131,7 @@ A `Makefile` wraps these as `make setup|lint|typecheck|test|verify-env|verify-ma
 ```
 ledgerlight/        Python package (config, acquisition, common)
 scripts/             verify_env, verify_manifests, acquire_seed, import_local, infra_check
-docs/                adr/, data/, phase-0/
+docs/                adr/, data/, knowledge/, evaluation/, phase-0/, phase-1/, phase-2/
 data/                raw/ interim/ processed/ inbox/ (all gitignored) + manifests/ (committed)
 infra/               docker-compose.yml (Postgres+pgvector, Garage S3-compatible storage)
 tests/               unit tests (network tests marked and excluded by default)
