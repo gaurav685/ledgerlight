@@ -80,7 +80,7 @@ def train_tfidf_lr(texts: list[str], labels: list[str]) -> TfidfLrModel:
 
     vectorizer = TfidfVectorizer(max_features=5000, ngram_range=(1, 2), min_df=1)
     x = vectorizer.fit_transform(texts)
-    classifier = LogisticRegression(max_iter=1000, class_weight="balanced")
+    classifier = LogisticRegression(max_iter=1000, class_weight="balanced", random_state=42)
     classifier.fit(x, labels)
     return TfidfLrModel(
         vectorizer=vectorizer, classifier=classifier, classes=list(classifier.classes_)

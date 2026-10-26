@@ -1,0 +1,92 @@
+C:\ledger light\.venv\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+validation examples: 112
+test examples: 14
+
+--- fine-tuning decision ---
+positives per class (dev+validation+test combined): {'RPT_GROWTH': 22, 'FORENSIC': 7, 'PLEDGE_UP': 28, 'ID_EXIT': 6, 'none': 154, 'RESULT_DELAY': 4, 'KMP_EXIT': 2, 'AUDIT_QUAL': 8, 'RATING_ACT': 4, 'AUD_RESIGN': 6}
+fine-tune threshold: >= 50 positives/class
+max positives in any non-'none' class: 28 -- does NOT meet the threshold. Decision: zero-shot only, no fine-tuning attempted.
+
+=== VALIDATION ===
+
+-- rules_baseline (n=112) --
+label             precision   recall       f1  support
+AUD_RESIGN            1.000    1.000    1.000        2
+KMP_EXIT              1.000    1.000    1.000        1
+ID_EXIT               1.000    1.000    1.000        4
+RESULT_DELAY          1.000    1.000    1.000        1
+AUDIT_QUAL            1.000    1.000    1.000        5
+RPT_GROWTH            1.000    1.000    1.000        9
+none                  1.000    1.000    1.000       90
+macro_f1: 1.000
+confusion_matrix (rows=true, cols=pred, order=['AUD_RESIGN', 'KMP_EXIT', 'ID_EXIT', 'RESULT_DELAY', 'AUDIT_QUAL', 'RPT_GROWTH', 'none']):
+     2    0    0    0    0    0    0
+     0    1    0    0    0    0    0
+     0    0    4    0    0    0    0
+     0    0    0    1    0    0    0
+     0    0    0    0    5    0    0
+     0    0    0    0    0    9    0
+     0    0    0    0    0    0   90
+
+-- tfidf_lr (n=112) --
+label             precision   recall       f1  support
+AUD_RESIGN            0.000    0.000    0.000        2
+PLEDGE_UP             0.000    0.000    0.000        0
+KMP_EXIT              0.000    0.000    0.000        1
+ID_EXIT               0.500    0.250    0.333        4
+RESULT_DELAY          0.000    0.000    0.000        1
+AUDIT_QUAL            1.000    0.200    0.333        5
+RPT_GROWTH            0.294    0.556    0.385        9
+none                  0.889    0.889    0.889       90
+macro_f1: 0.243
+confusion_matrix (rows=true, cols=pred, order=['AUD_RESIGN', 'PLEDGE_UP', 'KMP_EXIT', 'ID_EXIT', 'RESULT_DELAY', 'AUDIT_QUAL', 'RPT_GROWTH', 'none']):
+     0    0    0    0    0    0    1    1
+     0    0    0    0    0    0    0    0
+     0    0    0    1    0    0    0    0
+     0    0    0    1    0    0    3    0
+     0    0    0    0    0    0    0    1
+     0    0    0    0    0    1    0    4
+     0    0    0    0    0    0    5    4
+     0    1    1    0    0    0    8   80
+Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]Loading weights:  19%|#9        | 39/202 [00:00<00:00, 364.92it/s]Loading weights:  38%|###8      | 77/202 [00:00<00:00, 371.23it/s]Loading weights: 100%|##########| 202/202 [00:00<00:00, 915.10it/s]
+
+-- deberta_zero_shot (n=112) --
+label             precision   recall       f1  support
+AUD_RESIGN            0.000    0.000    0.000        2
+KMP_EXIT              0.000    0.000    0.000        1
+ID_EXIT               0.000    0.000    0.000        4
+RESULT_DELAY          0.000    0.000    0.000        1
+AUDIT_QUAL            0.286    0.400    0.333        5
+RPT_GROWTH            0.000    0.000    0.000        9
+none                  0.842    0.944    0.890       90
+macro_f1: 0.175
+confusion_matrix (rows=true, cols=pred, order=['AUD_RESIGN', 'KMP_EXIT', 'ID_EXIT', 'RESULT_DELAY', 'AUDIT_QUAL', 'RPT_GROWTH', 'none']):
+     0    1    0    0    0    0    1
+     0    0    1    0    0    0    0
+     0    2    0    0    0    0    2
+     0    0    0    0    0    0    1
+     0    0    0    0    2    0    3
+     0    0    0    0    0    0    9
+     0    0    0    0    5    0   85
+
+-- DeBERTa confidence distribution (validation) --
+  min=0.159 max=0.874 mean=0.343
+  (sample sizes per class are too small, 2-28 positives, for a reliable calibration curve -- not computed; reporting the raw confidence range instead)
+
+=== Selected production classifier (by validation macro_f1): rules_baseline (macro_f1=1.000) ===
+
+=== TEST (reported once, selected method only) ===
+
+-- rules_baseline_TEST (n=14) --
+label             precision   recall       f1  support
+AUD_RESIGN            1.000    1.000    1.000        4
+PLEDGE_UP             1.000    1.000    1.000        2
+ID_EXIT               1.000    1.000    1.000        1
+none                  1.000    1.000    1.000        7
+macro_f1: 1.000
+confusion_matrix (rows=true, cols=pred, order=['AUD_RESIGN', 'PLEDGE_UP', 'ID_EXIT', 'none']):
+     4    0    0    0
+     0    2    0    0
+     0    0    1    0
+     0    0    0    7
