@@ -79,12 +79,18 @@ def test_exact_identifier_match_wins_even_with_different_surface_name(db_session
 
 
 def test_normalized_name_exact_match_when_no_identifier(db_session: Session) -> None:
+    # Deliberately not a real firm name already bootstrapped from the
+    # real corpus (e.g. "Price Waterhouse & Co...") -- this test's
+    # db_session shares a transaction view with already-committed real
+    # entities, so reusing a real display name here would make this
+    # entity ambiguous against the real one and always resolve to
+    # "review" instead of "auto_link", regardless of this test's logic.
     entity = _make_entity(
-        db_session, "audit_firm", "Price Waterhouse & Co Chartered Accountants LLP"
+        db_session, "audit_firm", "Northfield Waterhouse & Co Chartered Accountants LLP"
     )
     result = resolve_mention(
         db_session,
-        surface_text="Price Waterhouse & Co. Chartered Accountants LLP",
+        surface_text="Northfield Waterhouse & Co. Chartered Accountants LLP",
         entity_type="audit_firm",
     )
     assert result.decision == "auto_link"

@@ -25,10 +25,19 @@ rationale tables, RPT-note figures) beyond what this phase built.
 Documented honestly here rather than stubbed with invented logic — see
 the Phase 2 report's limitations section.
 
-**Optional LLM extractor.** Gated on `LLM_PROVIDER` and an API key being
-present in `.env`. If absent: "not run", never faked. See
-`ledgerlight/knowledge/llm_extraction.py` (not implemented in this phase
-— no LLM_PROVIDER key is configured; see the Phase 2 report §9).
+**Optional LLM extractor.** `ledgerlight/knowledge/llm_extraction.py`:
+gated on `LLM_PROVIDER` and a matching `<PROVIDER>_API_KEY` being
+present in the environment; schema-validated against
+`extraction_schemas` (`extra="forbid"`), no tool access, cost-capped
+per call, document text passed only inside a delimited `<document>`
+section with an explicit instruction to ignore anything instruction-
+like found inside it. No `LLM_PROVIDER` is configured in this
+environment, so every real run reports `status="not_run"` (never a
+faked result) -- the only path this phase actually exercises. The
+real-provider call path exists but intentionally raises
+`NotImplementedError` (no provider client is wired up yet) rather than
+being exercised without ever having been run for real; see the Phase 2
+report §9.
 
 ## Evidence verification
 
