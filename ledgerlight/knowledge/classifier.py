@@ -14,6 +14,7 @@ human-gold-review checkpoint.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -100,6 +101,13 @@ _zero_shot_pipeline: Pipeline | None = None
 def _get_zero_shot_pipeline() -> Pipeline:
     global _zero_shot_pipeline
     if _zero_shot_pipeline is None:
+        # Real bug found running this for real: with TOKENIZERS_PARALLELISM
+        # unset, the Rust `tokenizers` backend spawns a parallel worker that,
+        # on this machine, resolved to an unrelated system Python install
+        # instead of this venv's interpreter -- turning a ~20-minute CPU
+        # workload (126 examples) into a 13+ hour stall. Must be set before
+        # the pipeline is constructed.
+        os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
         from transformers import pipeline
 
         _zero_shot_pipeline = pipeline(
