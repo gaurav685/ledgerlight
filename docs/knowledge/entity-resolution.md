@@ -68,6 +68,15 @@ matching-order precedence for real, not just in a unit test. Idempotent.
    `"vakrangee"` and correctly short-circuit at the normalized-name
    stage instead, which is the matching order working as designed.
    Fixed the test's example, not the code.
+3. A later test (`test_normalized_name_exact_match_when_no_identifier`)
+   hardcoded the exact real firm name above as its own fixture entity.
+   Because this suite's `db_session` fixture shares a transaction view
+   with already-committed real rows, the real corpus's own audit_firm
+   entity and the test's local one became two genuinely ambiguous
+   normalized-name candidates, so the code correctly returned "review"
+   instead of "auto_link" — a test-isolation bug, not a resolution bug.
+   Fixed by giving the test a synthetic firm name that cannot collide
+   with anything the real pipeline has actually bootstrapped.
 
 ## Validated symbol/name change over time
 
