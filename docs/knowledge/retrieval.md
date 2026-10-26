@@ -20,7 +20,11 @@ Postgres-side full-text filtering.
 ## Vector
 
 A local CPU sentence-embedding model, `BAAI/bge-small-en-v1.5` (MIT
-licensed, 384-dim), via `sentence-transformers`. Model name/version are
+licensed, 384-dim), via `sentence-transformers`. Fetched automatically
+on first use into the OS-default Hugging Face cache
+(`~/.cache/huggingface/hub`, outside this repo) -- nothing to gitignore
+inside the repo for it; re-fetching on a new machine needs only network
+access to huggingface.co the first time a script imports this module. Model name/version are
 recorded on every `chunks` row (`embedding_model_name`/
 `embedding_model_version`) so a future re-embed under a different model
 is traceable, not silent. Stored in `pgvector` (`Vector(384)`), queried

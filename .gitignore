@@ -62,9 +62,12 @@ node_modules/
 .uv-cache/
 
 # --- Phase 2 knowledge-pipeline artifacts (rebuildable, never committed) ---
+# Pretrained model weights (bge-small-en-v1.5, DeBERTa-v3) are fetched by
+# sentence-transformers/transformers on first use into the OS-default
+# Hugging Face cache (~/.cache/huggingface/hub on this machine), not into
+# this repo -- nothing under the repo root needs gitignoring for them.
 data/indexes/
 data/models/
-.hf_cache/
 
 # --- OS / editor ---
 .DS_Store
