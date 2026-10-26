@@ -61,8 +61,9 @@ Verified against two independent sources, not assumed from memory:
 
 Full definitions, optional fields, severity rules and exact thresholds
 are in `data/taxonomy/taxonomy-v1.0.yaml` — see
-`ledgerlight/knowledge/taxonomy.py` for the three thresholds implemented
-as real, boundary-tested code (PLEDGE_UP, RESULT_DELAY, RPT_GROWTH) and
+`ledgerlight/knowledge/taxonomy.py` for the four thresholds implemented
+as real, boundary-tested code (PLEDGE_UP, RESULT_DELAY, RPT_GROWTH,
+AUDIT_QUAL's qualification/severity rules) and
 `ledgerlight/knowledge/evidence.py`/`extraction_schemas.py` for how
 AUDIT_QUAL's emphasis-of-matter exclusion is enforced in code.
 
