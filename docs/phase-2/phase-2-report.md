@@ -901,3 +901,341 @@ No new upgrade operations detected.
 Gate 9 is still `PENDING_HUMAN_REVIEW` -- this change only builds the sample and the tooling;
 it does not review anything. 42 new items are now queued for Gaurav in the manifest, in
 addition to whatever of the original 203 he chooses to review outside the sample.
+
+## 19. Gold evaluation executed (80-item review complete)
+
+Gaurav completed all 80 sample items (verified against the database, not taken on claim):
+50 accepted, 25 corrected, 2 rejected, 3 skipped.
+
+### 19.1 Label status
+
+By decision:
+```
+SQL: SELECT review_status, COUNT(*) FROM label_items WHERE reviewer ILIKE 'gaurav' GROUP BY review_status;
+corrected: 25   skipped: 3   rejected: 2   accepted: 50
+```
+
+By split (all 80, including skipped):
+```
+SQL: SELECT split, COUNT(*) FROM label_items WHERE reviewer ILIKE 'gaurav' GROUP BY split;
+validation: 45   dev: 21   test: 14
+```
+45 validation = 42 decided + 3 skipped (all 3 skips are validation-split `AUDIT_QUAL` items).
+
+By final event class (decided, non-rejected, non-skipped -- corrected items count under their
+corrected code; n=75):
+```
+SQL: SELECT COALESCE(corrected_event_type_code, proposed_event_type_code) AS final_class, COUNT(*)
+     FROM label_items WHERE reviewer ILIKE 'gaurav' AND review_status NOT IN ('rejected','skipped')
+     GROUP BY final_class ORDER BY 2 DESC;
+none: 58   AUD_RESIGN: 5   RPT_GROWTH: 4   KMP_EXIT: 4   PLEDGE_UP: 3   ID_EXIT: 1
+```
+
+Skipped items (3, all excluded from every metric below): all `AUDIT_QUAL`-proposed,
+validation split. Notes: `"s"`, `"s"`, and one with no note. These are not informative review
+content -- quoted here in full since they're each under 15 words (one character), not
+truncated.
+
+### 19.2 Silver-label error rate
+
+Overall, all 77 decided items (any split): **error rate = (corrected + rejected) / decided =
+27 / 77 = 0.351**, bootstrap 95% CI [0.247, 0.455] (10,000 resamples, seed 42).
+
+Per proposed event type (decided count, errors, rate, CI; `n<5` flagged insufficient support):
+```
+class          decided errors   rate  ci_low ci_high  flag
+OVERALL             77     27  0.351   0.247   0.455
+none                41      4  0.098   0.024   0.195
+RPT_GROWTH          12      8  0.667   0.417   0.917
+PLEDGE_UP            7      4  0.571   0.143   0.857
+ID_EXIT              6      5  0.833   0.500   1.000
+AUD_RESIGN           6      2  0.333   0.000   0.667
+AUDIT_QUAL           2      2  1.000   1.000   1.000  insufficient support (n<5)
+FORENSIC             1      1  1.000   1.000   1.000  insufficient support (n<5)
+KMP_EXIT             1      0  0.000   0.000   0.000  insufficient support (n<5)
+RESULT_DELAY         1      1  1.000   1.000   1.000  insufficient support (n<5)
+RATING_ACT           0      0    n/a     n/a     n/a  insufficient support (n=0, never reviewed)
+```
+
+Confusion table, proposed -> final (accepted + corrected only; rejected shown separately since
+a rejection has no valid final class):
+```
+proposed       -> final class (count)
+AUD_RESIGN     -> AUD_RESIGN:4  KMP_EXIT:1  none:1                    (decided: 6)
+PLEDGE_UP      -> PLEDGE_UP:3  none:4                                 (decided: 7)
+KMP_EXIT       -> KMP_EXIT:1                                          (decided: 1)
+ID_EXIT        -> ID_EXIT:1  KMP_EXIT:1  none:4                       (decided: 6)
+RATING_ACT     -> (never reviewed)                                    (decided: 0)
+RESULT_DELAY   -> none:1                                              (decided: 1)
+AUDIT_QUAL     -> none:2                                               (decided: 2)
+FORENSIC       -> REJECTED:1                                          (decided: 1)
+RPT_GROWTH     -> RPT_GROWTH:4  none:8                                (decided: 12)
+none           -> none:38  KMP_EXIT:1  AUD_RESIGN:1  REJECTED:1      (decided: 41)
+```
+
+**Most common error patterns** (no notes exist on corrected/rejected items -- the CLI only
+ever prompts for a note on `skip`, so there is nothing informative to quote beyond the 3 skip
+notes already shown in §19.1):
+- The keyword-rule proposer's dominant failure mode is **false positives on positive classes**:
+  `ID_EXIT` (83.3% error), `RPT_GROWTH` (66.7%), `PLEDGE_UP` (57.1%), and `AUDIT_QUAL` (2/2,
+  insufficient support) are all majority-wrong, and in every one of those corrections the
+  reviewer's final class was `none` -- the proposer is firing on keyword co-occurrence in
+  boilerplate/unrelated text (e.g. routine audit-report language for `AUDIT_QUAL`, generic
+  director-related text for `ID_EXIT`) without the real event actually being present.
+- `none` itself is comparatively well-calibrated (9.8% error, tight CI [2.4%, 19.5%], n=41) --
+  the proposer is good at recognizing when nothing is happening, just unreliable at naming
+  *which* positive event type when something keyword-matches.
+- 2 false negatives exist (proposer said `none`, reviewer found a real event: one corrected to
+  `AUD_RESIGN`, one to `KMP_EXIT`) -- rarer than false positives, but real, meaning the
+  proposer also misses genuine events, not just over-fires.
+- `AUD_RESIGN` (the one event type with a real extractor) sits at 33.3% error across dev+
+  validation -- better than the other positive classes, but far from clean; see §19.3 for how
+  this differs sharply from `AUD_RESIGN`'s performance on the frozen test split specifically.
+
+### 19.3 Classifier gold metrics -- frozen TEST split only (n=14)
+
+Never used for tuning; reported once. Gold final classes in test: `none` (9), `AUD_RESIGN`
+(4), `PLEDGE_UP` (1) -- every other class has 0 gold positives in test.
+
+```
+-- rules (n=14) --
+label        precision recall    f1 support  F1_95%CI
+AUD_RESIGN       1.000  1.000 1.000       4  [1.000, 1.000]
+PLEDGE_UP        0.500  1.000 0.667       1  [0.000, 1.000]  insufficient support (n<3)
+none             1.000  0.778 0.875       9  [0.625, 1.000]
+macro_f1: 0.635   macro_f1 95% CI: [0.432, 1.000]
+
+-- tfidf_lr (n=14) --
+label        precision recall    f1 support  F1_95%CI
+AUD_RESIGN       0.000  0.000 0.000       4  [0.000, 0.000]
+PLEDGE_UP        0.333  1.000 0.500       1  [0.000, 1.000]  insufficient support (n<3)
+none             0.600  0.667 0.632       9  [0.308, 0.833]
+macro_f1: 0.283   macro_f1 95% CI: [0.111, 0.544]
+
+-- deberta_zero_shot (n=14) --
+label        precision recall    f1 support  F1_95%CI
+AUD_RESIGN       1.000  1.000 1.000       4  [1.000, 1.000]
+PLEDGE_UP        0.000  0.000 0.000       1  [0.000, 0.000]  insufficient support (n<3)
+none             0.889  0.889 0.889       9  [0.700, 1.000]
+macro_f1: 0.472   macro_f1 95% CI: [0.417, 1.000]
+```
+(Bootstrap 95% CIs: 2000 resamples, seed 42, resampling the 14 paired gold/prediction tuples.
+Raw predictions: `docs/phase-2/evidence/gold-test-predictions.json`; full command output and
+confusion matrices: `docs/phase-2/evidence/gold-validation-metrics.log`'s sibling test-side
+computation and this section.)
+
+`ID_EXIT`, `KMP_EXIT`, `RATING_ACT`, `RESULT_DELAY`, `AUDIT_QUAL`, `FORENSIC`, `RPT_GROWTH`
+all have **0 gold positives in test** -- not evaluated, not estimated.
+
+**Validation-split gold, reported separately and clearly labelled (n=41 -- the subset Gaurav
+actually reviewed, NOT the full 111-item mixed silver+gold validation split used by the
+standard `evaluate` pipeline in §19.4):**
+```
+-- rules (n=41) --   macro_f1: 0.312
+-- tfidf_lr (n=41) -- macro_f1: 0.195
+-- deberta_zero_shot (n=41) -- macro_f1: 0.399
+```
+Full per-class tables: `docs/phase-2/evidence/gold-validation-metrics.log`.
+
+**Does this change classifier selection?** On this n=41 gold-only validation subset,
+`deberta_zero_shot` (0.399) edges out `rules_baseline` (0.312) -- a different winner than the
+standard pipeline's selection. **Selection is NOT changed.** Reasoning: the production
+selection mechanism (`scripts/evaluate.py`, §19.4) uses the full 111-item validation split,
+which is the authoritative, reproducible, already-documented selection criterion; the n=41
+gold-only slice is thin, has a different class mix (no `AUD_RESIGN` or `PLEDGE_UP` positives
+at all), and switching the selection mechanism on a small favorable subset would itself be a
+form of tuning-on-a-subset this report is trying to avoid. The gold-only result is reported as
+a signal to watch as more gold accumulates, not acted on now. This is documented, not silent.
+
+### 19.4 Silver correction impact
+
+**19.4.1 Estimated false positives among currently stored events.** Only `AUD_RESIGN` has any
+stored events (4, all `status=candidate`, per §6/§17.3). Applying `AUD_RESIGN`'s §19.2 error
+rate (0.333, CI [0.000, 0.667]) to those 4 events: **expected false positives ~= 1.3, 95% CI
+[0.0, 2.7]**. No other event type has any stored events to apply a rate to.
+
+**19.4.2 Recommendation (not implemented):** none of the 9 positive event types currently
+clear a bar I'd call "reliable enough to feed Phase 3 features as ground truth":
+- `ID_EXIT` (83.3% error), `RPT_GROWTH` (66.7%), `PLEDGE_UP` (57.1%) are all majority-wrong by
+  measured rate with real support (n>=6) -- **need stricter detection before Phase 3 use.**
+- `AUDIT_QUAL`, `FORENSIC`, `KMP_EXIT`, `RESULT_DELAY`, `RATING_ACT` have **insufficient
+  support** (n<5, three of them n<=1) -- not yet judgable either way.
+- `AUD_RESIGN` is the most promising (33.3% error, the one type with a real extractor, and a
+  clean 100% precision/recall on the frozen test split specifically) -- but its broader dev+
+  validation error rate (33%, CI up to 67%) shows the *silver proposal* stage still produces
+  real errors outside the small test sample. Recommend: AUD_RESIGN output sourced from
+  test-split-equivalent evidence can be trusted with lighter review; AUD_RESIGN output from
+  elsewhere in the corpus should still get a human spot-check before Phase 3 consumption,
+  not be treated as clean ground truth yet.
+- `none` is the one well-supported, low-error class (9.8%, CI [2.4%, 19.5%]) -- useful as a
+  negative filter, not as a source of positive-event ground truth (it has none to contribute).
+
+**19.4.3 Retraining on dev-split gold corrections.** `scripts/train_classifier.py` already
+supports this with no new code: `classifier_eval.load_split` has always used
+`corrected_event_type_code` when set and excluded `rejected` items, for whichever split it
+loads -- so simply re-running the existing retrain command on the `dev` split now picks up
+Gaurav's 21 real dev-split reviews automatically. Retrained:
+```
+$ python scripts/train_classifier.py
+dev examples: 114   (was 115 -- one dev item, originally silver, is now reviewer-rejected
+                      and correctly excluded by load_split)
+training_data_snapshot_hash: 2c69d820f0e1ba0a460703abbefabaaf3177001240db6ed83402ae5415ceba8a
+                      (differs from the pre-review hash 303c959d..., confirming the training
+                      set genuinely changed)
+```
+Old model backed up before retraining; `model_registry` row updated in place (same
+`model_name`/`model_version`, new `artifact_hash`/`training_data_snapshot_hash`) --
+`docs/phase-2/evidence/train-classifier-after-gold-dev-corrections.log`.
+
+**Before/after on validation -- two comparisons, because this is actually two different
+changes that happened at once, and conflating them would be misleading:**
+
+*(a) The "official" before/after* (what running `evaluate` literally shows, old vs new): old
+run used the pre-retrain model against the then-pure-silver 112-item validation split
+(`tfidf_lr` macro_f1 = 0.243, `docs/phase-2/evidence/evaluate-run-final.log`); the new run uses
+the retrained model against the now-partially-gold-corrected 111-item validation split (1
+fewer item: one validation `none` proposal is now reviewer-rejected and excluded) --
+`tfidf_lr` macro_f1 = 0.202 (`docs/phase-2/evidence/evaluate-run-after-gold-corrections.log`).
+**This -0.041 move is NOT purely a retraining effect** -- see (b).
+
+*(b) Isolated model-only comparison* (same current, gold-corrected validation labels for
+both, varying only the model -- raw output:
+`docs/phase-2/evidence/tfidf-before-after-retrain-isolated.log`):
+```
+tfidf_OLD_MODEL (pre-gold-dev-retrain) vs CURRENT validation labels: macro_f1 = 0.199
+tfidf_NEW_MODEL (post-gold-dev-retrain) vs CURRENT validation labels: macro_f1 = 0.202
+```
+Retraining on 21 dev-split gold corrections moved validation macro_f1 by **+0.003** -- a
+negligible, likely-noise-level change, not a regression and not a meaningful improvement.
+**Most of the (a) drop (0.243 -> ~0.199-0.202) is explained by the validation *labels*
+themselves changing** (silver mislabels corrected by review, one item excluded as rejected),
+not by the retrained model performing worse.
+
+A second, more striking silver-correction impact shows up in the *same* before/after: the
+rules-baseline's macro_f1 **collapsed from 1.000 (pure silver, perfectly circular -- it IS the
+labelling function) to 0.441** the moment real gold corrections entered the validation split
+(§19.3/§19.4.1's confusion matrices and the full-validation run in
+`evaluate-run-after-gold-corrections.log`). This is the clearest, most concrete demonstration
+in this report of why the brief insisted silver metrics never be reported as real accuracy.
+
+**Test stays untouched:** the test-split report in both the before and after `evaluate` runs
+is byte-identical (`AUD_RESIGN`/`PLEDGE_UP`/`none`, macro_f1 0.635 both times) -- test
+composition and gold labels didn't change between these runs, and nothing here was tuned
+against it.
+
+### 19.5 Gaps and evidence not yet shown (re-printed, still current)
+
+**Field/entity-pair/retrieval review gap** (verbatim from §18.3 / `docs/release/release-gates.md`):
+unchanged -- `label_item_fields` still has 0 rows; no entity-pair or retrieval-query review
+table exists. Still deferred to Phase 6; not built in this change either.
+
+**Preflight raw output** (unchanged since §4; re-verified this session):
+- 15 largest PDFs, PyMuPDF vs stored pages: 0 mismatches (§4a, re-confirmed by direct SQL in
+  §17.3).
+- Zero-page versions by mime type: `application/zip: 434` (expected -- bhavcopy content goes
+  to `price_bars`, never `document_pages`; Phase 1 report lines 336/564). No other mime type
+  has zero-page versions.
+- Version-churn fix test result (re-run this session):
+  ```
+  tests/test_content_identity.py -- 9 passed
+  tests/test_upsert_content_identity.py -- 2 passed
+  ```
+
+**Knowledge statistics** (re-queried this session, unchanged from §6/§17.3 -- review activity
+touches only `label_items`, not events/fields/entities):
+```
+events:        AUD_RESIGN / candidate: 4
+event_fields:  validated: 7
+entities:      company: 12, audit_firm: 1
+entity_links:  normalized_name/active: 2, manual/active: 1   (3 auto-links, 0 in review)
+review_queue:  0 open items of any reason_code
+```
+
+**Model checkpoints, versions, licences, fine-tuning decision** (unchanged from §8, restated):
+`BAAI/bge-small-en-v1.5` (MIT), `rank_bm25.BM25Okapi` (Apache-2.0),
+`MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli` (MIT), `tfidf-logreg-event-classifier` v1
+(locally trained, `model_registry` updated this session with a new training-data snapshot
+hash), `rapidfuzz.fuzz.token_sort_ratio` (MIT). Fine-tuning: still not attempted -- even after
+adding the dev-split gold corrections, the max positives in any non-`none` class across
+dev+validation+test combined is 24 (`PLEDGE_UP`), still under the 50-positive threshold.
+
+**Adversarial test results** (re-run this session): 6/6 passing, same tests as §10/§17.3.
+
+**Open review_queue count by reason_code:** 0 (re-queried this session; empty result set).
+
+### 19.6 Reproducibility
+
+`scripts/evaluate.py` re-run on the exact same snapshot (same `model_registry` row, same
+label_items state) and diffed:
+
+```
+$ diff docs/phase-2/evidence/evaluate-run-after-gold-corrections.log docs/phase-2/evidence/evaluate-run-after-gold-repro-check.log
+48c48
+< Loading weights: ... 364.92it/s ... 371.23it/s ... 915.10it/s
+---
+> Loading weights: ... 514.83it/s ... 433.56it/s ... 822.08it/s
+```
+
+The only diff line is the weight-loading progress bar's own throughput readout (a timing
+artifact of that one run) -- every metric, confusion matrix, the fine-tuning decision, the
+production-classifier selection, and the test report are byte-identical between the two runs.
+Full diff: `docs/phase-2/evidence/evaluate-after-gold-rerun-diff.log`.
+
+### 19.7 Checks (this session, after all gold-evaluation work)
+
+```
+ruff check .            -> All checks passed!
+ruff format --check .   -> 141 files already formatted
+mypy                     -> Success: no issues found in 75 source files
+pytest -q                -> 183 passed, 59 deselected in 19.10s
+pytest -q -m integration -> 57 passed, 185 deselected in 20.41s
+pytest -q -m corpus      -> 2 passed, 240 deselected in 14.20s
+```
+Total: 242 passing, 0 failing (unchanged from §18.5 -- no code changed this session, only
+real retraining/evaluation runs and documentation).
+
+```
+pre-commit run --all-files:
+ruff...................................................................................Passed
+ruff-format.............................................................................Passed
+Detect hardcoded secrets.................................................................Passed
+check for added large files..............................................................Passed
+reject staged files under data/raw, data/interim, data/processed........................Passed
+mypy (project venv -- avoids a second, heavy isolated env)...............................Passed
+```
+
+```
+gitleaks detect --source . --log-opts="--all":
+30 commits scanned.
+scan completed in 1.71s
+no leaks found
+```
+
+```
+alembic check:
+No new upgrade operations detected.
+```
+
+### 19.8 Exit gates, re-marked (gold evaluation executed)
+
+| # | Gate | Status | Evidence |
+|---|---|---|---|
+| 1 | Preflight (branch, baseline checks, PDF integrity, HTML churn fix) | PASS | §4, §19.5 |
+| 2 | Migrations apply from empty and match models with 0 drift | PASS | §19.7 |
+| 3 | Taxonomy v1.0 loaded from file, never hand-inserted, boundary-tested | PASS | §1, 23 threshold tests |
+| 4 | 3 classifiers compared on validation, once on test, support counts + fine-tuning justification | PASS -- now with real gold-test and gold-validation metrics, not just silver | §19.3, §19.4.3 |
+| 5 | Span-cited extraction with verified evidence, failures queued not promoted | PASS (still silver-only; field-level gold deferred, §19.5) | §7d, §19.5 |
+| 6 | Entity resolution: conflicts queued, merges reversible, evaluated (or honestly not run) | PASS, pairwise eval honestly not run (deferred, §19.5) | §7e, §19.5 |
+| 7 | Point-in-time-correct hybrid retrieval, evaluated on all 3 methods | PASS (still silver-only; gold query review deferred, §19.5) | §7f |
+| 8 | Idempotent/reproducible pipeline, model_registry populated | PASS -- model_registry updated with the real gold-dev retrain, reproducibility re-confirmed after the update | §19.4.3, §19.6 |
+| 9 | Gold metrics OR PENDING_HUMAN_REVIEW | **PASS for event classification gold** (test n=14, validation n=41, both real and reported with support/CIs); **PARTIAL overall** -- extraction/entity-resolution/retrieval gold are **DEFERRED_TO_PHASE_6** (§19.5, no review infrastructure exists for them yet) | §19.2, §19.3, §19.5 |
+| 10 | All tests/checks/adversarial tests passing, clean secret scan | PASS -- 242 tests, 6 adversarial tests, clean gitleaks (30 commits) | §19.5, §19.7 |
+| 11 | Committed locally, no AI attribution, bundle verified, nothing pushed | PASS | §14, this session's own commit |
+
+Gate 9 moves from `PENDING_HUMAN_REVIEW` to **PASS (event classification) / PARTIAL
+(overall)** -- real human review happened (80 items), real gold metrics exist with real
+support counts and confidence intervals for event classification specifically, and the
+classifier-selection mechanism was checked against gold validation (and not changed, with
+reasoning documented, §19.3). Extraction/entity-resolution/retrieval gold remain
+`DEFERRED_TO_PHASE_6` per `docs/release/release-gates.md` -- there is no review mechanism for
+them to evaluate against yet, gold or otherwise.

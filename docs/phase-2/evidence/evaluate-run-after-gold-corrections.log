@@ -1,0 +1,84 @@
+C:\ledger light\.venv\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+validation examples: 111
+test examples: 14
+
+--- fine-tuning decision ---
+positives per class (dev+validation+test combined): {'RPT_GROWTH': 14, 'FORENSIC': 6, 'PLEDGE_UP': 24, 'none': 171, 'KMP_EXIT': 5, 'RESULT_DELAY': 3, 'AUD_RESIGN': 5, 'AUDIT_QUAL': 6, 'RATING_ACT': 4, 'ID_EXIT': 1}
+fine-tune threshold: >= 50 positives/class
+max positives in any non-'none' class: 24 -- does NOT meet the threshold. Decision: zero-shot only, no fine-tuning attempted.
+
+=== VALIDATION ===
+
+-- rules_baseline (n=111) --
+label             precision   recall       f1  support
+AUD_RESIGN            0.000    0.000    0.000        0
+KMP_EXIT              1.000    0.333    0.500        3
+ID_EXIT               0.250    1.000    0.400        1
+RESULT_DELAY          0.000    0.000    0.000        0
+AUDIT_QUAL            0.600    1.000    0.750        3
+RPT_GROWTH            0.333    1.000    0.500        3
+none                  1.000    0.881    0.937      101
+macro_f1: 0.441
+confusion_matrix (rows=true, cols=pred, order=['AUD_RESIGN', 'KMP_EXIT', 'ID_EXIT', 'RESULT_DELAY', 'AUDIT_QUAL', 'RPT_GROWTH', 'none']):
+     0    0    0    0    0    0    0
+     1    1    1    0    0    0    0
+     0    0    1    0    0    0    0
+     0    0    0    0    0    0    0
+     0    0    0    0    3    0    0
+     0    0    0    0    0    3    0
+     1    0    2    1    2    6   89
+
+-- tfidf_lr (n=111) --
+label             precision   recall       f1  support
+PLEDGE_UP             0.000    0.000    0.000        0
+KMP_EXIT              0.000    0.000    0.000        3
+ID_EXIT               0.000    0.000    0.000        1
+AUDIT_QUAL            0.000    0.000    0.000        3
+RPT_GROWTH            0.188    1.000    0.316        3
+none                  0.945    0.851    0.896      101
+macro_f1: 0.202
+confusion_matrix (rows=true, cols=pred, order=['PLEDGE_UP', 'KMP_EXIT', 'ID_EXIT', 'AUDIT_QUAL', 'RPT_GROWTH', 'none']):
+     0    0    0    0    0    0
+     0    0    0    0    1    2
+     0    0    0    0    1    0
+     0    0    0    0    0    3
+     0    0    0    0    3    0
+     1    1    0    2   11   86
+Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]Loading weights:  17%|#7        | 35/202 [00:00<00:00, 342.88it/s]Loading weights:  80%|########  | 162/202 [00:00<00:00, 879.67it/s]Loading weights: 100%|##########| 202/202 [00:00<00:00, 980.64it/s]
+
+-- deberta_zero_shot (n=111) --
+label             precision   recall       f1  support
+KMP_EXIT              0.667    0.667    0.667        3
+ID_EXIT               0.000    0.000    0.000        1
+AUDIT_QUAL            0.286    0.667    0.400        3
+RPT_GROWTH            0.000    0.000    0.000        3
+none                  0.950    0.941    0.945      101
+macro_f1: 0.402
+confusion_matrix (rows=true, cols=pred, order=['KMP_EXIT', 'ID_EXIT', 'AUDIT_QUAL', 'RPT_GROWTH', 'none']):
+     2    1    0    0    0
+     0    0    0    0    1
+     0    0    2    0    1
+     0    0    0    0    3
+     1    0    5    0   95
+
+-- DeBERTa confidence distribution (validation) --
+  min=0.159 max=0.874 mean=0.344
+  (sample sizes per class are too small, 2-28 positives, for a reliable calibration curve -- not computed; reporting the raw confidence range instead)
+
+=== Selected production classifier (by validation macro_f1): rules_baseline (macro_f1=0.441) ===
+
+=== TEST (reported once, selected method only) ===
+
+-- rules_baseline_TEST (n=14) --
+label             precision   recall       f1  support
+AUD_RESIGN            1.000    1.000    1.000        4
+PLEDGE_UP             0.500    1.000    0.667        1
+ID_EXIT               0.000    0.000    0.000        0
+none                  1.000    0.778    0.875        9
+macro_f1: 0.635
+confusion_matrix (rows=true, cols=pred, order=['AUD_RESIGN', 'PLEDGE_UP', 'ID_EXIT', 'none']):
+     4    0    0    0
+     0    1    0    0
+     0    0    0    0
+     0    1    1    7

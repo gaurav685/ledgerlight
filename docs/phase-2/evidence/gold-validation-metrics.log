@@ -1,0 +1,53 @@
+n: 41
+
+-- rules_GOLD_VALIDATION (n=41) --
+label             precision   recall       f1  support
+AUD_RESIGN            0.000    0.000    0.000        0
+KMP_EXIT              1.000    0.333    0.500        3
+ID_EXIT               0.250    1.000    0.400        1
+RESULT_DELAY          0.000    0.000    0.000        0
+AUDIT_QUAL            0.000    0.000    0.000        0
+RPT_GROWTH            0.333    1.000    0.500        3
+none                  1.000    0.647    0.786       34
+macro_f1: 0.312
+confusion_matrix (rows=true, cols=pred, order=['AUD_RESIGN', 'KMP_EXIT', 'ID_EXIT', 'RESULT_DELAY', 'AUDIT_QUAL', 'RPT_GROWTH', 'none']):
+     0    0    0    0    0    0    0
+     1    1    1    0    0    0    0
+     0    0    1    0    0    0    0
+     0    0    0    0    0    0    0
+     0    0    0    0    0    0    0
+     0    0    0    0    0    3    0
+     1    0    2    1    2    6   22
+
+
+-- tfidf_GOLD_VALIDATION (n=41) --
+label             precision   recall       f1  support
+PLEDGE_UP             0.000    0.000    0.000        0
+KMP_EXIT              0.000    0.000    0.000        3
+ID_EXIT               0.000    0.000    0.000        1
+AUDIT_QUAL            0.000    0.000    0.000        0
+RPT_GROWTH            0.231    1.000    0.375        3
+none                  0.958    0.676    0.793       34
+macro_f1: 0.195
+confusion_matrix (rows=true, cols=pred, order=['PLEDGE_UP', 'KMP_EXIT', 'ID_EXIT', 'AUDIT_QUAL', 'RPT_GROWTH', 'none']):
+     0    0    0    0    0    0
+     0    0    1    0    1    1
+     0    0    0    0    1    0
+     0    0    0    0    0    0
+     0    0    0    0    3    0
+     1    0    1    1    8   23
+
+
+-- deberta_GOLD_VALIDATION (n=41) --
+label             precision   recall       f1  support
+KMP_EXIT              0.667    0.667    0.667        3
+ID_EXIT               0.000    0.000    0.000        1
+RPT_GROWTH            0.000    0.000    0.000        3
+none                  0.892    0.971    0.930       34
+macro_f1: 0.399
+confusion_matrix (rows=true, cols=pred, order=['KMP_EXIT', 'ID_EXIT', 'RPT_GROWTH', 'none']):
+     2    1    0    0
+     0    0    0    1
+     0    0    0    3
+     1    0    0   33
+

@@ -44,21 +44,26 @@ may set `label_source='human_reviewed'`.
 
 ## Gap: event-level gold coverage is thin and uneven
 
-**Status:** open, actively being filled.
+**Status:** open, partially closed -- the 80-item sample is fully reviewed; real coverage
+gaps remain where the corpus itself has no test/validation examples of a class.
 
-As of this entry: 38 human-reviewed event items (26 accepted, 10
-corrected, 2 rejected), 0 of them in the `test` split. Four event
-classes (`ID_EXIT`, `RATING_ACT`, `RESULT_DELAY`, `AUDIT_QUAL`) had 0
-gold items; two more (`KMP_EXIT`, `FORENSIC`) have 0 coverage reachable
-from the `test`/`validation` splits at all (every silver item of those
-classes landed in `dev` when the original split was built). A
-deterministic 80-item sample (`data/manifests/label-review-sample-42.jsonl`,
-seed 42) was built to target at least 4 reviewed items per class where
-test/validation items exist -- see
-`docs/phase-2/phase-2-report.md` §18 for the exact composition and
-which classes still can't reach the minimum from this corpus's data.
+The deterministic 80-item sample (`data/manifests/label-review-sample-42.jsonl`, seed 42) is
+now fully reviewed: 50 accepted, 25 corrected, 2 rejected, 3 skipped (verified against the
+database; see `docs/phase-2/phase-2-report.md` §19.1). This gave the `test` split its first
+gold coverage (14 items: 9 `none`, 4 `AUD_RESIGN`, 1 `PLEDGE_UP`) and the `validation` split
+41 gold items.
 
-**Closing this gap requires** a human actually reviewing the 42 new
-items in the sample (and, ideally, acquiring more real `RATING_ACT`/
-`FORENSIC` test/validation examples, since no amount of review can
-create coverage that doesn't exist in the corpus).
+Measured silver-label error rates (§19.2 of the Phase 2 report) turned out to be real and, for
+several classes, high: `ID_EXIT` 83.3%, `RPT_GROWTH` 66.7%, `PLEDGE_UP` 57.1% error, all with
+real support (n>=6). `RATING_ACT` was never reviewed at all (0 items in `test`/`validation` to
+pull from -- every `RATING_ACT` silver item landed in `dev`, which this sample's design
+deliberately never draws new items from). `FORENSIC` similarly has 0 coverage reachable from
+`test`/`validation`. `AUDIT_QUAL`, `KMP_EXIT`, `RESULT_DELAY` all remain at insufficient
+support (n<5) even after this round.
+
+**Closing this gap further requires**: acquiring more real `RATING_ACT`/`FORENSIC` corpus
+documents whose silver proposals land in `test`/`validation` (no amount of review can create
+coverage that doesn't exist in the corpus), and continued review to push
+`AUDIT_QUAL`/`KMP_EXIT`/`RESULT_DELAY` past n=5. See
+`docs/phase-2/phase-2-report.md` §19.4.2 for which event types are and aren't recommended as
+reliable enough for Phase 3 consumption given the error rates measured so far.

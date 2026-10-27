@@ -1,0 +1,37 @@
+n validation (current, post-gold-correction labels): 111
+--- OLD model (pre-gold-dev-retrain) vs current (post-gold-correction) validation labels ---
+
+-- tfidf_OLD_MODEL_vs_CURRENT_LABELS (n=111) --
+label             precision   recall       f1  support
+PLEDGE_UP             0.000    0.000    0.000        0
+KMP_EXIT              0.000    0.000    0.000        3
+ID_EXIT               0.000    0.000    0.000        1
+AUDIT_QUAL            0.000    0.000    0.000        3
+RPT_GROWTH            0.176    1.000    0.300        3
+none                  0.955    0.842    0.895      101
+macro_f1: 0.199
+confusion_matrix (rows=true, cols=pred, order=['PLEDGE_UP', 'KMP_EXIT', 'ID_EXIT', 'AUDIT_QUAL', 'RPT_GROWTH', 'none']):
+     0    0    0    0    0    0
+     0    0    1    0    1    1
+     0    0    0    0    1    0
+     0    0    0    0    0    3
+     0    0    0    0    3    0
+     1    1    1    1   12   85
+--- NEW model (post-gold-dev-retrain) vs current (post-gold-correction) validation labels ---
+
+-- tfidf_NEW_MODEL_vs_CURRENT_LABELS (n=111) --
+label             precision   recall       f1  support
+PLEDGE_UP             0.000    0.000    0.000        0
+KMP_EXIT              0.000    0.000    0.000        3
+ID_EXIT               0.000    0.000    0.000        1
+AUDIT_QUAL            0.000    0.000    0.000        3
+RPT_GROWTH            0.188    1.000    0.316        3
+none                  0.945    0.851    0.896      101
+macro_f1: 0.202
+confusion_matrix (rows=true, cols=pred, order=['PLEDGE_UP', 'KMP_EXIT', 'ID_EXIT', 'AUDIT_QUAL', 'RPT_GROWTH', 'none']):
+     0    0    0    0    0    0
+     0    0    0    0    1    2
+     0    0    0    0    1    0
+     0    0    0    0    0    3
+     0    0    0    0    3    0
+     1    1    0    2   11   86

@@ -1,0 +1,5 @@
+C:\ledger light\.venv\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+n items: 41
+Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]Loading weights:  14%|#4        | 29/202 [00:00<00:00, 284.34it/s]Loading weights: 100%|##########| 202/202 [00:00<00:00, 1085.99it/s]
+done
