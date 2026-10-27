@@ -20,8 +20,18 @@ exact next step is below, not left to be re-derived.
   - Commits: `1d2b30c`, `816407a`, `6dfd6de`, `5518d16`, `367cb97` (all `phase-2:` prefix
     per this phase's own instruction for §1 work).
 - **Part B (this continuation)**: `docs/phase-3/brief.md` (the full original brief +
-  this continuation's addendum, saved verbatim) -- written, not yet committed as of this
-  checkpoint (see "next step" below). This file.
+  this continuation's addendum, saved verbatim) and this progress file -- both written and
+  committed (`39e5e76`).
+- **§2.2 CARE rationale broadening**: COMPLETE. `ledgerlight/ingestion/care.py` (new
+  module) found and uses CARE's real per-company discovery API (not guessed -- read out of
+  the site's own header-search widget script); driven by the 15-company SEED-track
+  universe. Real run: 11/15 companies matched, 161 new documents fetched (162 total with
+  the pre-existing DHFL seed item), 0 errors. 4/15 unmatched, each confirmed by hand as a
+  real CARE-side limitation (not a matcher bug) -- see `docs/phase-3/phase-3-report.md` §2.2
+  and `docs/data/source-inventory.md`'s 2026-10-28 addendum for the full detail on each.
+  `tests/test_care_ingestion.py` (6 tests, all passing). `data/manifests/sources.yaml`'s
+  `care` entry updated to the real coverage. New Dagster op/job `care_discovery`
+  (`python scripts/ingest.py care_discovery`).
 
 ## In progress
 
@@ -51,22 +61,23 @@ exact next step is below, not left to be re-derived.
 
 ## Not yet started
 
-§2.2 (CARE rationale broadening), §2.3 (SEBI/IBBI full history), §2.4 (entity-link
-reporting), §3 (outcome definitions, frozen before any training), §4 (point-in-time
+§2.3 (SEBI/IBBI full history), §2.4 (entity-link reporting -- partly addressed in passing
+by §2.2's name-driven discovery, but SEBI/IBBI/other sources still need their own linking
+pass and report), §3 (outcome definitions, frozen before any training), §4 (point-in-time
 features + migrations), §5 (guidance extraction), §6 (LightGBM models), §7 (walk-forward
-eval + leakage controls), §8 (scoring + storage), §9 (Dagster pipeline + commands), §10
-(tests), §11 (documentation set), §12 (run and verify), §13 (final commit/backup for
-§2-15, `phase-3:` prefix), §14 (exit gates), §15 (final report).
+eval + leakage controls), §8 (scoring + storage), §9 (rest of the Dagster pipeline +
+commands), §10 (tests), §11 (documentation set), §12 (run and verify), §13 (final
+commit/backup for §2-15, `phase-3:` prefix), §14 (exit gates), §15 (final report).
 
 ## Exact next step
 
 1. Check on the bhavcopy backfill (see "in progress" above for the exact check command).
-2. Commit `docs/phase-3/brief.md` and this file (`phase-3:` prefix -- this is Part B of
-   the continuation brief, not §1 hardening work).
-3. Begin §2.2: broaden CARE rationale coverage (current: see
-   `docs/phase-2/evidence/` and `data/manifests/sources.yaml`'s `care` entry for what's
-   already ingested; the task is to extend it to "all available rationales" within the
-   same compliant, rate-limited `PoliteFetcher` path already used, and report coverage).
+2. Begin §2.3: SEBI orders and IBBI public announcements, full available history. Current
+   state: only the handful of individually hand-found SEBI/IBBI documents from Phase 0/1
+   (`known_seed_items.py`). Same method as §2.2: check robots.txt, try the obvious
+   listing/search pages, look for a real discovery mechanism (API or otherwise) by reading
+   the page's own source rather than guessing a URL pattern -- and if nothing crawlable
+   exists, report that honestly rather than fabricating a mechanism.
    ICRA and CRISIL stay excluded (CRISIL by its own exclusion terms, per `docs/data/
    source-inventory.md`).
 

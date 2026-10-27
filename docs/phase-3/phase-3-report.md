@@ -3,8 +3,9 @@
 Branch: `phase-3/temporal-risk-modelling`, from `bc69c29` (Phase 2 final).
 Git policy honoured throughout: every commit is local-only, no remote configured, nothing pushed.
 
-**Status: §1 (preflight, selection fix, detector hardening) complete. §2 onward not yet
-started** -- see the note at the end of this section. This report will grow as later
+**Status: §1 (preflight, selection fix, detector hardening) and §2.2 (CARE rationale
+broadening) complete. §2.1 (bhavcopy backfill) in progress in the background. §2.3 onward
+not yet started** -- see the note at the end of §2. This report will grow as later
 sections land; it is not a placeholder, every number in it is real and verified.
 
 ## §1. Preflight: selection fix and detector hardening
@@ -265,17 +266,104 @@ All authored by `gaurav685 <gaurav685@gmail.com>`, no AI attribution (verified, 
 
 ---
 
-## Status note: §2 onward not yet started
+## §2. Market-wide data expansion
 
-Sections 2-15 of this phase's brief (market-wide data expansion, outcome definitions,
-point-in-time features, guidance extraction, LightGBM risk modelling with calibration and
-SHAP, walk-forward evaluation with leakage/survivorship controls, scoring infrastructure,
-the Dagster pipeline, the full test suite, the documentation set, and this report's
-remaining 14 sections) have not been started. §1 alone -- a necessary, blocking
-prerequisite, since nothing downstream can honestly use detector output or classifier
-selection until both were fixed -- already involved two real, previously-undetected bugs
-(the extraction false positive, and the stale-selection-run mixup during this session)
-found only by actually running the real pipeline against real data and checking results
-by hand, not by assumption. The remaining sections need the same real-execution,
-real-verification treatment and are substantial, multi-session work, consistent with how
-Phase 2 itself was built incrementally across many sessions rather than in one pass.
+### 2.1 NSE bhavcopy backfill (in progress)
+
+`python scripts/backfill.py 2012-01-01 2026-10-28`, started 2026-10-28 00:31, running in
+the background against the real `archives.nseindia.com` path, processing business days
+chronologically from 2012-01-01. `price_bars` coverage before this run: 2017-01-05 to
+2025-09-22, 876,101 rows, single source `nse_archives` (Phase 1 baseline). At the last
+checkpoint taken while writing this section, the process (PID 10152) was still alive and
+responsive, CPU time climbing slowly (consistent with an I/O/rate-limit-bound job at
+~0.499 req/s, not a hang), and `price_bars` was still unchanged from the baseline -- expected,
+since the job is working chronologically through 2012-2016 first, where most dates are
+genuinely pre-coverage 404s, before it reaches the already-covered 2017-2025 range (fast,
+idempotent no-ops) and then the new 2025-09 to 2026-10 extension. This section will be
+closed out with the real final coverage range once the job finishes or is explicitly
+checkpointed -- see `docs/phase-3/progress.md` for the exact resume procedure if a session
+boundary is hit first.
+
+### 2.2 CARE Ratings rationale coverage (complete)
+
+Phase 0/1 had exactly one CARE document (a hand-found DHFL rationale). This section looked
+for a real, compliant way to broaden that and found one -- and also found a real limit to
+what it reaches.
+
+**What was checked and does not exist**: a sitewide, crawlable, date-range listing of
+rating rationales. `/industry/press-release/24` (reachable from the site's own nav and
+sitemap) only filters *industry research* reports by month/year and is itself
+client-rendered with no discoverable date-range API for rationale documents. This was
+checked by fetching the raw HTML and grepping it for inline `<script>`/AJAX hooks, not
+assumed absent.
+
+**What does exist**, same-origin, read directly out of the site's own header-search
+widget's inline `<script>` (not guessed): `GET /header/searchlist?cinput=<name>` (name ->
+encrypted company id) -> `GET /pryear?companyName=<id>` (years on file) -> `GET
+/getSearchprdocument?companyName=<id>&YearID=<year>` (the documents themselves, with real
+filenames under `/upload/CompanyFiles/PR/`). robots.txt is fully permissive and this is the
+exact path a real browser's own search box takes.
+
+`ledgerlight/ingestion/care.py` (new) drives this lookup from the 15-company SEED-track
+universe (`docs/data/seed-universe.md`) rather than crawling blindly -- CARE rates debt
+instruments, so most of the multi-thousand-symbol bhavcopy universe would have nothing on
+file anyway, and this also directly produces the name->identifier link §2.4 asks for. Name
+matching: `rapidfuzz.token_sort_ratio` on corporate-suffix-stripped names
+(`_normalize_name`), floor 75 -- picked against real data, see
+`tests/test_care_ingestion.py` (6 tests, all passing, including one integration test
+against the real Postgres+Garage stack).
+
+**Real run** (2026-10-28, `docs/phase-3/evidence/care-discovery-run1.log`), via the new
+`care_discovery` Dagster op/job (`python scripts/ingest.py care_discovery`):
+```
+CareDiscoveryStats(companies_queried=15, companies_matched=11,
+companies_unmatched=['Dewan Housing Finance', 'Brightcom Group', 'Reliance Capital', 'Mastek'],
+documents_discovered=161, attempted=161, fetched_new=161, unchanged=0, blocked=0, errors=[])
+```
+Real per-company document counts from the `documents` table (new, from this run): PNB
+Housing Finance 47, LIC Housing Finance 44, Future Retail 28, Suzlon Energy 15, Avenue
+Supermarts (DMart) 12, Vakrangee 4, SpiceJet 4, Gensol Engineering 4, Jet Airways 2,
+Thermax 1 -- plus the one pre-existing Phase 0 DHFL document (unaffected, untouched).
+Total CARE documents in the store: 162. Real published-date range across all of them:
+2003-12-30 to 2026-07-21.
+
+**4 of 15 seed companies did not match -- confirmed by hand as a real source limitation,
+not a matcher bug**, each re-checked with a direct request against the live API after the
+run (full detail in `docs/data/source-inventory.md`'s 2026-10-28 addendum):
+- **Dewan Housing Finance**: zero live search results under that name or "DHFL". CARE's
+  live index reflects current entity names only; DHFL's post-CIRP successor (`Piramal
+  Capital & Housing Finance Limited`, confirmed present) does not itself reference DHFL in
+  its own name, so there is no live name path back to the original entity. The existing
+  Phase 0 document (fetched by a hand-found direct URL) is unaffected by this; it is simply
+  not *discoverable* through this mechanism any more.
+- **Reliance Capital**: zero live search results under that exact name; the broader prefix
+  "Reliance" returns real candidates with none named "Reliance Capital" -- same
+  post-resolution pattern as DHFL (CIRP resolved 2024-2025).
+- **Mastek**: one real candidate found, "Mastek Engineering Private Limited" -- a different
+  legal entity from the listed parent this project tracks (NSE:MASTEK), correctly scored
+  50/100 (below the 75 floor) and excluded. No record under "Mastek" for the listed parent
+  itself exists in CARE's index.
+- **Brightcom Group**: zero live search results under that name or "Brightcom" alone. No
+  evidence CARE has ever rated this company (plausible given its governance issue was a
+  SEBI accounting/disclosure matter, not a rated-debt event) -- recorded as a gap, not
+  asserted as a confirmed absence.
+- One matched company, **CG Power and Industrial Solutions**, found an exact company record
+  but zero PR documents on file for it -- a real, matched-but-empty result, not an error.
+
+`data/manifests/sources.yaml`'s `care` entry is updated to this real coverage.
+
+## Status note: §2.3 onward not yet started
+
+Sections 2.3-15 of this phase's brief (SEBI/IBBI full-history expansion, entity-link
+reporting, outcome definitions, point-in-time features, guidance extraction, LightGBM risk
+modelling with calibration and SHAP, walk-forward evaluation with leakage/survivorship
+controls, scoring infrastructure, the rest of the Dagster pipeline, the full test suite, the
+documentation set, and this report's remaining sections) have not been started. §1 alone --
+a necessary, blocking prerequisite -- already involved two real, previously-undetected bugs
+found only by actually running the real pipeline against real data and checking results by
+hand, not by assumption; §2.2 likewise surfaced a real, non-obvious source limitation (CARE's
+live search reflecting current entity names only) only by checking each unmatched case by
+hand rather than accepting an aggregate "unmatched" count at face value. The remaining
+sections need the same real-execution, real-verification treatment and are substantial,
+multi-session work, consistent with how Phase 2 itself was built incrementally across many
+sessions rather than in one pass.

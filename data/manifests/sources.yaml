@@ -206,8 +206,10 @@ sources:
   care:
     owner: "CARE Ratings Ltd (CareEdge Ratings)"
     base_url: "https://www.careratings.com"
-    endpoints: ["Rating rationales / press releases, served from /upload/CompanyFiles/PR/*.pdf"]
-    access_method: "HTML pages + direct PDF paths"
+    endpoints:
+      - "Rating rationales / press releases, served from /upload/CompanyFiles/PR/*.pdf"
+      - "Phase 3 addition: a real, same-origin per-company discovery API (read out of the\n        site's own header-search widget, not guessed) -- GET /header/searchlist?cinput=<name>\n        -> GET /pryear?companyName=<id> -> GET /getSearchprdocument?companyName=<id>&YearID=<year>.\n        See docs/data/source-inventory.md's 2026-10-28 addendum for what it does and does not\n        cover (no sitewide date-range listing exists; 4/15 seed companies had no live match)."
+    access_method: "HTML pages + direct PDF paths + the discovery API above"
     registration_required: false
     robots_txt:
       fetched_at: "2026-10-23T18:08Z"
@@ -217,14 +219,17 @@ sources:
       reviewed_at: "2026-10-23"
       note: "CARE Ratings Ltd holds copyright over published content, 'all rights reserved'; content is published for dissemination of information required under applicable law/regulation, which is not the same as an open redistribution licence."
     rate_limits_or_anti_automation: "None observed."
-    formats: ["HTML", "PDF"]
-    verified_coverage: { earliest: "2019-06-05 (DHFL rationale, actually fetched)", latest: "2019-06-05", note: "Single document verified in Phase 0." }
-    delisted_or_suspended_accessible: "Yes for this one case — the DHFL rationale (a company later admitted to CIRP) was reachable."
+    formats: ["HTML", "PDF", "JSON (discovery API)"]
+    verified_coverage: { earliest: "2003-12-30", latest: "2026-07-21", note: "162 real rationale/press-release documents across 10 companies (Phase 3 Sec2.2 run, 2026-10-28, ledgerlight/ingestion/care.py) -- up from the single 2019-06-05 DHFL seed item. 4 of 15 SEED-track companies had no live match; see the source-inventory addendum for the real reason in each case (not a matcher bug -- re-checked by hand)." }
+    delisted_or_suspended_accessible: "Mixed: the DHFL rationale (hand-found Phase 0 URL) is reachable but no longer discoverable via live search (DHFL's post-CIRP successor entity does not reference it by name); Reliance Capital similarly has no live search match post-resolution."
     verdict: "AVAILABLE"
-    verdict_reason: "Permissive robots.txt; identifying UA succeeded; one real rationale PDF downloaded and hash-verified. Redistribution of the documents is copyrighted/all-rights-reserved, so only the manifest is committed."
+    verdict_reason: "Permissive robots.txt; identifying UA succeeded; 162 real rationale PDFs downloaded and hash-verified across both the original hand-found path and the Phase 3 discovery API. Redistribution of the documents is copyrighted/all-rights-reserved, so only the manifest is committed."
     urls_opened:
       - "https://www.careratings.com/robots.txt"
       - "https://www.careratings.com/upload/CompanyFiles/PR/Dewan%20Housing%20Finance%20Corporation%20Ltd.-06-05-2019.pdf"
+      - "https://www.careratings.com/header/searchlist"
+      - "https://www.careratings.com/pryear"
+      - "https://www.careratings.com/getSearchprdocument"
 
   india_ratings:
     owner: "India Ratings & Research (Fitch Group)"

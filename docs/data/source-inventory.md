@@ -27,7 +27,7 @@ workaround. See "NSE bhavcopy: a working, unblocked path" below.
 | IBBI | HTML + PDF | Generic copyright notice; full terms not read (gap) | 2019-07 to 2024-08 (seed sample) | **AVAILABLE** |
 | CRISIL Ratings | HTML | Not reviewed — see note below | Not fetched (declined) | **BLOCKED** (judgment call) |
 | ICRA | HTML | Not reached (bot-mitigation challenge) | Not verified (blocked) | **BLOCKED** |
-| CARE Ratings (CareEdge) | HTML + PDF | Copyrighted, all rights reserved | 2019-06-05 (seed sample) | **AVAILABLE** |
+| CARE Ratings (CareEdge) | HTML + PDF; real per-company discovery API found in Phase 3 (see addendum) | Copyrighted, all rights reserved | 162 rationale documents across 10 companies, 2003-12-30 to 2026-07-21 (Phase 3 §2.2, up from the single 2019-06-05 seed item) | **AVAILABLE** |
 | India Ratings | HTML | Not reviewed (gap) | Not verified | **AVAILABLE_WITH_LIMITS** |
 | Acuité | HTML | Not reviewed (gap) | Not verified | **AVAILABLE_WITH_LIMITS** |
 | Infomerics | HTML | Not reviewed (gap) | Not verified | **UNCLEAR** |
@@ -212,6 +212,71 @@ Vakrangee). Selection rule and per-company reasoning:
 - **Manual bhavcopy import** (the brief's option (c)): turned out
   unnecessary — the automated `archives.nseindia.com` path above covers
   the seed windows directly.
+
+## Addendum (2026-10-28, Phase 3 §2.2): CARE rationale coverage broadened
+
+Phase 0/1 had exactly one CARE document (the DHFL rationale above),
+hand-found. Phase 3 §2.2 looked for a real, crawlable, compliant discovery
+mechanism and found one -- and also found a real limit it does not clear.
+
+**What does NOT exist**: a sitewide, crawlable, date-range listing of
+rating rationales. `/industry/press-release/24` (reachable from the
+site's own nav and sitemap) only filters *industry research* reports by
+month/year and is itself client-rendered with no discoverable date-range
+API for rationale documents specifically. This was checked directly
+(fetched the raw HTML, grepped for inline `<script>`/AJAX hooks) before
+concluding it does not exist, not assumed.
+
+**What DOES exist**, same-origin, read directly out of the site's own
+inline `<script>` for its header search widget (not guessed): `GET
+/header/searchlist?cinput=<name>` (name resolution) -> `GET
+/pryear?companyName=<id>` (years on file) -> `GET
+/getSearchprdocument?companyName=<id>&YearID=<year>` (the documents
+themselves, with real filenames under `/upload/CompanyFiles/PR/`).
+robots.txt is fully permissive (quoted above) and this is the exact path
+a real browser's search box takes.
+
+**Real result, driving this lookup from the 15-company SEED-track universe
+(`docs/data/seed-universe.md`)**, `ledgerlight/ingestion/care.py`,
+2026-10-28 run (`docs/phase-3/evidence/care-discovery-run1.log`):
+- 15 companies queried, 11 matched a CARE company record by name
+  (`rapidfuzz.token_sort_ratio` on corporate-suffix-stripped names, floor
+  75), 161 new rationale/press-release PDFs fetched (0 unchanged, 0
+  blocked, 0 errors) across 10 of those 11 (CG Power matched but has zero
+  PR documents on CARE's file). Real per-company counts, from the
+  `documents` table: PNB Housing 47, LIC Housing 44, Future Retail 28,
+  Suzlon 15, DMart 12, Vakrangee 4, SpiceJet 4, Gensol 4, Jet Airways 2,
+  Thermax 1.
+- **4 of 15 did not match, confirmed as a real source limitation, not a
+  matcher bug** (each re-checked by hand with a direct `curl` against the
+  live API after the run):
+  - **Dewan Housing Finance**: zero search results under that name or
+    "DHFL". CARE's live index reflects *current* entity names only; DHFL's
+    post-CIRP successor (`Piramal Capital & Housing Finance Limited`,
+    confirmed present in CARE's search) does not itself reference DHFL in
+    its own "erstwhile" name, so there is no live name path back to the
+    original entity. The one DHFL rationale already in the seed (fetched
+    in Phase 0 by a hand-found direct URL) remains reachable; it just is
+    not *discoverable* via this mechanism any more.
+  - **Reliance Capital**: zero search results under that exact name;
+    querying the shorter prefix "Reliance" returns real candidates but
+    none named "Reliance Capital" (alphabetically, the result set jumps
+    straight from "Business Broadcast..." to "Chemicals..."). Same
+    pattern as DHFL: a large NBFC that went through CIRP resolution
+    (2024-2025) and appears to no longer carry its pre-resolution name in
+    CARE's live index.
+  - **Mastek**: one real candidate found, "Mastek Engineering Private
+    Limited" -- a *different* legal entity from the listed parent (NSE:
+    MASTEK) this project tracks, correctly scored 50/100 (well below the
+    75 floor) and excluded. CARE's index has no record under "Mastek"
+    for the listed parent itself at all.
+  - **Brightcom Group**: zero search results under that name or the
+    shorter "Brightcom" alone. No evidence CARE has ever rated this
+    company (plausible: Brightcom's governance issue was a SEBI
+    accounting/disclosure matter, not a rated-debt event) -- recorded as
+    a gap, not asserted as a confirmed absence.
+- **sources.yaml's `care.verified_coverage`** is updated to this real
+  162-document, 2003-12-30 to 2026-07-21, 10-company result (see that file).
 
 ## Commercial and academic datasets
 

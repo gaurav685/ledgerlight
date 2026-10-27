@@ -1,0 +1,13 @@
+2026-10-28 00:51:06 +0530 - dagster - DEBUG - care_discovery_job - 08caa444-38c8-40ba-bdf7-2f8961a819b0 - 4632 - RUN_START - Started execution of run for "care_discovery_job".
+2026-10-28 00:51:06 +0530 - dagster - DEBUG - care_discovery_job - 08caa444-38c8-40ba-bdf7-2f8961a819b0 - 4632 - ENGINE_EVENT - Executing steps in process (pid: 4632)
+2026-10-28 00:51:06 +0530 - dagster - DEBUG - care_discovery_job - 08caa444-38c8-40ba-bdf7-2f8961a819b0 - 4632 - care_discovery - RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
+2026-10-28 00:51:06 +0530 - dagster - DEBUG - care_discovery_job - 08caa444-38c8-40ba-bdf7-2f8961a819b0 - 4632 - care_discovery - RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
+2026-10-28 00:51:06 +0530 - dagster - DEBUG - care_discovery_job - 08caa444-38c8-40ba-bdf7-2f8961a819b0 - 4632 - LOGS_CAPTURED - Capturing logs for process (pid: 4632).
+2026-10-28 00:51:06 +0530 - dagster - DEBUG - care_discovery_job - 08caa444-38c8-40ba-bdf7-2f8961a819b0 - 4632 - care_discovery - STEP_START - Started execution of step "care_discovery".
+2026-10-28 00:59:38 +0530 - dagster - INFO - care_discovery_job - 08caa444-38c8-40ba-bdf7-2f8961a819b0 - care_discovery - care_discovery: CareDiscoveryStats(companies_queried=15, companies_matched=11, companies_unmatched=['Dewan Housing Finance', 'Brightcom Group', 'Reliance Capital', 'Mastek'], documents_discovered=161, attempted=161, fetched_new=161, unchanged=0, blocked=0, errors=[])
+2026-10-28 00:59:38 +0530 - dagster - DEBUG - care_discovery_job - 08caa444-38c8-40ba-bdf7-2f8961a819b0 - 4632 - care_discovery - STEP_OUTPUT - Yielded output "result" of type "Nothing". (Type check passed).
+2026-10-28 00:59:38 +0530 - dagster - DEBUG - care_discovery_job - 08caa444-38c8-40ba-bdf7-2f8961a819b0 - 4632 - care_discovery - STEP_SUCCESS - Finished execution of step "care_discovery" in 8m31s.
+2026-10-28 00:59:39 +0530 - dagster - DEBUG - care_discovery_job - 08caa444-38c8-40ba-bdf7-2f8961a819b0 - 4632 - ENGINE_EVENT - Finished steps in process (pid: 4632) in 8m32s
+2026-10-28 00:59:39 +0530 - dagster - DEBUG - care_discovery_job - 08caa444-38c8-40ba-bdf7-2f8961a819b0 - 4632 - RUN_SUCCESS - Finished execution of run for "care_discovery_job".
+run_id: 08caa444-38c8-40ba-bdf7-2f8961a819b0
+success: True

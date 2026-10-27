@@ -26,6 +26,7 @@ from dagster import (
 from ledgerlight.acquisition.import_local import import_inbox
 from ledgerlight.config.settings import load_settings
 from ledgerlight.db.session import make_session_factory
+from ledgerlight.ingestion.care import run_care_discovery_job
 from ledgerlight.ingestion.known_items import run_known_items_job
 from ledgerlight.ingestion.nse_bhavcopy import run_bhavcopy_range
 from ledgerlight.storage.s3_store import ObjectStore
@@ -133,6 +134,39 @@ def _make_known_items_job(source_id: str) -> dg.JobDefinition:
 known_items_jobs = {
     source_id: _make_known_items_job(source_id) for source_id in _KNOWN_ITEM_SOURCES
 }
+
+
+@dg.op(name="care_discovery", retry_policy=_RETRY_POLICY)
+def care_discovery_op(context: OpExecutionContext) -> None:
+    """Phase 3 Sec2.2: per-SEED-company CARE rationale discovery (beyond the
+    single hardcoded DHFL known_items entry) -- see ledgerlight.ingestion
+    .care for the real discovery mechanism this drives."""
+    settings = load_settings()
+    store = ObjectStore(settings)
+    session_factory = make_session_factory(settings)
+
+    from ledgerlight.acquisition.fetcher import PoliteFetcher
+
+    with (
+        session_factory() as session,
+        PoliteFetcher(
+            contact_email=settings.contact_email,
+            data_dir=settings.data_dir,
+            manifest_path=settings.data_dir / "manifests" / "live_ingestion.jsonl",
+            rate_limit_seconds=settings.fetch_rate_limit_seconds,
+            timeout_seconds=settings.fetch_timeout_seconds,
+            max_retries=settings.fetch_max_retries,
+            max_file_size_bytes=settings.fetch_max_file_size_bytes,
+        ) as fetcher,
+    ):
+        stats = run_care_discovery_job(session, store, fetcher, settings.contact_email)
+    context.log.info(f"care_discovery: {stats}")
+
+
+@dg.job(name="care_discovery_job")
+def care_discovery_job() -> None:
+    care_discovery_op()
+
 
 bhavcopy_job = dg.define_asset_job(name="bhavcopy_job", selection=[bhavcopy_daily])
 
@@ -278,7 +312,13 @@ def knowledge_pipeline_job() -> None:
 
 defs = dg.Definitions(
     assets=[bhavcopy_daily],
-    jobs=[bhavcopy_job, inbox_import_job, knowledge_pipeline_job, *known_items_jobs.values()],
+    jobs=[
+        bhavcopy_job,
+        inbox_import_job,
+        knowledge_pipeline_job,
+        care_discovery_job,
+        *known_items_jobs.values(),
+    ],
     schedules=[bhavcopy_daily_schedule],
     sensors=[inbox_sensor],
 )
