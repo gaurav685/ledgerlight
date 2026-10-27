@@ -11,7 +11,11 @@ import pytest
 from sqlalchemy.orm import Session
 
 from ledgerlight.db.models import Document, DocumentVersion
-from ledgerlight.knowledge.label_review import apply_review_decision, gold_label_counts
+from ledgerlight.knowledge.label_review import (
+    apply_review_decision,
+    gold_label_counts,
+    pending_label_items,
+)
 from ledgerlight.knowledge.models import LabelItem
 
 pytestmark = pytest.mark.integration
@@ -107,8 +111,62 @@ def test_gold_label_counts_excludes_rejected_and_uses_corrected_code(db_session:
         db_session, corrected.id, "correct", "r", corrected_event_type_code="ID_EXIT"
     )
     apply_review_decision(db_session, rejected.id, "reject", "r")
-    _ = unreviewed
 
-    counts = gold_label_counts(db_session)
+    ids = {accepted.id, corrected.id, rejected.id, unreviewed.id}
+    counts = gold_label_counts(db_session, only_label_item_ids=ids)
     assert counts.get("AUD_RESIGN") == 1
     assert counts.get("ID_EXIT") == 1
+
+
+def test_skip_persists_as_skipped_without_promoting_to_gold(db_session: Session) -> None:
+    item = _make_label_item(db_session)
+    result = apply_review_decision(
+        db_session, item.id, "skip", "jane reviewer", note="unsure, revisit"
+    )
+
+    assert result.review_status == "skipped"
+    # Skip is a deliberate non-decision: never promotes to GOLD, unlike
+    # accept/correct/reject which all set human_reviewed.
+    assert result.label_source == "ai_assisted_unreviewed"
+    db_session.refresh(item)
+    assert item.review_status == "skipped"
+    assert item.reviewer == "jane reviewer"
+    assert item.reviewed_at is not None
+    assert item.review_note == "unsure, revisit"
+
+
+def test_skip_without_note_is_allowed(db_session: Session) -> None:
+    item = _make_label_item(db_session)
+    apply_review_decision(db_session, item.id, "skip", "jane reviewer")
+    db_session.refresh(item)
+    assert item.review_status == "skipped"
+    assert item.review_note is None
+
+
+def test_skipped_item_is_distinguishable_from_unseen_pending(db_session: Session) -> None:
+    skipped = _make_label_item(db_session)
+    untouched = _make_label_item(db_session)
+    apply_review_decision(db_session, skipped.id, "skip", "jane reviewer")
+
+    ids = {skipped.id, untouched.id}
+    pending = pending_label_items(db_session, only_ids=ids)
+    pending_ids = {p.id for p in pending}
+
+    assert skipped.id not in pending_ids
+    assert untouched.id in pending_ids
+
+
+def test_resume_excludes_already_decided_items_from_a_second_pending_query(
+    db_session: Session,
+) -> None:
+    item_a = _make_label_item(db_session)
+    item_b = _make_label_item(db_session)
+    ids = {item_a.id, item_b.id}
+
+    first_pass = pending_label_items(db_session, only_ids=ids)
+    assert {i.id for i in first_pass} == ids
+
+    apply_review_decision(db_session, item_a.id, "accept", "jane reviewer")
+
+    second_pass = pending_label_items(db_session, only_ids=ids)
+    assert {i.id for i in second_pass} == {item_b.id}

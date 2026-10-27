@@ -99,9 +99,12 @@ build-bm25-index:
 labels-propose:
 	uv run python scripts/labels_propose.py
 
-# usage: make label-review REVIEWER="your name" [LIMIT=20]
+build-label-sample:
+	uv run python scripts/build_label_sample.py
+
+# usage: make label-review REVIEWER="your name" [LIMIT=20] [SAMPLE=80]
 label-review:
-	uv run python scripts/label_review.py --reviewer "$(REVIEWER)" $(if $(LIMIT),--limit $(LIMIT),)
+	uv run python scripts/label_review.py --reviewer "$(REVIEWER)" $(if $(LIMIT),--limit $(LIMIT),) $(if $(SAMPLE),--sample-size $(SAMPLE),)
 
 labels-split:
 	uv run python scripts/labels_split.py

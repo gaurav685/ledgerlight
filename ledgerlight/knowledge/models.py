@@ -465,11 +465,14 @@ class LabelItem(Base):
         String(16),
         nullable=False,
         default="pending",
-        doc="pending | accepted | corrected | rejected",
+        doc="pending | accepted | corrected | rejected | skipped",
     )
     corrected_event_type_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
     reviewer: Mapped[str | None] = mapped_column(String(64), nullable=True)
     reviewed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    review_note: Mapped[str | None] = mapped_column(
+        Text, nullable=True, doc="optional free-text note, e.g. recorded on 'skip'"
+    )
 
     split: Mapped[str | None] = mapped_column(
         String(16), nullable=True, doc="dev | validation | test"

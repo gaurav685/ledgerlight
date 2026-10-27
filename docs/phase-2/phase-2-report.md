@@ -766,3 +766,138 @@ No gate regressed. Gate 9 is unchanged from the original report (`PENDING_HUMAN_
 this completion pass could not move it to PASS or PARTIAL because the one and only thing that
 would have moved it (a real human running `label_review.py`) did not happen in this session,
 and the model correctly declined to perform that step itself.
+
+## 18. 80-item review sample (filling per-class gold-coverage gaps)
+
+Gaurav reviewed 38 event-level label items (real counts, re-verified against the database:
+26 accepted, 10 corrected, 2 rejected; 0 in the `test` split -- 21 `dev`, 17 `validation`).
+Four classes had 0 gold-counted items at all (`ID_EXIT`, `RATING_ACT`, `RESULT_DELAY`,
+`AUDIT_QUAL`), and `KMP_EXIT`/`FORENSIC`/`RPT_GROWTH`/`AUD_RESIGN`/`PLEDGE_UP` were all below
+the 4-per-class target.
+
+`ledgerlight/knowledge/label_sample.py` builds a deterministic 80-item sample (seed 42): the
+38 already-reviewed items unchanged, plus up to 42 new pending items selected to fill each
+class's gap -- `test` split preferred, `validation` as fallback, `dev` never used for new
+items (reviewing more training-split items wouldn't grow gold *evaluation* coverage). When a
+class's per-class minimum is satisfied before the 42-item budget is used up, the remaining
+budget is filled by round-robining the same class order/split preference until the budget or
+the eligible pool is exhausted -- in this corpus that overflow lands mostly on `none`, the
+only class with a large remaining pool; disclosed here, not hidden.
+
+Real composition (`scripts/build_label_sample.py`,
+`docs/phase-2/evidence/build-label-sample-run1.log`):
+
+```
+class         already   new  total  new_test  new_val
+-----------------------------------------------------
+AUD_RESIGN          1     5      6         4        1
+PLEDGE_UP           2     2      4         2        0
+KMP_EXIT            1     1      2         0        1
+ID_EXIT             0     5      5         1        4
+RATING_ACT          0     0      0         0        0
+RESULT_DELAY        0     1      1         0        1
+AUDIT_QUAL          0     5      5         0        5
+FORENSIC            1     0      1         0        0
+RPT_GROWTH          1     8      9         0        8
+none               32    15     47         7        8
+```
+
+`RATING_ACT` and `FORENSIC` stay under the 4-item minimum: both have **zero** items in the
+`test`+`validation` splits combined (all their silver items landed in `dev` when the original
+company+time split was built in Phase 2) -- there is nothing eligible to add for them without
+reaching into `dev`, which this design deliberately does not do. `KMP_EXIT` (2 of 4) and
+`RESULT_DELAY` (1 of 4) are also short, for the same reason (thin test+validation pools).
+These four classes are flagged `under_minimum_classes`, not silently padded.
+
+Manifest: `data/manifests/label-review-sample-42.jsonl` (80 lines, `{label_item_id, split}`
+only -- no document text, no proposed/corrected codes, nothing that could let a reviewer or
+this report infer the "right answer" from the manifest itself).
+
+### 18.1 Sample-mode review CLI
+
+`scripts/label_review.py --reviewer "Gaurav" --sample-size 80` (auto-discovers the one
+manifest under `data/manifests/` with exactly 80 lines) or
+`--sample-manifest data/manifests/label-review-sample-42.jsonl` explicitly. Presents only the
+pending items from the manifest (the 42 new ones, shrinking as they're decided), and prints
+progress as `done/total` (`38/80` before the first new decision, counting up to `80/80`).
+Smoke-tested this session with an immediate `q` (quit) on the very first prompt -- confirmed
+it shows `38/80 done, 42 pending item(s) to show` and made zero database writes (verified: the
+reviewed-item count stayed at 38 before and after). No item was reviewed, decided, or altered
+by this session.
+
+### 18.2 Skip persistence
+
+`review_status` gains a `skipped` value (migration `61708ede1bba_add_review_note_to_label_items`
+also adds a nullable `review_note` text column). `apply_review_decision(..., "skip", ...,
+note=...)` persists `review_status='skipped'`, `reviewer`, `reviewed_at`, and the optional
+note -- but deliberately does **not** set `label_source='human_reviewed'`, since a skip is a
+non-decision, not a judgement about correctness, and must never promote a label to GOLD.
+Skipped items are excluded from `pending_label_items`'s result (same as accepted/corrected/
+rejected), which is what makes a second run of the sample CLI resume with whatever's still
+actually pending.
+
+### 18.3 Coverage gap: field/entity-pair/retrieval-query review types don't exist
+
+`label_item_fields` has 0 rows (schema exists, never populated); there is no entity-pair
+review table and no retrieval-query review table in this schema at all. Gold evaluation for
+extraction (field-level accuracy), entity resolution (pairwise P/R/F1), and retrieval
+(Recall@k/MRR against a human-reviewed query set) therefore has no review mechanism to build
+on yet, even once event-level gold coverage grows. **This is a real, disclosed gap, not built
+in this change** (explicitly out of scope per this task's own instructions) -- deferred to
+Phase 6. See `docs/release/release-gates.md` for the release-blocking framing of this gap.
+
+### 18.4 Tests added
+
+`tests/test_label_sample.py` (6 tests): deterministic sampling given the same seed, different
+seeds can select differently, the 38-equivalent already-reviewed items are included with
+decisions untouched, a class already at its minimum gets 0 new items, `test` split is
+exhausted before `validation` is touched, `dev` is never used for new items (and the class is
+flagged `under_minimum`).
+
+`tests/test_label_review.py` (+5 tests, 1 pre-existing test fixed): skip persists as
+`skipped` without promoting to gold; skip without a note is allowed; a skipped item is
+excluded from a subsequent pending query (distinguishing it from an untouched item); a second
+`pending_label_items` call excludes an item decided since the first call (resume). The
+pre-existing `test_gold_label_counts_...` test was failing against the real database (the same
+class of test-isolation bug fixed earlier in this branch: `gold_label_counts` queried the
+whole table, which now includes Gaurav's real 38 reviews) -- fixed by adding the same
+`only_label_item_ids` scoping parameter already used elsewhere in this codebase, not by
+changing the production logic.
+
+### 18.5 Checks
+
+```
+ruff check .            -> All checks passed!
+ruff format --check .   -> 141 files already formatted
+mypy                     -> Success: no issues found in 75 source files
+pytest -q                -> 183 passed, 59 deselected in 15.52s
+pytest -q -m integration -> 57 passed, 185 deselected in 11.78s
+pytest -q -m corpus      -> 2 passed, 240 deselected in 11.75s
+```
+Total: 242 passing (up from 232; +10 new tests, 0 regressions).
+
+```
+pre-commit run --all-files:
+ruff...................................................................................Passed
+ruff-format.............................................................................Passed
+Detect hardcoded secrets.................................................................Passed
+check for added large files..............................................................Passed
+reject staged files under data/raw, data/interim, data/processed........................Passed
+mypy (project venv -- avoids a second, heavy isolated env)...............................Passed
+```
+
+```
+gitleaks detect --source . --log-opts="--all":
+29 commits scanned.
+scan completed in 1.82s
+no leaks found
+```
+
+```
+alembic check:
+No new upgrade operations detected.
+```
+
+Gate 9 is still `PENDING_HUMAN_REVIEW` -- this change only builds the sample and the tooling;
+it does not review anything. 42 new items are now queued for Gaurav in the manifest, in
+addition to whatever of the original 203 he chooses to review outside the sample.
