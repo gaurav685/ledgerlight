@@ -1,0 +1,31 @@
+C:\ledger light\.venv\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+gold validation examples: 41
+Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]Loading weights:  30%|##9       | 60/202 [00:00<00:00, 598.88it/s]Loading weights:  59%|#####9    | 120/202 [00:00<00:00, 575.02it/s]Loading weights: 100%|##########| 202/202 [00:00<00:00, 946.02it/s]
+wrote raw predictions to docs\phase-3\evidence\select-classifiers-raw-predictions.json
+
+event_type     support           selected flag                        
+AUD_RESIGN           0               None no_gold_validation_data     
+PLEDGE_UP            0               None no_gold_validation_data     
+KMP_EXIT             3     rules_baseline insufficient_support        
+    rules_baseline       F1=0.667 CI=[0.000,1.000]  precision=0.667 CI=[0.000,1.000]
+    tfidf_lr             F1=0.000 CI=[0.000,0.000]  precision=0.000 CI=[0.000,0.000]
+    deberta_zero_shot    F1=0.667 CI=[0.000,1.000]  precision=0.667 CI=[0.000,1.000]
+ID_EXIT              1     rules_baseline insufficient_support        
+    rules_baseline       F1=0.500 CI=[0.000,1.000]  precision=0.333 CI=[0.000,1.000]
+    tfidf_lr             F1=0.000 CI=[0.000,0.000]  precision=0.000 CI=[0.000,0.000]
+    deberta_zero_shot    F1=0.000 CI=[0.000,0.000]  precision=0.000 CI=[0.000,0.000]
+RATING_ACT           0               None no_gold_validation_data     
+RESULT_DELAY         0               None no_gold_validation_data     
+AUDIT_QUAL           0               None no_gold_validation_data     
+FORENSIC             0               None no_gold_validation_data     
+RPT_GROWTH           3           tfidf_lr insufficient_support        
+    rules_baseline       F1=0.000 CI=[0.000,0.000]  precision=0.000 CI=[0.000,0.000]
+    tfidf_lr             F1=0.400 CI=[0.000,0.667]  precision=0.250 CI=[0.000,0.500]
+    deberta_zero_shot    F1=0.000 CI=[0.000,0.000]  precision=0.000 CI=[0.000,0.000]
+none                34  deberta_zero_shot                             
+    rules_baseline       F1=0.896 CI=[0.806,0.960]  precision=0.909 CI=[0.800,1.000]
+    tfidf_lr             F1=0.800 CI=[0.679,0.899]  precision=0.923 CI=[0.800,1.000]
+    deberta_zero_shot    F1=0.930 CI=[0.862,0.986]  precision=0.892 CI=[0.784,0.974]
+
+wrote data\manifests\classifier-selection-gold-validation.json

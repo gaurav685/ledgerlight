@@ -1,0 +1,228 @@
+{
+  "AUD_RESIGN": {
+    "support": 0,
+    "selected_method": null,
+    "method_f1": {},
+    "f1_95ci": {},
+    "method_precision": {},
+    "precision_95ci": {},
+    "insufficient_support": true
+  },
+  "PLEDGE_UP": {
+    "support": 0,
+    "selected_method": null,
+    "method_f1": {},
+    "f1_95ci": {},
+    "method_precision": {},
+    "precision_95ci": {},
+    "insufficient_support": true
+  },
+  "KMP_EXIT": {
+    "support": 3,
+    "selected_method": "rules_baseline",
+    "method_f1": {
+      "rules_baseline": 0.6666666666666666,
+      "tfidf_lr": 0.0,
+      "deberta_zero_shot": 0.6666666666666666
+    },
+    "f1_95ci": {
+      "rules_baseline": [
+        0.0,
+        1.0
+      ],
+      "tfidf_lr": [
+        0.0,
+        0.0
+      ],
+      "deberta_zero_shot": [
+        0.0,
+        1.0
+      ]
+    },
+    "method_precision": {
+      "rules_baseline": 0.6666666666666666,
+      "tfidf_lr": 0.0,
+      "deberta_zero_shot": 0.6666666666666666
+    },
+    "precision_95ci": {
+      "rules_baseline": [
+        0.0,
+        1.0
+      ],
+      "tfidf_lr": [
+        0.0,
+        0.0
+      ],
+      "deberta_zero_shot": [
+        0.0,
+        1.0
+      ]
+    },
+    "insufficient_support": true
+  },
+  "ID_EXIT": {
+    "support": 1,
+    "selected_method": "rules_baseline",
+    "method_f1": {
+      "rules_baseline": 0.5,
+      "tfidf_lr": 0.0,
+      "deberta_zero_shot": 0.0
+    },
+    "f1_95ci": {
+      "rules_baseline": [
+        0.0,
+        1.0
+      ],
+      "tfidf_lr": [
+        0.0,
+        0.0
+      ],
+      "deberta_zero_shot": [
+        0.0,
+        0.0
+      ]
+    },
+    "method_precision": {
+      "rules_baseline": 0.3333333333333333,
+      "tfidf_lr": 0.0,
+      "deberta_zero_shot": 0.0
+    },
+    "precision_95ci": {
+      "rules_baseline": [
+        0.0,
+        1.0
+      ],
+      "tfidf_lr": [
+        0.0,
+        0.0
+      ],
+      "deberta_zero_shot": [
+        0.0,
+        0.0
+      ]
+    },
+    "insufficient_support": true
+  },
+  "RATING_ACT": {
+    "support": 0,
+    "selected_method": null,
+    "method_f1": {},
+    "f1_95ci": {},
+    "method_precision": {},
+    "precision_95ci": {},
+    "insufficient_support": true
+  },
+  "RESULT_DELAY": {
+    "support": 0,
+    "selected_method": null,
+    "method_f1": {},
+    "f1_95ci": {},
+    "method_precision": {},
+    "precision_95ci": {},
+    "insufficient_support": true
+  },
+  "AUDIT_QUAL": {
+    "support": 0,
+    "selected_method": null,
+    "method_f1": {},
+    "f1_95ci": {},
+    "method_precision": {},
+    "precision_95ci": {},
+    "insufficient_support": true
+  },
+  "FORENSIC": {
+    "support": 0,
+    "selected_method": null,
+    "method_f1": {},
+    "f1_95ci": {},
+    "method_precision": {},
+    "precision_95ci": {},
+    "insufficient_support": true
+  },
+  "RPT_GROWTH": {
+    "support": 3,
+    "selected_method": "tfidf_lr",
+    "method_f1": {
+      "rules_baseline": 0.0,
+      "tfidf_lr": 0.4,
+      "deberta_zero_shot": 0.0
+    },
+    "f1_95ci": {
+      "rules_baseline": [
+        0.0,
+        0.0
+      ],
+      "tfidf_lr": [
+        0.0,
+        0.6666666666666666
+      ],
+      "deberta_zero_shot": [
+        0.0,
+        0.0
+      ]
+    },
+    "method_precision": {
+      "rules_baseline": 0.0,
+      "tfidf_lr": 0.25,
+      "deberta_zero_shot": 0.0
+    },
+    "precision_95ci": {
+      "rules_baseline": [
+        0.0,
+        0.0
+      ],
+      "tfidf_lr": [
+        0.0,
+        0.5
+      ],
+      "deberta_zero_shot": [
+        0.0,
+        0.0
+      ]
+    },
+    "insufficient_support": true
+  },
+  "none": {
+    "support": 34,
+    "selected_method": "deberta_zero_shot",
+    "method_f1": {
+      "rules_baseline": 0.8955223880597015,
+      "tfidf_lr": 0.8,
+      "deberta_zero_shot": 0.9295774647887324
+    },
+    "f1_95ci": {
+      "rules_baseline": [
+        0.8064516129032258,
+        0.96
+      ],
+      "tfidf_lr": [
+        0.6792452830188679,
+        0.8985507246376812
+      ],
+      "deberta_zero_shot": [
+        0.8615384615384616,
+        0.9863013698630136
+      ]
+    },
+    "method_precision": {
+      "rules_baseline": 0.9090909090909091,
+      "tfidf_lr": 0.9230769230769231,
+      "deberta_zero_shot": 0.8918918918918919
+    },
+    "precision_95ci": {
+      "rules_baseline": [
+        0.8,
+        1.0
+      ],
+      "tfidf_lr": [
+        0.8,
+        1.0
+      ],
+      "deberta_zero_shot": [
+        0.7837837837837838,
+        0.9736842105263158
+      ]
+    },
+    "insufficient_support": false
+  }
+}

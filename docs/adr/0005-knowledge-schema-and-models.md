@@ -103,10 +103,14 @@ entered the full validation set) and `docs/phase-3/phase-3-report.md` §5 for th
 gold-only selection this amendment produced.
 
 **Why per-type, not one global winner.** Different event types showed different best methods
-even within this small gold sample (e.g. `deberta_zero_shot` beat `rules_baseline` on `none`
-and `KMP_EXIT` in the gold-only subset, while `rules_baseline` was still ahead on
-`RPT_GROWTH`) — collapsing this to one global "winner" would throw away real per-type signal
-for the sake of a simpler number that isn't actually more honest.
+even within this small gold sample: `deberta_zero_shot` won on `none` (precision 0.892,
+95% CI [0.784, 0.974], the only class with support >= 10, but excluded from the reliability
+framework since it's the background class, not a red-flag event type); `rules_baseline` won
+on `KMP_EXIT` (support 3) and `ID_EXIT` (support 1); `tfidf_lr` won on `RPT_GROWTH` (support 3)
+-- see `docs/modelling/event-reliability.md` for the full table and the one, demonstrated
+(not statistically estimated) false positive this pass also found and fixed in the
+extraction pipeline itself. Collapsing this to one global "winner" would throw away real
+per-type signal for the sake of a simpler number that isn't actually more honest.
 
 **Consequence.** Any class with 0 or `<5` gold-validation examples cannot be reliably
 selected on yet (several currently aren't) — this is surfaced explicitly, not defaulted
