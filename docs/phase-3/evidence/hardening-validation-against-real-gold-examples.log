@@ -1,0 +1,41 @@
+=== AUDIT_QUAL false positives (expect None now) ===
+[OK] AUDIT_QUAL FP (emphasis of matter): expected=None got=None
+[OK] AUDIT_QUAL FP (emphasis of matter): expected=None got=None
+
+=== ID_EXIT false positives (expect None now) ===
+[OK] ID_EXIT FP (roster/role-mismatch): expected=None got=None
+[MISMATCH] ID_EXIT FP (roster/role-mismatch): expected=None got='KMP_EXIT'
+[MISMATCH] ID_EXIT FP (roster/role-mismatch): expected=None got='ID_EXIT'
+[MISMATCH] ID_EXIT FP (roster/role-mismatch): expected=None got='ID_EXIT'
+
+=== ID_EXIT true positive (expect ID_EXIT still) ===
+[OK] ID_EXIT TP: expected='ID_EXIT' got='ID_EXIT'
+
+=== RPT_GROWTH false positives (expect None now) ===
+[OK] RPT_GROWTH FP: expected=None got=None
+[OK] RPT_GROWTH FP: expected=None got=None
+[OK] RPT_GROWTH FP: expected=None got=None
+[OK] RPT_GROWTH FP: expected=None got=None
+[OK] RPT_GROWTH FP: expected=None got=None
+[OK] RPT_GROWTH FP: expected=None got=None
+[OK] RPT_GROWTH FP: expected=None got=None
+[MISMATCH] RPT_GROWTH FP: expected=None got='RPT_GROWTH'
+
+=== RPT_GROWTH accepted (true per reviewer -- may now diverge, report honestly) ===
+[MISMATCH] RPT_GROWTH accepted-by-reviewer: expected='RPT_GROWTH' got=None
+[MISMATCH] RPT_GROWTH accepted-by-reviewer: expected='RPT_GROWTH' got=None
+[MISMATCH] RPT_GROWTH accepted-by-reviewer: expected='RPT_GROWTH' got=None
+[MISMATCH] RPT_GROWTH accepted-by-reviewer: expected='RPT_GROWTH' got=None
+
+=== AUD_RESIGN accepted (expect AUD_RESIGN still) ===
+[OK] AUD_RESIGN TP: expected='AUD_RESIGN' got='AUD_RESIGN'
+[OK] AUD_RESIGN TP: expected='AUD_RESIGN' got='AUD_RESIGN'
+[OK] AUD_RESIGN TP: expected='AUD_RESIGN' got='AUD_RESIGN'
+[OK] AUD_RESIGN TP: expected='AUD_RESIGN' got='AUD_RESIGN'
+
+=== PLEDGE_UP (expect None always now -- removed from free text) ===
+[OK] PLEDGE_UP (any): expected=None got=None
+[OK] PLEDGE_UP (any): expected=None got=None
+[OK] PLEDGE_UP (any): expected=None got=None
+[OK] PLEDGE_UP (any): expected=None got=None
+[OK] PLEDGE_UP (any): expected=None got=None

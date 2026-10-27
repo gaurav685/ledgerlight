@@ -1,0 +1,12 @@
+chunks_seen: 2591
+proposals_created: 192
+already_proposed: 0
+by_event_type:
+  AUD_RESIGN: 4
+  FORENSIC: 7
+  ID_EXIT: 10
+  KMP_EXIT: 5
+  RATING_ACT: 4
+  RESULT_DELAY: 4
+  RPT_GROWTH: 1
+  none: 157

@@ -79,3 +79,35 @@ enough labelled mention-pairs to train or even properly evaluate one.
 - The classification and retrieval evaluation numbers in this phase are
   against SILVER labels only (see the Phase 2 report §13) — this is a
   known, explicitly reported limitation, not a model-choice problem.
+
+## Amendment (Phase 3 §1.3): classifier selection was circular, now fixed
+
+**Problem.** The original selection mechanism (`scripts/evaluate.py`, described above)
+picked the production classifier by macro_f1 on the *validation split as a whole*, using
+`label_source` labels that were almost entirely silver (`ai_assisted_unreviewed`) at the time.
+Because `rules_baseline` is literally the same function that generated those silver labels
+(`ledgerlight.knowledge.labeling.propose_event_type`), it scored a perfect, meaningless 1.000
+on validation and was selected every time — a circularity, not evidence of real accuracy. This
+was documented honestly in the Phase 2 report as a known limitation, but the mechanism itself
+was never fixed in Phase 2 because no gold labels existed yet to fix it with.
+
+**Fix (this phase).** `ledgerlight.knowledge.classifier_eval.load_gold_split` loads only
+`label_source='human_reviewed'` items for a split; `select_production_classifier_per_class`
+(`scripts/select_classifiers.py`) selects **per event type**, using gold validation only
+(`split='validation'` AND gold), with a bootstrap 95% F1 confidence interval per method and an
+explicit `insufficient_support` flag (support `< 5`) and a `None` selection (not a silent
+default) when a class has zero gold-validation examples at all. Real result on 41 gold
+validation items: see `docs/phase-2/phase-2-report.md` §19.3/§19.4 for the headline finding
+(rules_baseline's validation macro_f1 collapsed from 1.000 to 0.441 the moment real gold
+entered the full validation set) and `docs/phase-3/phase-3-report.md` §5 for the per-class
+gold-only selection this amendment produced.
+
+**Why per-type, not one global winner.** Different event types showed different best methods
+even within this small gold sample (e.g. `deberta_zero_shot` beat `rules_baseline` on `none`
+and `KMP_EXIT` in the gold-only subset, while `rules_baseline` was still ahead on
+`RPT_GROWTH`) — collapsing this to one global "winner" would throw away real per-type signal
+for the sake of a simpler number that isn't actually more honest.
+
+**Consequence.** Any class with 0 or `<5` gold-validation examples cannot be reliably
+selected on yet (several currently aren't) — this is surfaced explicitly, not defaulted
+silently to whichever method happens to be convenient.

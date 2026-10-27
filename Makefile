@@ -130,3 +130,11 @@ review-queue:
 
 knowledge-pipeline:
 	$(DAGSTER_ENV) uv run dagster job execute -m ledgerlight.orchestration.definitions -j knowledge_pipeline_job
+
+# --- Phase 3 §1: selection fix and detector hardening ---
+
+freeze-eval-data:
+	uv run python scripts/freeze_phase2_eval_data.py
+
+select-classifiers:
+	uv run python scripts/select_classifiers.py

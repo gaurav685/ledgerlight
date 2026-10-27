@@ -200,3 +200,118 @@ def test_full_pipeline_is_idempotent_on_rerun(db_session: Session) -> None:
 
     mentions = db_session.scalars(select(Mention).where(Mention.version_id == version.id)).all()
     assert len(mentions) == 1
+
+
+def test_required_field_gate_rejects_date_only_extraction(db_session: Session) -> None:
+    """Phase 3 §1.4 fix: a chunk with a resignation date but no
+    gazetteer-known audit firm name must not create an AUD_RESIGN event
+    at all -- this is the real false positive gold review found (an
+    event with only resignation_date, no audit_firm, sourced from a KMP
+    roster-table row gold review corrected away from AUD_RESIGN)."""
+    document = Document(
+        source_id="sebi",
+        source_key=f"test://pipeline-integration/{uuid.uuid4()}",
+        document_type="announcement",
+    )
+    db_session.add(document)
+    db_session.flush()
+    # Satisfies the classifier's AUD_RESIGN rule (statutory auditor +
+    # resign + a date, all within range) but "Not A Known Firm LLP" is
+    # not in the extractor's gazetteer, so no audit_firm can be found.
+    page_text = (
+        "BY THE STATUTORY AUDITOR - Not A Known Firm LLP\n\n"
+        "This is to hereby inform that Not A Known Firm LLP has resigned "
+        "as statutory auditor with effect from April 28, 2018."
+    )
+    version = DocumentVersion(
+        document_id=document.id,
+        sha256=uuid.uuid4().hex + uuid.uuid4().hex,
+        content_sha256=uuid.uuid4().hex + uuid.uuid4().hex,
+        object_key=f"raw/test/{uuid.uuid4()}.pdf",
+        bytes=len(page_text),
+        mime_type="application/pdf",
+        retrieval_method="automated_fetch",
+        retrieval_url="https://example.com/test.pdf",
+        retrieved_at=dt.datetime.now(dt.UTC),
+        known_at=dt.datetime.now(dt.UTC),
+        known_at_basis="retrieved_at",
+        tool_version="test/1",
+    )
+    db_session.add(version)
+    db_session.flush()
+    db_session.add(
+        DocumentPage(
+            version_id=version.id,
+            page_number=1,
+            raw_text=page_text,
+            text_sha256=hashlib.sha256(page_text.encode("utf-8")).hexdigest(),
+            char_count=len(page_text),
+            extraction_method="text_layer",
+            extractor_version="test/1",
+        )
+    )
+    db_session.flush()
+
+    _ensure_taxonomy_loaded(db_session)
+    result = _run_pipeline_once(db_session, version)
+
+    assert result["events_created"] == 0
+    assert result["fields_created"] == 0
+    assert _fields_for_version(db_session, version.id) == []
+
+
+def test_new_detector_version_supersedes_old_event(db_session: Session) -> None:
+    """A pre-existing event from an older extractor_version must not be
+    duplicated or overwritten -- the new run's event links to it via
+    `supersedes_event_id`, and the old row is untouched."""
+    from ledgerlight.knowledge.extraction_pipeline import DETECTOR_NAME, DETECTOR_VERSION
+
+    _ensure_taxonomy_loaded(db_session)
+    version = _make_document_version(db_session)
+    event_type = db_session.scalar(select(EventType).where(EventType.code == "AUD_RESIGN"))
+    assert event_type is not None
+
+    old_event = Event(
+        event_type_id=event_type.id,
+        known_at=version.known_at,
+        severity="medium",
+        status="candidate",
+        detector_name=DETECTOR_NAME,
+        detector_version="1",
+        confidence=0.9,
+    )
+    db_session.add(old_event)
+    db_session.flush()
+    db_session.add(
+        EventField(
+            event_id=old_event.id,
+            field_name="resignation_date",
+            value_json="2018-04-28",
+            evidence_version_id=version.id,
+            evidence_page=1,
+            evidence_char_start=0,
+            evidence_char_end=10,
+            extractor_name="aud-resign-rule-v1",
+            extractor_version="1",
+            confidence=0.3,
+            validation_status="failed",
+        )
+    )
+    db_session.commit()
+
+    result = _run_pipeline_once(db_session, version)
+    assert result["events_created"] == 1
+
+    new_event_ids = {f.event_id for f in _fields_for_version(db_session, version.id)} - {
+        old_event.id
+    }
+    assert len(new_event_ids) == 1
+    new_event = db_session.get(Event, next(iter(new_event_ids)))
+    assert new_event is not None
+    assert new_event.supersedes_event_id == old_event.id
+    assert new_event.detector_version == DETECTOR_VERSION
+
+    # The old event is untouched -- never overwritten, never deleted.
+    db_session.refresh(old_event)
+    assert old_event.detector_version == "1"
+    assert old_event.supersedes_event_id is None

@@ -29,7 +29,12 @@ from ledgerlight.knowledge.evidence import (
 )
 
 EXTRACTOR_NAME = "aud-resign-rule-v1"
-EXTRACTOR_VERSION = "1"
+# v2: the field-matching logic below is unchanged; bumped because
+# ledgerlight.knowledge.extraction_pipeline's event-creation gate (which
+# keys idempotency off this version) now requires `audit_firm` to be
+# present before materializing an event -- see that module's docstring
+# for the real false positive this fixes.
+EXTRACTOR_VERSION = "2"
 
 _KNOWN_AUDIT_FIRMS = [
     "Price Waterhouse & Co Chartered Accountants LLP",
