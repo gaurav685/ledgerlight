@@ -1,0 +1,135 @@
+gold validation n=41  frozen test n=14
+
+=== GOLD VALIDATION -- rules_baseline BEFORE hardening (v1) ===
+
+-- rules_v1_BEFORE_validation (n=41) --
+label             precision   recall       f1  support
+AUD_RESIGN            0.000    0.000    0.000        0
+KMP_EXIT              1.000    0.333    0.500        3
+ID_EXIT               0.250    1.000    0.400        1
+RESULT_DELAY          0.000    0.000    0.000        0
+AUDIT_QUAL            0.000    0.000    0.000        0
+RPT_GROWTH            0.333    1.000    0.500        3
+none                  1.000    0.647    0.786       34
+macro_f1: 0.312
+confusion_matrix (rows=true, cols=pred, order=['AUD_RESIGN', 'KMP_EXIT', 'ID_EXIT', 'RESULT_DELAY', 'AUDIT_QUAL', 'RPT_GROWTH', 'none']):
+     0    0    0    0    0    0    0
+     1    1    1    0    0    0    0
+     0    0    1    0    0    0    0
+     0    0    0    0    0    0    0
+     0    0    0    0    0    0    0
+     0    0    0    0    0    3    0
+     1    0    2    1    2    6   22
+
+=== GOLD VALIDATION -- rules_baseline AFTER hardening (v2) ===
+
+-- rules_v2_AFTER_validation (n=41) --
+label             precision   recall       f1  support
+KMP_EXIT              0.667    0.667    0.667        3
+ID_EXIT               0.333    1.000    0.500        1
+RESULT_DELAY          0.000    0.000    0.000        0
+RPT_GROWTH            0.000    0.000    0.000        3
+none                  0.909    0.882    0.896       34
+macro_f1: 0.412
+confusion_matrix (rows=true, cols=pred, order=['KMP_EXIT', 'ID_EXIT', 'RESULT_DELAY', 'RPT_GROWTH', 'none']):
+     2    1    0    0    0
+     0    1    0    0    0
+     0    0    0    0    0
+     0    0    0    0    3
+     1    1    1    1   30
+
+=== GOLD VALIDATION -- tfidf_lr (unaffected by hardening) ===
+
+-- tfidf_lr_validation (n=41) --
+label             precision   recall       f1  support
+PLEDGE_UP             0.000    0.000    0.000        0
+KMP_EXIT              0.000    0.000    0.000        3
+ID_EXIT               0.000    0.000    0.000        1
+AUDIT_QUAL            0.000    0.000    0.000        0
+RPT_GROWTH            0.250    1.000    0.400        3
+none                  0.923    0.706    0.800       34
+macro_f1: 0.200
+confusion_matrix (rows=true, cols=pred, order=['PLEDGE_UP', 'KMP_EXIT', 'ID_EXIT', 'AUDIT_QUAL', 'RPT_GROWTH', 'none']):
+     0    0    0    0    0    0
+     0    0    0    0    1    2
+     0    0    0    0    1    0
+     0    0    0    0    0    0
+     0    0    0    0    3    0
+     1    0    0    2    7   24
+
+=== GOLD VALIDATION -- deberta_zero_shot (unaffected by hardening) ===
+
+-- deberta_zero_shot_validation (n=41) --
+label             precision   recall       f1  support
+KMP_EXIT              0.667    0.667    0.667        3
+ID_EXIT               0.000    0.000    0.000        1
+RPT_GROWTH            0.000    0.000    0.000        3
+none                  0.892    0.971    0.930       34
+macro_f1: 0.399
+confusion_matrix (rows=true, cols=pred, order=['KMP_EXIT', 'ID_EXIT', 'RPT_GROWTH', 'none']):
+     2    1    0    0
+     0    0    0    1
+     0    0    0    3
+     1    0    0   33
+
+=== FROZEN TEST -- rules_baseline BEFORE hardening (v1) ===
+
+-- rules_v1_BEFORE_test (n=14) --
+label             precision   recall       f1  support
+AUD_RESIGN            1.000    1.000    1.000        4
+PLEDGE_UP             0.500    1.000    0.667        1
+ID_EXIT               0.000    0.000    0.000        0
+none                  1.000    0.778    0.875        9
+macro_f1: 0.635
+confusion_matrix (rows=true, cols=pred, order=['AUD_RESIGN', 'PLEDGE_UP', 'ID_EXIT', 'none']):
+     4    0    0    0
+     0    1    0    0
+     0    0    0    0
+     0    1    1    7
+
+=== FROZEN TEST -- rules_baseline AFTER hardening (v2) -- FINAL, reported once ===
+
+-- rules_v2_AFTER_test (n=14) --
+label             precision   recall       f1  support
+AUD_RESIGN            1.000    1.000    1.000        4
+PLEDGE_UP             0.000    0.000    0.000        1
+ID_EXIT               0.000    0.000    0.000        0
+none                  0.889    0.889    0.889        9
+macro_f1: 0.472
+confusion_matrix (rows=true, cols=pred, order=['AUD_RESIGN', 'PLEDGE_UP', 'ID_EXIT', 'none']):
+     4    0    0    0
+     0    0    0    1
+     0    0    0    0
+     0    0    1    8
+
+=== FROZEN TEST -- tfidf_lr (unaffected by hardening) ===
+
+-- tfidf_lr_test (n=14) --
+label             precision   recall       f1  support
+AUD_RESIGN            0.000    0.000    0.000        4
+PLEDGE_UP             0.333    1.000    0.500        1
+RPT_GROWTH            0.000    0.000    0.000        0
+none                  0.600    0.667    0.632        9
+macro_f1: 0.283
+confusion_matrix (rows=true, cols=pred, order=['AUD_RESIGN', 'PLEDGE_UP', 'RPT_GROWTH', 'none']):
+     0    0    0    4
+     0    1    0    0
+     0    0    0    0
+     0    2    1    6
+
+=== FROZEN TEST -- deberta_zero_shot (unaffected by hardening) ===
+
+-- deberta_zero_shot_test (n=14) --
+label             precision   recall       f1  support
+AUD_RESIGN            1.000    1.000    1.000        4
+PLEDGE_UP             0.000    0.000    0.000        1
+ID_EXIT               0.000    0.000    0.000        0
+none                  0.889    0.889    0.889        9
+macro_f1: 0.472
+confusion_matrix (rows=true, cols=pred, order=['AUD_RESIGN', 'PLEDGE_UP', 'ID_EXIT', 'none']):
+     4    0    0    0
+     0    0    0    1
+     0    0    0    0
+     0    0    1    8
+
+wrote docs/phase-3/evidence/before-after-hardening-full.json
