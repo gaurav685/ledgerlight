@@ -93,6 +93,16 @@ selection-confidence bar -- selection among these is reported honestly as
 
 ### 1.4 Detector hardening
 
+**Disclosure: frozen-TEST items informed two of these changes.** Full accounting (exact
+gold item IDs and splits) in `docs/modelling/event-reliability.md`'s "Frozen-TEST-split
+consultation" section. In short: all 4 `AUD_RESIGN` accepted examples used to validate
+and fix the hardened rule are TEST-split items -- the whole-chunk date-scan fix was
+specifically discovered by debugging one of them. One of the 4 `ID_EXIT` false-positive
+examples used is also TEST-split. **`AUD_RESIGN`'s frozen-test metrics (§1.4 below and
+everywhere else in this phase) are marked "test split consulted during development --
+not held-out"** -- reported anyway, not hidden, not re-split. `AUDIT_QUAL` and
+`RPT_GROWTH`'s hardening used only `dev`/`validation` items.
+
 Full before/after reasoning, real gold-reviewed examples, and every fix is documented in
 `ledgerlight/knowledge/labeling.py`'s module docstring -- summarized here:
 
@@ -161,6 +171,38 @@ idempotent on a second run (0 new). `PLEDGE_UP` dropped from 28 to 0 (by design)
 confirms **zero** chunks in the real corpus contain the literal phrase "qualified
 opinion"/"adverse opinion"/"disclaimer of opinion" at all, so every one of v1's 8
 AUDIT_QUAL proposals was driven by Emphasis-of-Matter.
+
+**Per-type precision/recall/support, gold validation, BEFORE vs AFTER hardening**
+(`rules_baseline`; full report incl. `tfidf_lr`/`deberta_zero_shot`:
+`docs/phase-3/evidence/before-after-hardening-report.log`):
+
+| label | P before | R before | F1 before | P after | R after | F1 after | support |
+|---|---|---|---|---|---|---|---|
+| KMP_EXIT | 1.000 | 0.333 | 0.500 | 0.667 | 0.667 | 0.667 | 3 |
+| ID_EXIT | 0.250 | 1.000 | 0.400 | 0.333 | 1.000 | 0.500 | 1 |
+| RPT_GROWTH | 0.333 | 1.000 | 0.500 | 0.000 | 0.000 | 0.000 | 3 |
+| none | 1.000 | 0.647 | 0.786 | 0.909 | 0.882 | 0.896 | 34 |
+| **macro_f1** | | | **0.312** | | | **0.412** | |
+
+`RPT_GROWTH` got worse (disclosed, not hidden -- the 3 gold-validation examples are
+exactly the unquantified-but-previously-accepted kind this phase's stricter evidence
+bar was instructed to exclude). `AUD_RESIGN`/`PLEDGE_UP`/`AUDIT_QUAL`/`RATING_ACT`/
+`RESULT_DELAY`/`FORENSIC` all have 0 gold-validation support either before or after.
+
+**Final test report, once** (n=14; `AUD_RESIGN` carries the test-consultation caveat
+above):
+
+| label | P before | R before | F1 before | P after | R after | F1 after | support |
+|---|---|---|---|---|---|---|---|
+| AUD_RESIGN (test-consulted) | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 4 |
+| PLEDGE_UP | 0.500 | 1.000 | 0.667 | 0.000 | 0.000 | 0.000 | 1 |
+| none | 1.000 | 0.778 | 0.875 | 0.889 | 0.889 | 0.889 | 9 |
+| **macro_f1** | | | **0.635** | | | **0.472** | |
+
+The macro_f1 drop is mechanical (`PLEDGE_UP` structurally can't be predicted by `v2`
+anymore, by design), not a quality regression on `AUD_RESIGN` (unchanged, expected given
+the caveat) or `none` (slightly improved). `tfidf_lr`/`deberta_zero_shot` test macro_f1
+(0.283/0.472) are unchanged from the Phase 2 report -- same models, same frozen items.
 
 Tests: `tests/test_labeling.py` grew from 4 to 13 tests, each drawn from a real
 gold-reviewed example (true or false positive) that motivated the corresponding rule;
