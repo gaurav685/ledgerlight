@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-10-27T15:59:51.155231+00:00",
+  "description": "Phase 2 frozen TEST split (label_items.split='test'). Never used for training, tuning, or threshold selection in Phase 3. Guarded by tests/test_frozen_split_guard.py.",
+  "count": 14,
+  "item_ids": [
+    "6cae44d1-ddd8-4680-8366-866c19f52388",
+    "83d228a8-f82e-4fba-9edd-b0afc63773a9",
+    "9167a9a1-0349-42dc-ac71-e831ddaf47be",
+    "9e984661-07bc-4d81-be15-b8b36092b7a7",
+    "a001d952-e294-44a3-b90f-ebdb4b7b9038",
+    "a3ae3450-cecd-477c-b8c1-c53fd891b903",
+    "a9e07430-4429-4c2d-9a02-8a52f3d56783",
+    "ad5dd767-0700-4bf0-9de7-bbdf0e8dc5dc",
+    "b8d54c96-f82a-4465-88e3-2593cf04a4eb",
+    "b994a9e8-0390-48a9-9c7b-8e045073746d",
+    "cf935e23-d709-4496-a23d-32b62d681dde",
+    "e6130d4f-c875-43ba-97a5-eb414794b258",
+    "e9029b34-3ef0-48ba-8048-59efb70fdf5e",
+    "f3a5b95c-a843-45fc-b21a-715090e4e9bc"
+  ],
+  "sha256_of_sorted_ids": "6b710e179dad29d40024e82215bbf9054edf4fa3333e6accd8e8e913f633857c"
+}

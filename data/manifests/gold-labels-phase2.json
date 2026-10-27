@@ -1,0 +1,778 @@
+{
+  "generated_at": "2026-10-27T15:59:51.155231+00:00",
+  "description": "Phase 2 gold-labelled items (label_source='human_reviewed'). Includes accepted/corrected/rejected; excludes 'skipped' (never promoted to gold). final_label is the resolved class for accepted/corrected items; for rejected items it is the original proposed code with counts_toward_class_coverage=false (a rejection is not valid evidence for that class).",
+  "count": 77,
+  "records": [
+    {
+      "label_item_id": "01686e1e-f82b-4a6c-8030-7ad49fdcfbff",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-26T13:47:27.952794+00:00"
+    },
+    {
+      "label_item_id": "01f5e9ce-debf-4379-8ed9-bfd205c717d7",
+      "split": "validation",
+      "proposed_event_type_code": "RPT_GROWTH",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:18:47.446905+00:00"
+    },
+    {
+      "label_item_id": "022c8c4c-5ff4-4801-b3e3-dba3f6c09860",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-26T14:52:48.881539+00:00"
+    },
+    {
+      "label_item_id": "02560f86-2812-4296-843b-d1a9c33f77d3",
+      "split": "dev",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-26T14:52:07.648923+00:00"
+    },
+    {
+      "label_item_id": "04d6eb93-07cd-4870-ab7f-890e6aea883a",
+      "split": "dev",
+      "proposed_event_type_code": "none",
+      "review_status": "corrected",
+      "final_label": "AUD_RESIGN",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-26T14:52:29.791571+00:00"
+    },
+    {
+      "label_item_id": "05ba88b5-06ca-4024-bcc4-2c7461cbcade",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-26T14:52:41.991736+00:00"
+    },
+    {
+      "label_item_id": "06869923-2aca-40e6-a5e6-0dcc6fff9ba3",
+      "split": "dev",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:20:51.630241+00:00"
+    },
+    {
+      "label_item_id": "08095f85-fd57-4299-83e6-a182fe7d124a",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-26T14:52:54.028653+00:00"
+    },
+    {
+      "label_item_id": "095b4d45-e3e3-480c-8c03-8f762abc989e",
+      "split": "validation",
+      "proposed_event_type_code": "AUD_RESIGN",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-26T14:53:00.330519+00:00"
+    },
+    {
+      "label_item_id": "09ceeda4-f6ca-4378-9b9d-126c931f3347",
+      "split": "dev",
+      "proposed_event_type_code": "RPT_GROWTH",
+      "review_status": "accepted",
+      "final_label": "RPT_GROWTH",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-26T14:53:01.994120+00:00"
+    },
+    {
+      "label_item_id": "109df33b-7524-41d9-ae64-1cdacc62bf66",
+      "split": "dev",
+      "proposed_event_type_code": "FORENSIC",
+      "review_status": "rejected",
+      "final_label": "FORENSIC",
+      "counts_toward_class_coverage": false,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-26T14:53:03.026989+00:00"
+    },
+    {
+      "label_item_id": "112ff955-1be4-4198-9544-d9094f802d09",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "rejected",
+      "final_label": "none",
+      "counts_toward_class_coverage": false,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-26T14:53:05.502138+00:00"
+    },
+    {
+      "label_item_id": "11dd22d3-6c10-4717-8e70-a2013ccf12f4",
+      "split": "dev",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-26T14:53:06.825527+00:00"
+    },
+    {
+      "label_item_id": "125d850a-1af4-4e38-a590-8f2b93ab42d6",
+      "split": "dev",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:21:14.316720+00:00"
+    },
+    {
+      "label_item_id": "1260ba02-1cac-48ca-9035-9c8ddd846a08",
+      "split": "dev",
+      "proposed_event_type_code": "ID_EXIT",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:21:55.168894+00:00"
+    },
+    {
+      "label_item_id": "128790d9-2719-458b-9370-2e8c7a2b47ce",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:22:09.531000+00:00"
+    },
+    {
+      "label_item_id": "14146b36-9630-4171-bb33-e587e59aae18",
+      "split": "dev",
+      "proposed_event_type_code": "PLEDGE_UP",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:22:35.594591+00:00"
+    },
+    {
+      "label_item_id": "142cab26-3266-43c4-9711-7fcc73c70b05",
+      "split": "dev",
+      "proposed_event_type_code": "PLEDGE_UP",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:23:35.429403+00:00"
+    },
+    {
+      "label_item_id": "14a36136-c7e5-477d-bb83-6550806d6bed",
+      "split": "dev",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:23:52.005468+00:00"
+    },
+    {
+      "label_item_id": "15123f33-7c3a-44df-886b-a59df29c920c",
+      "split": "dev",
+      "proposed_event_type_code": "RPT_GROWTH",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:41:52.822113+00:00"
+    },
+    {
+      "label_item_id": "15eef36f-198d-4431-a388-9ae16c5fa926",
+      "split": "dev",
+      "proposed_event_type_code": "PLEDGE_UP",
+      "review_status": "accepted",
+      "final_label": "PLEDGE_UP",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:24:55.083542+00:00"
+    },
+    {
+      "label_item_id": "16b52ff6-631d-4ea3-960d-322da18ef682",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:25:13.949326+00:00"
+    },
+    {
+      "label_item_id": "16f1a7c9-78e9-4875-8c8d-9906511accf2",
+      "split": "dev",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:25:32.604732+00:00"
+    },
+    {
+      "label_item_id": "17dd5017-4660-43ef-9a31-e6a39f657953",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:30:21.841714+00:00"
+    },
+    {
+      "label_item_id": "19730c22-45a1-4768-9a65-9512ef15183a",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:32:05.517920+00:00"
+    },
+    {
+      "label_item_id": "19facf94-2fd1-4c1e-a467-6e1d31d7679f",
+      "split": "dev",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:35:12.369104+00:00"
+    },
+    {
+      "label_item_id": "1a26136b-ce73-4ffd-9d74-754e81577694",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:35:28.351823+00:00"
+    },
+    {
+      "label_item_id": "1aa8ed91-68d2-4eb1-a2c8-099fdbc99e85",
+      "split": "dev",
+      "proposed_event_type_code": "PLEDGE_UP",
+      "review_status": "accepted",
+      "final_label": "PLEDGE_UP",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:36:02.152847+00:00"
+    },
+    {
+      "label_item_id": "1bc463c3-e08a-4247-a1a3-61896572e3fc",
+      "split": "dev",
+      "proposed_event_type_code": "none",
+      "review_status": "corrected",
+      "final_label": "KMP_EXIT",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:36:27.728422+00:00"
+    },
+    {
+      "label_item_id": "1bf32ffb-d34b-4e32-b62e-a3d02279b750",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:36:55.854320+00:00"
+    },
+    {
+      "label_item_id": "1c19a64c-160b-4459-b058-217936a871ff",
+      "split": "dev",
+      "proposed_event_type_code": "PLEDGE_UP",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:37:23.234305+00:00"
+    },
+    {
+      "label_item_id": "1c265bcb-06c3-4ee0-bafe-84985c6c6b88",
+      "split": "dev",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:37:43.963617+00:00"
+    },
+    {
+      "label_item_id": "1e2e6943-d573-4dce-ab56-eb2211c1c10d",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:38:08.534966+00:00"
+    },
+    {
+      "label_item_id": "1edaecc1-7f14-454e-a208-94e124a96184",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:38:22.617389+00:00"
+    },
+    {
+      "label_item_id": "216b1095-43ee-49c7-9f1c-d6710da2036a",
+      "split": "dev",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:38:44.209294+00:00"
+    },
+    {
+      "label_item_id": "275c72aa-7753-48e4-9819-ad8612d72490",
+      "split": "dev",
+      "proposed_event_type_code": "RPT_GROWTH",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:39:45.683851+00:00"
+    },
+    {
+      "label_item_id": "29a1e7d4-e7a6-460f-813b-db531a1da3a4",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:40:04.330849+00:00"
+    },
+    {
+      "label_item_id": "29ef4a43-a634-4882-91cc-d3d72ae77165",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T10:40:22.189462+00:00"
+    },
+    {
+      "label_item_id": "2f37afa5-45db-4ea2-b193-87be20dcffdf",
+      "split": "validation",
+      "proposed_event_type_code": "RPT_GROWTH",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:24:51.616876+00:00"
+    },
+    {
+      "label_item_id": "303d9eaa-da80-403e-a9d5-4fced4299f79",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:25:14.762328+00:00"
+    },
+    {
+      "label_item_id": "42956032-36d9-46bd-a781-32b6cf355e1e",
+      "split": "validation",
+      "proposed_event_type_code": "RPT_GROWTH",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:25:53.803790+00:00"
+    },
+    {
+      "label_item_id": "4b31329b-063a-41cf-b0ac-e34dae569789",
+      "split": "validation",
+      "proposed_event_type_code": "RPT_GROWTH",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:29:49.904858+00:00"
+    },
+    {
+      "label_item_id": "4d1755dd-b66d-41b1-8071-7c61f33cb2f4",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:30:59.635113+00:00"
+    },
+    {
+      "label_item_id": "4d49e488-62b1-49f7-bfd2-72160ea7a793",
+      "split": "validation",
+      "proposed_event_type_code": "AUD_RESIGN",
+      "review_status": "corrected",
+      "final_label": "KMP_EXIT",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:31:44.780444+00:00"
+    },
+    {
+      "label_item_id": "535fe1f3-b94e-4ec2-9974-3481e2a37972",
+      "split": "validation",
+      "proposed_event_type_code": "RESULT_DELAY",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:49:51.615829+00:00"
+    },
+    {
+      "label_item_id": "56443746-609b-4913-99f4-ac8d50c42491",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:32:48.523024+00:00"
+    },
+    {
+      "label_item_id": "5852c78b-95e4-40bc-b412-c15dc0ec24f2",
+      "split": "validation",
+      "proposed_event_type_code": "ID_EXIT",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:33:27.768451+00:00"
+    },
+    {
+      "label_item_id": "6cae44d1-ddd8-4680-8366-866c19f52388",
+      "split": "test",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:34:20.602909+00:00"
+    },
+    {
+      "label_item_id": "7c86b3db-7222-445e-b15d-54d793744e52",
+      "split": "validation",
+      "proposed_event_type_code": "RPT_GROWTH",
+      "review_status": "accepted",
+      "final_label": "RPT_GROWTH",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:35:22.554437+00:00"
+    },
+    {
+      "label_item_id": "8259e4ad-51ab-466d-ae09-04916f41b23e",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:36:30.814697+00:00"
+    },
+    {
+      "label_item_id": "83d228a8-f82e-4fba-9edd-b0afc63773a9",
+      "split": "test",
+      "proposed_event_type_code": "ID_EXIT",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:37:00.320557+00:00"
+    },
+    {
+      "label_item_id": "8d5f6857-d08f-4097-bbe5-378c9a9bfd7a",
+      "split": "validation",
+      "proposed_event_type_code": "KMP_EXIT",
+      "review_status": "accepted",
+      "final_label": "KMP_EXIT",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:37:29.397130+00:00"
+    },
+    {
+      "label_item_id": "8e051d86-a85f-4658-8252-c2ba26b10525",
+      "split": "validation",
+      "proposed_event_type_code": "RPT_GROWTH",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:38:01.705303+00:00"
+    },
+    {
+      "label_item_id": "9167a9a1-0349-42dc-ac71-e831ddaf47be",
+      "split": "test",
+      "proposed_event_type_code": "AUD_RESIGN",
+      "review_status": "accepted",
+      "final_label": "AUD_RESIGN",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:38:38.379565+00:00"
+    },
+    {
+      "label_item_id": "94e783d4-3e12-4238-8dbe-fef4fb507db9",
+      "split": "validation",
+      "proposed_event_type_code": "AUDIT_QUAL",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:38:58.068333+00:00"
+    },
+    {
+      "label_item_id": "964b00b8-8cb5-45b1-8a04-b6e64439fc24",
+      "split": "validation",
+      "proposed_event_type_code": "RPT_GROWTH",
+      "review_status": "accepted",
+      "final_label": "RPT_GROWTH",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:40:09.928556+00:00"
+    },
+    {
+      "label_item_id": "98690f06-b540-48a3-9754-d6329117cd02",
+      "split": "validation",
+      "proposed_event_type_code": "ID_EXIT",
+      "review_status": "accepted",
+      "final_label": "ID_EXIT",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:40:31.496162+00:00"
+    },
+    {
+      "label_item_id": "9e271ab2-966c-4e93-8f1f-98abaa4de9f5",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:41:18.394596+00:00"
+    },
+    {
+      "label_item_id": "9e984661-07bc-4d81-be15-b8b36092b7a7",
+      "split": "test",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:41:37.824338+00:00"
+    },
+    {
+      "label_item_id": "a001d952-e294-44a3-b90f-ebdb4b7b9038",
+      "split": "test",
+      "proposed_event_type_code": "AUD_RESIGN",
+      "review_status": "accepted",
+      "final_label": "AUD_RESIGN",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:42:16.739847+00:00"
+    },
+    {
+      "label_item_id": "a3ae3450-cecd-477c-b8c1-c53fd891b903",
+      "split": "test",
+      "proposed_event_type_code": "AUD_RESIGN",
+      "review_status": "accepted",
+      "final_label": "AUD_RESIGN",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:42:54.888170+00:00"
+    },
+    {
+      "label_item_id": "a9e07430-4429-4c2d-9a02-8a52f3d56783",
+      "split": "test",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:43:12.498355+00:00"
+    },
+    {
+      "label_item_id": "ad5dd767-0700-4bf0-9de7-bbdf0e8dc5dc",
+      "split": "test",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:43:41.411001+00:00"
+    },
+    {
+      "label_item_id": "b570b630-f399-47f9-82d0-5e432f2aa2c7",
+      "split": "validation",
+      "proposed_event_type_code": "ID_EXIT",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:44:03.320403+00:00"
+    },
+    {
+      "label_item_id": "b8d54c96-f82a-4465-88e3-2593cf04a4eb",
+      "split": "test",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:44:23.700246+00:00"
+    },
+    {
+      "label_item_id": "b994a9e8-0390-48a9-9c7b-8e045073746d",
+      "split": "test",
+      "proposed_event_type_code": "PLEDGE_UP",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:44:48.756983+00:00"
+    },
+    {
+      "label_item_id": "c94ce5da-2e21-41ac-a9d8-cf68ee7dbe5d",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:45:03.676182+00:00"
+    },
+    {
+      "label_item_id": "c9525ab4-686f-434f-a156-36f3918ab458",
+      "split": "validation",
+      "proposed_event_type_code": "RPT_GROWTH",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:45:21.650617+00:00"
+    },
+    {
+      "label_item_id": "cf935e23-d709-4496-a23d-32b62d681dde",
+      "split": "test",
+      "proposed_event_type_code": "AUD_RESIGN",
+      "review_status": "accepted",
+      "final_label": "AUD_RESIGN",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:45:37.751860+00:00"
+    },
+    {
+      "label_item_id": "dcac8ef0-ceb2-4ed0-be22-271e893f6e5c",
+      "split": "validation",
+      "proposed_event_type_code": "ID_EXIT",
+      "review_status": "corrected",
+      "final_label": "KMP_EXIT",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:46:02.665942+00:00"
+    },
+    {
+      "label_item_id": "e451570e-3327-4044-8693-edd21249eb9e",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:46:19.428001+00:00"
+    },
+    {
+      "label_item_id": "e6130d4f-c875-43ba-97a5-eb414794b258",
+      "split": "test",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:46:37.428376+00:00"
+    },
+    {
+      "label_item_id": "e9029b34-3ef0-48ba-8048-59efb70fdf5e",
+      "split": "test",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:46:56.110299+00:00"
+    },
+    {
+      "label_item_id": "ee794ff1-98de-490b-ad33-508b61414ba3",
+      "split": "validation",
+      "proposed_event_type_code": "AUDIT_QUAL",
+      "review_status": "corrected",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:50:10.719237+00:00"
+    },
+    {
+      "label_item_id": "f3a5b95c-a843-45fc-b21a-715090e4e9bc",
+      "split": "test",
+      "proposed_event_type_code": "PLEDGE_UP",
+      "review_status": "accepted",
+      "final_label": "PLEDGE_UP",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:47:36.486206+00:00"
+    },
+    {
+      "label_item_id": "fa42725a-71e9-4e57-b268-66c860b8baec",
+      "split": "validation",
+      "proposed_event_type_code": "RPT_GROWTH",
+      "review_status": "accepted",
+      "final_label": "RPT_GROWTH",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:47:56.095748+00:00"
+    },
+    {
+      "label_item_id": "ffbbab52-9482-46eb-b654-858398730b3b",
+      "split": "validation",
+      "proposed_event_type_code": "none",
+      "review_status": "accepted",
+      "final_label": "none",
+      "counts_toward_class_coverage": true,
+      "reviewer": "Gaurav",
+      "reviewed_at": "2026-10-27T11:48:18.837224+00:00"
+    }
+  ],
+  "sha256_of_sorted_ids": "1b0f9c10dd97fdf0d9ff91dfe74b1133cfbeec274bacfa123f73bbf9636f0ddd"
+}

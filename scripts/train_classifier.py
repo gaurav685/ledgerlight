@@ -13,11 +13,14 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
+from sqlalchemy import select  # noqa: E402
+
 from ledgerlight.config.settings import load_settings  # noqa: E402
 from ledgerlight.db.session import make_session_factory  # noqa: E402
 from ledgerlight.knowledge.classifier import train_tfidf_lr  # noqa: E402
 from ledgerlight.knowledge.classifier_eval import load_split  # noqa: E402
-from ledgerlight.knowledge.models import ModelRegistryEntry  # noqa: E402
+from ledgerlight.knowledge.models import LabelItem, ModelRegistryEntry  # noqa: E402
+from ledgerlight.modelling.frozen_split_guard import assert_no_frozen_test_ids  # noqa: E402
 
 MODEL_NAME = "tfidf-logreg-event-classifier"
 MODEL_VERSION = "1"
@@ -35,6 +38,9 @@ def main() -> int:
     session_factory = make_session_factory(settings)
 
     with session_factory() as session:
+        dev_item_ids = session.scalars(select(LabelItem.id).where(LabelItem.split == "dev")).all()
+        assert_no_frozen_test_ids(dev_item_ids, context="train_classifier.py dev split")
+
         dev_examples = load_split(session, "dev")
         print(f"dev examples: {len(dev_examples)}")
 
