@@ -128,27 +128,57 @@ exact next step is below, not left to be re-derived.
   - **Final result** (`docs/phase-3/evidence/entity-link-report-run2-post-fix.log`): all
     301 CARE/IBBI/SEBI documents now auto-link -- care 162/162, ibbi 55/55, sebi 84/84.
 
+- **§3 outcome definitions**: COMPLETE as a spec, PARTIAL as populated data (disclosed,
+  not hidden). `data/taxonomy/outcomes-v1.0.yaml` (new taxonomy, loaded via
+  `make outcomes-taxonomy-load`, deliberately separate from the red-flag taxonomy) defines
+  5 event types: `IBBI_CIRP_ADMISSION`, `RATING_DOWNGRADE_D` (the primary outcome's two
+  OR'd triggers), `SEBI_ORDER_AGAINST_COMPANY`, `SEVERE_DRAWDOWN`, `BHAVCOPY_DISAPPEARANCE`
+  (secondary). `scripts/compute_drawdown_threshold.py` computed the real severe-drawdown
+  threshold from `price_bars` (p5 of the pooled, ETF-filtered, winsorized 12-month
+  cross-sectional excess-return distribution, 2016-2026: **-48.69pp** filtered vs -55.73pp
+  raw, both disclosed). `scripts/populate_outcomes.py` populated real `Outcome` rows with
+  `EventField` evidence citations for the three document-evidenced types; a real
+  duplicate-grouping bug (DHFL's one real case split into 4 by exact-string case-number
+  matching across differently-formatted real documents) was found by spot-checking DHFL
+  directly and fixed via `_normalize_case_number()` -- `IBBI_CIRP_ADMISSION` dropped from
+  33 to 20 project-wide (DHFL 4 to 3). Real current counts:
+  `SEVERE_DRAWDOWN` 7,462, `BHAVCOPY_DISAPPEARANCE` 801, `SEBI_ORDER_AGAINST_COMPANY` 69,
+  `IBBI_CIRP_ADMISSION` 20, `RATING_DOWNGRADE_D` 14. The full narrative spec is
+  `docs/modelling/outcomes.md`; the machine-readable spec is
+  `data/modelling/outcomes-v1.0.json` (sha256
+  `d879a2874d063b0025820ce52223e443b5b14d7c8746aa8d9e3117e4f3503e1b`, to be stored in
+  `model_registry` for every experiment); every positive primary-outcome row is listed
+  with its evidence citation in `docs/modelling/outcome-evidence-review.csv`, pending the
+  human spot-check now tracked as its own `docs/release/release-gates.md` entry. Censoring
+  (unknown trading stop, end-of-window observation) is handled explicitly in both the
+  narrative doc and the machine-readable spec's `censoring_policy` block -- never silently
+  imputed as a negative. **Two coverage gaps are disclosed, not hidden**: the full-universe
+  IBBI discovery crawl (`scripts/ibbi_universe_discovery.py`) was still running as of this
+  commit (2,617 currently-listed companies at IBBI's own rate limit) -- counts above will
+  change on re-run; and CARE rating discovery was NOT broadened beyond the 15-company
+  SEED-track universe in this pass (only IBBI discovery was, per the user's explicit
+  decision), so `RATING_DOWNGRADE_D` coverage stays SEED-track-only for now. Commit:
+  `ff55920` (outcomes rows) plus this `phase-3:` doc commit.
+
 ## Not yet started
 
-§3 (outcome definitions, frozen before any training), §4 (point-in-time features +
-migrations), §5 (guidance extraction), §6 (LightGBM models), §7 (walk-forward eval +
-leakage controls), §8 (scoring + storage), §9 (rest of the Dagster pipeline + commands),
-§10 (tests), §11 (documentation set), §12 (run and verify), §13 (final commit/backup for
-§2-15, `phase-3:` prefix), §14 (exit gates), §15 (final report).
+§4 (point-in-time features + migrations), §5 (guidance extraction), §6 (LightGBM models),
+§7 (walk-forward eval + leakage controls), §8 (scoring + storage), §9 (rest of the Dagster
+pipeline + commands), §10 (tests), §11 (documentation set), §12 (run and verify), §13
+(final commit/backup for §2-15, `phase-3:` prefix), §14 (exit gates), §15 (final report).
 
 ## Exact next step
 
-1. Begin §3: freeze the outcome definitions (hashed, stored in `model_registry`) *before*
-   any training code runs, per the brief's own ordering. Primary outcome: IBBI CIRP
-   admission OR rating downgrade to D, within 12 months. Secondary outcomes: severe
-   drawdown, SEBI order, bhavcopy disappearance. Handle censoring explicitly.
-   `docs/modelling/outcomes.md` + a spec file; `docs/modelling/outcome-evidence-review.csv`;
-   a release-gate addition. DHFL/Future Retail/Reliance Capital now auto-link cleanly
-   (§2.4's fix), so their IBBI-based primary-outcome positives can be populated via the
-   normal auto-link path -- no special-casing needed.
-   ICRA and CRISIL stay excluded (CRISIL by its own exclusion terms, per `docs/data/
-   source-inventory.md`).
-2. If a future session hits an apparent background-job hang with near-zero CPU growth on
+1. Once the full-universe IBBI discovery crawl finishes: run `scripts/process.py` (or a
+   scoped extraction job) on whatever new IBBI documents it found, then re-run
+   `scripts/populate_outcomes.py` and refresh the counts in `docs/modelling/outcomes.md`,
+   `docs/modelling/outcome-evidence-review.csv`, and this file. Consider broadening CARE
+   discovery to the full universe too (not yet decided/done).
+2. Begin §4: point-in-time feature engineering + migrations, strictly respecting
+   `known_at`/`as_of` temporal integrity (no feature may see data not yet known at
+   `as_of`). This is where the project's leakage-control discipline matters most -- read
+   §4 of the brief closely before writing any feature code.
+3. If a future session hits an apparent background-job hang with near-zero CPU growth on
    a heavy document/OCR batch: check this environment's free memory
    (`Get-CimInstance Win32_OperatingSystem`) and the Docker/Garage container logs for
    fresh timestamps before assuming a real code bug -- this session's `scripts/process.py`

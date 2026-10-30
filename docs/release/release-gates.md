@@ -67,3 +67,26 @@ coverage that doesn't exist in the corpus), and continued review to push
 `AUDIT_QUAL`/`KMP_EXIT`/`RESULT_DELAY` past n=5. See
 `docs/phase-2/phase-2-report.md` §19.4.2 for which event types are and aren't recommended as
 reliable enough for Phase 3 consumption given the error rates measured so far.
+
+## Gap: human spot-check of primary-outcome evidence completed before release
+
+**Status:** open. **Deferred to:** Phase 6.
+
+**What's missing:** every positive `IBBI_CIRP_ADMISSION` and `RATING_DOWNGRADE_D` row (the
+primary outcome's two trigger types, see `docs/modelling/outcomes.md` §2) is listed with its
+real evidence citation in `docs/modelling/outcome-evidence-review.csv`, but no human has
+reviewed any row yet -- the `reviewer_verdict`/`reviewer_name`/`review_date`/`review_notes`
+columns are all blank. `IBBI_CIRP_ADMISSION` detection is a disclosed heuristic (earliest order
+per normalized case number), not a hand-verified legal classification; `RATING_DOWNGRADE_D` is
+span-verified text-matched, not semantically verified.
+
+**What this blocks:** treating the primary outcome label as ground truth for model training,
+walk-forward evaluation, or release reporting. Until reviewed, every `PRIMARY_DISTRESS` positive
+is a candidate, not a confirmed label.
+
+**Closing this gap requires**: a human reviewer works through
+`docs/modelling/outcome-evidence-review.csv` row by row, opens each cited `retrieval_url`/page/
+span, and records a verdict, their name, and the review date in the corresponding columns. Must
+not be done by Claude or any other AI agent -- same human-only restriction as gold-label review
+elsewhere in this project (see the gap above). Must also be re-run against any new rows produced
+once the full-universe IBBI discovery crawl (Phase 3 §3) finishes and is extracted.

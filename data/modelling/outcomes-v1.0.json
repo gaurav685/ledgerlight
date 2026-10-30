@@ -1,0 +1,40 @@
+{
+  "spec_version": "outcomes-1.0",
+  "frozen_at": "2026-10-31",
+  "horizon_months": 12,
+  "primary_outcome": {
+    "name": "PRIMARY_DISTRESS",
+    "definition": "Severe credit or insolvency distress within H=12 months after as_of: any one of IBBI_CIRP_ADMISSION or RATING_DOWNGRADE_D, event date = the earliest trustworthy known_at.",
+    "triggers": ["IBBI_CIRP_ADMISSION", "RATING_DOWNGRADE_D"],
+    "requires_auto_linked_ibbi": true,
+    "requires_span_verified_rating": true
+  },
+  "secondary_outcomes": {
+    "SEVERE_DRAWDOWN": {
+      "definition": "12-month trailing return at least X percentage points below the cross-sectional median return across the EQ-series universe that month.",
+      "threshold_pp": -48.69,
+      "threshold_basis": "p5 of the real, pooled, ETF-filtered, winsorized empirical excess-return distribution, 2016-01 to 2026-10, 117 usable months, 149,285 observations -- see docs/modelling/outcomes.md and docs/phase-3/evidence/drawdown-threshold-run2-filtered.log",
+      "lookback_days": 365,
+      "tolerance_days": 10,
+      "etf_filter": "symbol-pattern heuristic (ETF/BEES/GOLDSHARE/LIQUID/GOLD/SILVER substrings), disclosed as imperfect",
+      "winsorize_abs_return": 0.90
+    },
+    "SEBI_ORDER_AGAINST_COMPANY": {
+      "definition": "A real SEBI final or interim order exists, auto-linked to the company (or its promoters, not distinguished further)."
+    },
+    "BHAVCOPY_DISAPPEARANCE": {
+      "definition": "No EQ-series trade for at least min_gap_days before the end of this project's bhavcopy coverage, with no later re-appearance. Explicitly noisy: mergers, voluntary delistings and other benign corporate actions are not distinguished from distress-driven disappearance -- this project has no compliant corporate-actions source.",
+      "min_gap_days": 90
+    }
+  },
+  "censoring_policy": {
+    "unknown_trading_stop": "A company whose trading stops (BHAVCOPY_DISAPPEARANCE fires) is never silently labelled negative for the primary outcome within any as_of window that extends past its last trade_date plus min_gap_days -- that window's primary-outcome label is RIGHT-CENSORED, not a confirmed negative, and must be excluded or explicitly flagged (not imputed as 0) in any evaluation that uses it.",
+    "end_of_window_observation": "An as_of whose 12-month forward window extends past the end of this project's real data coverage (currently 2026-10-30 for price_bars; per-source for CARE/IBBI/SEBI, see docs/phase-3/phase-3-report.md §2) is RIGHT-CENSORED for the same reason -- the absence of an observed trigger before data ends is not evidence of a true negative, since a real trigger could exist after the data's own coverage end and simply not yet be observed."
+  },
+  "excluded_rating_agencies": ["ICRA", "CRISIL"],
+  "excluded_rating_agencies_reason": "ICRA is BLOCKED (bot-mitigation challenge); CRISIL excluded by its own stated exclusion terms -- see docs/data/source-inventory.md. CARE is the only AVAILABLE agency as of this spec's freeze date.",
+  "universe_coverage_gaps": {
+    "ibbi_coverage": "Phase 3 §2.3/§3 broadened IBBI discovery from the 15-company SEED-track universe to every currently-listed company (via NSE's own equity master files), but NOT to companies already delisted before this spec's freeze date beyond the 15 known individually -- those remain unchecked (not confirmed-negative) for IBBI_CIRP_ADMISSION.",
+    "rating_coverage": "CARE rationale discovery (Phase 3 §2.2) was driven by the 15-company SEED-track universe, not the full currently-listed universe -- RATING_DOWNGRADE_D is only checked for those 15 companies as of this spec's freeze date."
+  }
+}

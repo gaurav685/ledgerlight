@@ -1,0 +1,18 @@
+2026-10-31 00:11:07 [info     ] duplicate_skipped              sha256=e99e5163b9edd041d3bed2c31c60c26ba954e741ca2d87a4594ffc3fea9c4cec url=https://archives.nseindia.com/content/equities/EQUITY_L.csv
+2026-10-31 00:11:09 [info     ] duplicate_skipped              sha256=d97a9285ff298f81781ce5f84a2ae7058a82968bd7f7c3152060f9c5e6f386c6 url=https://archives.nseindia.com/content/equities/SME_EQUITY_L.csv
+companies parsed from master files: 2621
+distinct company names: 2617
+2026-10-31 00:14:36 [info     ] duplicate_skipped              sha256=2b1ec01b76f4e1ca2b6ff5860825c6f1d4c3d0a2e99ed840982e4e53bea9ec99 url=https://ibbi.gov.in/uploads/order/2affdbc4109f8909607a01716fa15988.pdf
+2026-10-31 00:15:02 [info     ] duplicate_skipped              sha256=4ad61dfd72a4065470446cc07fd6c7ae9a28cf7a8759cd174cb22d2624f84c90 url=https://ibbi.gov.in/uploads/order/e454301ed3d5f0987315cfbaebf44524.pdf
+2026-10-31 00:16:02 [info     ] duplicate_skipped              sha256=e548ca4a256d7f2955172321ae07c6a6d5c1cc273cec6787a86aee32f826d1e8 url=https://ibbi.gov.in/uploads/order/3eaf1765ca83d270d4fd9e450a8df7a2.pdf
+2026-10-31 00:16:20 [info     ] duplicate_skipped              sha256=c5a9f578153cd8f9bae1a4d57982fc7c15afdf2c96f55fe75678c3055da62dde url=https://ibbi.gov.in/uploads/order/61431b9b70eb7a83a14539061b3ccf2b.pdf
+2026-10-31 00:21:37 [info     ] duplicate_skipped              sha256=c3aa9e7866b01e6f348b94091707cdebd3d220bb30313f6ecbfb8d15665813fd url=https://ibbi.gov.in/uploads/order/095547ccc49bf122656c003ab2ba18cc.pdf
+2026-10-31 00:24:33 [info     ] duplicate_skipped              sha256=d20df69e3d2faa760b5905b5d5b20dc1820c6e5cca3b1d2ef49e485a7f67e918 url=https://ibbi.gov.in/uploads/order/708a422c31d77583248b58bc4e9af7cd.pdf
+2026-10-31 00:24:35 [info     ] duplicate_skipped              sha256=a22b2583d372d183993f31d9890d8dda02b2d505d345d646d65a6c79c9c3c0b6 url=https://ibbi.gov.in/uploads/order/35dcf78effcf47b35e40039f4b92e83b.pdf
+2026-10-31 00:25:25 [info     ] duplicate_skipped              sha256=6e1c1d4312530ef7944944d2dbfd0e2a043331bed8e77a9793d8f55fd1e3a644 url=https://ibbi.gov.in/uploads/order/8950a131f38e5662e02d8b67a56463c6.pdf
+2026-10-31 00:26:30 [info     ] duplicate_skipped              sha256=f3c4908e3236385035884bfaa8e25c6215db4cacd12b3c00edc48af4d3cb1d66 url=https://ibbi.gov.in/uploads/order/43742ae90d6ab3909a0593375392ec90.pdf
+2026-10-31 00:28:02 [info     ] duplicate_skipped              sha256=9999baeb495db8d794a4ac62c834483e2da54d2d4af366af884a70efa3de8f3c url=https://ibbi.gov.in/uploads/order/2026-06-22-191219-3q9ry-514f7e128236719c7c9183db4b5e2ad8.pdf
+2026-10-31 00:28:03 [info     ] duplicate_skipped              sha256=0f64f87db76915cc3577b99393fdc2c174e6f40023689cbe81cc639d5acb0622 url=https://ibbi.gov.in/uploads/order/363960bbd78f751bb5e13afe9d27182a.pdf
+2026-10-31 00:30:19 [info     ] duplicate_skipped              sha256=e224e42c717e032eb2946577cd6c01fc05c39cb8f078deb898d1291e2b280a77 url=https://ibbi.gov.in/uploads/order/0b7edecfd4d7ac49aefc039c5761198d.pdf
+2026-10-31 00:33:57 [info     ] duplicate_skipped              sha256=a40af4629e674c0b75626a848b89c297d66497de0169fb28b656a2eecd43d78b url=https://ibbi.gov.in/uploads/order/68d0393b4b0dada3ac6f4f8928d4e8b4.pdf
+2026-10-31 00:33:58 [info     ] duplicate_skipped              sha256=c3c08fdb099fcf6f3b0e3ddb86447a63b5e981d80f8723cc8cd532ecc2f7fecf url=https://ibbi.gov.in/uploads/order/02f4387e754f1b910ebb6bf2e6462a00.pdf

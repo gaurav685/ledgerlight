@@ -3,9 +3,10 @@
 Branch: `phase-3/temporal-risk-modelling`, from `bc69c29` (Phase 2 final).
 Git policy honoured throughout: every commit is local-only, no remote configured, nothing pushed.
 
-**Status: §1 (preflight, selection fix, detector hardening) and §2 in full (2.1 bhavcopy
-backfill; 2.2 CARE; 2.3 IBBI and SEBI discovery broadening; 2.4 entity-link reporting)
-complete. §3 onward not yet started** -- see the note at the end of §2. §2.1's bhavcopy
+**Status: §1 (preflight, selection fix, detector hardening), §2 in full (2.1 bhavcopy
+backfill; 2.2 CARE; 2.3 IBBI and SEBI discovery broadening; 2.4 entity-link reporting),
+and §3 (outcome definitions, spec complete, data population partial and disclosed as
+such) complete. §4 onward not yet started** -- see the note at the end of §3. §2.1's bhavcopy
 backfill surfaced real findings of its own: the exhaustively-confirmed 2016-01-01
 earliest-available-date boundary, a parsing-pipeline gap for 2016-01 to 2017-01-04, and a
 real environment constraint (a low-memory kill) that took three attempts to work around
@@ -636,21 +637,90 @@ to §4's point-in-time features, which are keyed by `company_id` and would other
 silently mis-aggregated any debt-heavy company's history across dozens of fragmented
 identities.
 
-## Status note: §3 onward not yet started
+## §3: Outcome definitions
 
-Sections 3-15 of this phase's brief (outcome definitions, point-in-time features,
-guidance extraction, LightGBM risk modelling with calibration and SHAP, walk-forward
-evaluation with leakage/survivorship controls, scoring infrastructure, the rest of the
-Dagster pipeline, the full test suite, the documentation set, and this report's remaining
-sections) have not been started. §1 alone -- a necessary, blocking prerequisite -- already
-involved two real, previously-undetected bugs found only by actually running the real
-pipeline against real data and checking results by hand, not by assumption; §2.2-2.4 each
-surfaced their own real, non-obvious finding the same way (CARE's live search reflecting
-current entity names only; IBBI's hard-404 pagination bug; SpiceJet's real
-insolvency-petition history contradicting its Phase 0 control-group selection; the
-BSE_CODE bootstrap gap hiding exactly the three most central event companies from
-identifier resolution) -- none of which would have surfaced from accepting an aggregate
-stats object at face value instead of checking individual cases by hand. The remaining
-sections need the same real-execution, real-verification treatment and are substantial,
-multi-session work, consistent with how Phase 2 itself was built incrementally across
-many sessions rather than in one pass.
+Full narrative spec: `docs/modelling/outcomes.md`. Machine-readable spec:
+`data/modelling/outcomes-v1.0.json` (sha256
+`d879a2874d063b0025820ce52223e443b5b14d7c8746aa8d9e3117e4f3503e1b`, to be stored in
+`model_registry` for every experiment trained or evaluated against these outcomes). New
+taxonomy: `data/taxonomy/outcomes-v1.0.yaml` (`outcomes-1.0`, loaded via
+`make outcomes-taxonomy-load`), deliberately separate from the red-flag taxonomy -- these
+are realized outcome triggers, not disclosure red flags.
+
+**Primary outcome** (H=12 months): `IBBI_CIRP_ADMISSION` OR `RATING_DOWNGRADE_D`, event
+date = earliest trustworthy `known_at` across the trigger's evidence (both sources are
+members of `RELIABLE_PUBLISHED_AT_SOURCES`, so `known_at` already equals the document's
+real `published_at`, not the fetch date).
+
+- `IBBI_CIRP_ADMISSION`: earliest-dated real IBBI order per normalized case number, for a
+  company auto-linked via §2.3/§2.4's discovery. Disclosed heuristic, not a hand-verified
+  legal classification -- see the real DHFL case-number-grouping bug below.
+- `RATING_DOWNGRADE_D`: span-verified regex match for "CARE D"/"rated D"/"downgraded to D"
+  in extracted CARE document text, agency restricted to CARE (ICRA blocked, CRISIL
+  excluded by its own terms).
+
+**Secondary outcomes**: `SEVERE_DRAWDOWN` (X = -48.69pp, the real p5 of the pooled,
+ETF-filtered, winsorized 12-month cross-sectional excess-return distribution computed from
+`price_bars`, 2016-2026, 117 months, 149,285 observations -- raw unfiltered p5 was
+-55.73pp, both reported, neither hidden); `SEBI_ORDER_AGAINST_COMPANY` (auto-linked order
+exists, company-vs-promoter not distinguished, a deliberate scope decision);
+`BHAVCOPY_DISAPPEARANCE` (90+ day gap with no re-appearance, explicitly disclosed as noisy
+since this project has no compliant corporate-actions source to separate benign
+disappearance from distress).
+
+**Censoring** is handled explicitly in both the narrative doc and the spec's
+`censoring_policy` block: a company with an unresolved trading stop, or an `as_of` window
+extending past this project's own data coverage end, is RIGHT-CENSORED for the primary
+outcome, never silently imputed as a negative.
+
+**Real bug found and fixed**: `populate_ibbi_admissions` originally grouped IBBI orders by
+the exact case-number STRING. DHFL's one real case (docket 4258/2019) was extracted with
+4 different formats across its 4 real order documents, so exact-string grouping produced 4
+spurious admission events for a single real case. Found by spot-checking DHFL's own result
+directly (this project's standing discipline -- never trust an aggregate count without
+checking a concrete real example), fixed via `_normalize_case_number()` (extracts the
+leading ≥2-digit run). Re-run: `IBBI_CIRP_ADMISSION` 33 → 20 rows project-wide, DHFL 4 → 3.
+Evidence: `docs/phase-3/evidence/populate-outcomes-run1.log` (buggy) vs
+`populate-outcomes-run2-fixed.log` (fixed).
+
+**Real current counts** (`scripts/populate_outcomes.py`, 2026-10-30 run, verified by direct
+DB query, not asserted): `SEVERE_DRAWDOWN` 7,462; `BHAVCOPY_DISAPPEARANCE` 801;
+`SEBI_ORDER_AGAINST_COMPANY` 69; `IBBI_CIRP_ADMISSION` 20; `RATING_DOWNGRADE_D` 14. Every
+positive `IBBI_CIRP_ADMISSION`/`RATING_DOWNGRADE_D` row, with its real evidence citation
+(`DocumentVersion` id, page, char span, retrieval URL), is listed in
+`docs/modelling/outcome-evidence-review.csv` for the human spot-check now tracked as its
+own gate in `docs/release/release-gates.md` -- not yet performed, and this report does not
+claim otherwise.
+
+**Two coverage gaps are disclosed, not hidden, rather than silently assumed closed**:
+
+1. The full-universe IBBI discovery crawl (`scripts/ibbi_universe_discovery.py`, driven by
+   NSE's own real equity-master CSVs covering all currently-listed companies, per the
+   user's explicit decision to broaden rather than patch 3 companies) was still running as
+   of this commit -- 2,617 companies to check at IBBI's own per-company rate limit, IBBI
+   document count having grown from the SEED-track baseline of 55 to 64 at the last check.
+   The counts above will change on re-run, and any new documents it finds still need a
+   `process.py` extraction pass before `populate_ibbi_admissions`'s `DocumentPage` join can
+   see them.
+2. CARE rating discovery was NOT broadened past the 15-company SEED-track universe in this
+   pass -- only IBBI discovery was, per the user's explicit, narrower decision. So
+   `RATING_DOWNGRADE_D` coverage is SEED-track-only for now; broadening it is unstarted
+   work, tracked in `docs/phase-3/progress.md`.
+
+## Status note: §4 onward not yet started
+
+Sections 4-15 of this phase's brief (point-in-time features, guidance extraction,
+LightGBM risk modelling with calibration and SHAP, walk-forward evaluation with
+leakage/survivorship controls, scoring infrastructure, the rest of the Dagster pipeline,
+the full test suite, the documentation set, and this report's remaining sections) have not
+been started. §1 and §2 each involved real, previously-undetected bugs found only by
+actually running the real pipeline against real data and checking results by hand, not by
+assumption (detector false positives; CARE's live search reflecting current entity names
+only; IBBI's hard-404 pagination bug; SpiceJet's real insolvency-petition history
+contradicting its Phase 0 control-group selection; the BSE_CODE bootstrap gap hiding
+exactly the three most central event companies from identifier resolution; the 422-company
+fragmentation bug; §3's own DHFL case-number-grouping bug) -- none of which would have
+surfaced from accepting an aggregate stats object at face value instead of checking
+individual cases by hand. The remaining sections need the same real-execution,
+real-verification treatment and are substantial, multi-session work, consistent with how
+Phase 2 itself was built incrementally across many sessions rather than in one pass.
