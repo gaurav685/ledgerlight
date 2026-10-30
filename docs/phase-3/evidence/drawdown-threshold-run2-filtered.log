@@ -1,0 +1,17 @@
+EQ rows loaded: 2370656
+month-end dates: 130 (2016-01-29 to 2026-10-30)
+months with usable data: 117
+-- RAW (unfiltered, includes ETF/split artifacts): 173870 observations --
+  p1: -91.51 pp
+  p2: -76.60 pp
+  p5: -55.73 pp
+  p10: -41.20 pp
+  p25: -21.60 pp
+  p50: 0.00 pp
+-- FILTERED (ETF-pattern excluded, winsorized at +/-90%): 149285 observations --
+  p1: -80.83 pp
+  p2: -66.70 pp
+  p5: -48.69 pp
+  p10: -36.44 pp
+  p25: -19.21 pp
+  p50: 0.00 pp
