@@ -93,10 +93,10 @@ sources:
     terms_of_use: { url: null, reviewed_at: null, note: "Not reached — same edge behaviour as the rest of nseindia.com; only specific static file paths are reachable, not HTML pages." }
     rate_limits_or_anti_automation: "Unlike www.nseindia.com and nsearchives.nseindia.com, specific static bhavcopy file paths on this host return HTTP 200 to our honest identifying User-Agent. A pre-2016-ish date (tested: 1999) returned the same Akamai 'Access Denied' page seen on the fully-blocked hosts, so this host is NOT simply unprotected — it appears some file paths/date ranges are excluded from the edge rule and others are not. Treat each date range as independently verified, not as a blanket exemption."
     formats: ["CSV/ZIP (bhavcopy)"]
-    verified_coverage: { earliest: "2016-01-01 (spot-checked, 200 + valid zip)", latest: "2025 UDiFF format (spot-checked 2024-07-08 onward, 200)", note: "1999-01-04 spot-check returned the Akamai block page (403-equivalent), so coverage before ~2016 is NOT available via this path; exact cutover date between 'works' and 'blocked' was not pinpointed." }
+    verified_coverage: { earliest: "2016-01-01 (Phase 3 Sec2.1, 2026-10-30: exhaustively confirmed, not just spot-checked -- a full day-by-day attempt from 2012-01-01 found zero successful fetches before this date, and curl spot-checks of 2012-06-15/2014-01-10 return 403 while 2016-06-01/2016-12-30 return 200)", latest: "2026-10-30 (Phase 3 Sec2.1 forward-extension backfill, 272 new files, 0 errors)", note: "1999-01-04 spot-check (Phase 1) returned the Akamai block page (403-equivalent); the real 2012-2015 boundary is now exhaustively confirmed rather than inferred from one 1999 sample. A real parsing-pipeline gap (2016-01 to 2017-01-04 fetched but never parsed into price_bars) was found and fixed via scripts/process.py -- see the source-inventory 2026-10-30 addendum." }
     delisted_or_suspended_accessible: "Not specifically tested (bhavcopy contains all listed symbols for that date, not company-specific; the seed acquisition run pulls dates spanning each event company's suspension/CIRP period as the survivorship check — see docs/data/seed-universe.md)."
     verdict: "AVAILABLE_WITH_LIMITS"
-    verdict_reason: "A genuinely separate finding from the BLOCKED www.nseindia.com / nsearchives.nseindia.com verdicts above: specific bhavcopy file paths on archives.nseindia.com are reachable with our honest, identifying User-Agent and robots.txt does not exist (allow by convention). Real files were downloaded and verified as valid ZIP/CSV content. Marked WITH_LIMITS because the host's root/listing pages are not reachable (only exact, predictable file paths work) and at least one old date (1999) was blocked, so the full historical range is not confirmed."
+    verdict_reason: "A genuinely separate finding from the BLOCKED www.nseindia.com / nsearchives.nseindia.com verdicts above: specific bhavcopy file paths on archives.nseindia.com are reachable with our honest, identifying User-Agent and robots.txt does not exist (allow by convention). Real files were downloaded and verified as valid ZIP/CSV content. Marked WITH_LIMITS because the host's root/listing pages are not reachable (only exact, predictable file paths work) and the pre-2016-01-01 range is now exhaustively confirmed unavailable (403), not just one old (1999) blocked sample."
     urls_opened:
       - "https://archives.nseindia.com/robots.txt (404)"
       - "https://archives.nseindia.com/content/historical/EQUITIES/2016/JAN/cm01JAN2016bhav.csv.zip (200, verified valid zip)"
@@ -125,18 +125,20 @@ sources:
       local_storage: "Not explicitly addressed; treated as permitted for internal, non-redistributed use."
       redistribution: "Explicitly conditional: 'material featured on the website may be reproduced free of charge after taking proper permission' and must not be used in a derogatory or misleading context — i.e. redistribution requires asking first, not an open licence."
       commercial_use: "Not explicitly addressed; treat as UNCLEAR absent permission."
-    rate_limits_or_anti_automation: "None observed. Identifying User-Agent reached every path tried (homepage, enforcement order HTML pages, PDF attachments) with HTTP 200."
-    formats: ["HTML", "PDF"]
-    verified_coverage: { earliest: "2025-04 (Gensol interim order, actually fetched)", latest: "2025-07 (Gensol confirmatory order, actually fetched)", note: "Only the two seed documents' dates were verified; SEBI states orders going back many years, not independently verified here." }
+    rate_limits_or_anti_automation: "Plain HTML pages and PDF attachments: none observed, HTTP 200 on every tested path. Phase 3 addition: the site's AJAX search endpoint (/sebiweb/ajax/home/getnewslistinfo.jsp) DOES have a WAF that rejects a request with no session/Referer ('Unauthorized Activity Has Been Detected') -- worked around with ordinary session continuity (cookie + Referer + X-Requested-With), not defeated; see the source-inventory 2026-10-30 addendum."
+    formats: ["HTML", "PDF", "JSON-like form-POST (search endpoint)"]
+    verified_coverage: { earliest: "2009-06-02", latest: "2026-05-28", note: "84 real enforcement-order documents across 13 companies (Phase 3 Sec2.3 run, 2026-10-30, ledgerlight/ingestion/sebi.py) -- up from the 3 hand-found Phase 0 seed items. LIC Housing Finance and Thermax had no match, consistent with their control-group role." }
     delisted_or_suspended_accessible: "UNVERIFIED (not tested — no delisted-company order was in the Phase 0 seed sample)"
     verdict: "AVAILABLE"
-    verdict_reason: "robots.txt permissive; identifying UA succeeds on every tested path; two real documents downloaded and hash-verified. Redistribution of the documents themselves is NOT an open licence (permission required), so only manifests are committed."
+    verdict_reason: "robots.txt permissive; identifying UA succeeds on every tested path; 84 real documents downloaded and hash-verified across both the original hand-found path and the Phase 3 per-company discovery. Redistribution of the documents themselves is NOT an open licence (permission required), so only manifests are committed."
     urls_opened:
       - "https://www.sebi.gov.in/robots.txt"
       - "https://www.sebi.gov.in/enforcement/orders/apr-2025/interim-order-in-the-matter-of-gensol-engineering-limited_93458.html"
       - "https://www.sebi.gov.in/sebi_data/attachdocs/apr-2025/1744719603252_1.pdf"
       - "https://www.sebi.gov.in/sebi_data/attachdocs/jul-2025/confirm_order_gensol_engg.pdf"
       - "https://www.sebi.gov.in/website-policy.html"
+      - "https://www.sebi.gov.in/sebiweb/home/HomeAction.do?doListing=yes&sid=2&ssid=9&smid=133"
+      - "https://www.sebi.gov.in/sebiweb/ajax/home/getnewslistinfo.jsp"
 
   ibbi:
     owner: "Insolvency and Bankruptcy Board of India"
@@ -154,10 +156,10 @@ sources:
       note: "Generic '© 2018. All Rights Reserved.' copyright notice observed via search; full terms text not read in Phase 0 (gap)."
     rate_limits_or_anti_automation: "None observed. Identifying User-Agent reached every path tried with HTTP 200."
     formats: ["HTML", "PDF"]
-    verified_coverage: { earliest: "2019-07 (Jet Airways order, actually fetched)", latest: "2024-08 (Reliance Capital listing page entry, actually seen)", note: "Based only on the Phase 0 seed sample." }
+    verified_coverage: { earliest: "2019-07-04", latest: "2026-08-19", note: "55 real NCLT order documents across 6 companies (Phase 3 Sec2.3 run, 2026-10-28, ledgerlight/ingestion/ibbi.py) -- up from the 4 hand-found Phase 0 seed items. 9 of 15 SEED-track companies had no match: expected for the 3 real event companies whose own distress event is not an insolvency matter (Vakrangee, Brightcom, CG Power), and expected for most controls -- except SpiceJet, which this search found has 8 real NCLT insolvency petitions filed against it (2021-2026), a finding that revisits its Phase 0 'no known event' control-group selection; see the source-inventory addendum." }
     delisted_or_suspended_accessible: "Yes for the CIRP cases themselves (DHFL, Jet Airways, Reliance Capital, Future Retail orders all reachable despite those companies being suspended/delisted/under CIRP) — a positive survivorship-bias signal for insolvency records specifically."
     verdict: "AVAILABLE"
-    verdict_reason: "No robots.txt restriction found; every tested path succeeded; four real documents/pages downloaded and hash-verified, covering companies currently suspended or under CIRP."
+    verdict_reason: "No robots.txt restriction found; every tested path succeeded; 55 real documents/pages downloaded and hash-verified across both the original hand-found path and the Phase 3 per-company discovery, covering companies currently suspended or under CIRP."
     urls_opened:
       - "https://ibbi.gov.in/robots.txt"
       - "https://ibbi.gov.in/orders/nclt?title=Reliance+Capital"

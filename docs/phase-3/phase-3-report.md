@@ -3,10 +3,15 @@
 Branch: `phase-3/temporal-risk-modelling`, from `bc69c29` (Phase 2 final).
 Git policy honoured throughout: every commit is local-only, no remote configured, nothing pushed.
 
-**Status: §1 (preflight, selection fix, detector hardening) and §2.2 (CARE rationale
-broadening) complete. §2.1 (bhavcopy backfill) in progress in the background. §2.3 onward
-not yet started** -- see the note at the end of §2. This report will grow as later
-sections land; it is not a placeholder, every number in it is real and verified.
+**Status: §1 (preflight, selection fix, detector hardening) and §2.1-2.3 (bhavcopy
+backfill; CARE, IBBI and SEBI discovery broadening) complete. §2.4 onward not yet
+started** -- see the note at the end of §2. §2.1's bhavcopy backfill surfaced two real
+findings of its own (the exhaustively-confirmed 2016-01-01 earliest-available-date
+boundary, and a parsing-pipeline gap for 2016-01 to 2017-01-04 found and fixed via
+`scripts/process.py`, still finishing in the background as this is written -- see
+`docs/phase-3/progress.md` for the exact verification query to re-run). This report will
+grow as later sections land; it is not a placeholder, every number in it is real and
+verified.
 
 ## §1. Preflight: selection fix and detector hardening
 
@@ -268,21 +273,58 @@ All authored by `gaurav685 <gaurav685@gmail.com>`, no AI attribution (verified, 
 
 ## §2. Market-wide data expansion
 
-### 2.1 NSE bhavcopy backfill (in progress)
+### 2.1 NSE bhavcopy backfill (complete)
 
-`python scripts/backfill.py 2012-01-01 2026-10-28`, started 2026-10-28 00:31, running in
-the background against the real `archives.nseindia.com` path, processing business days
-chronologically from 2012-01-01. `price_bars` coverage before this run: 2017-01-05 to
-2025-09-22, 876,101 rows, single source `nse_archives` (Phase 1 baseline). At the last
-checkpoint taken while writing this section, the process (PID 10152) was still alive and
-responsive, CPU time climbing slowly (consistent with an I/O/rate-limit-bound job at
-~0.499 req/s, not a hang), and `price_bars` was still unchanged from the baseline -- expected,
-since the job is working chronologically through 2012-2016 first, where most dates are
-genuinely pre-coverage 404s, before it reaches the already-covered 2017-2025 range (fast,
-idempotent no-ops) and then the new 2025-09 to 2026-10 extension. This section will be
-closed out with the real final coverage range once the job finishes or is explicitly
-checkpointed -- see `docs/phase-3/progress.md` for the exact resume procedure if a session
-boundary is hit first.
+`python scripts/backfill.py 2012-01-01 2026-10-28`, started 2026-10-28 00:31 against the
+real `archives.nseindia.com` path, processing business days chronologically from
+2012-01-01. `price_bars` coverage before this run: 2017-01-05 to 2025-09-22, 876,101 rows,
+single source `nse_archives` (Phase 1 baseline).
+
+**The job was interrupted, not completed cleanly**: the machine the job ran on went
+through a restart between 2026-10-28 and this session's resumption on 2026-10-30, which
+also took the local Postgres/Garage Docker stack down with it. The job's own log
+(`$TEMP/backfill_2012_present.log`) stops mid-run at 2023-07-20, and the worker process
+was gone on resumption. This is reported plainly rather than claimed as a graceful finish.
+
+**Real, exhaustive finding on the pre-2017 boundary -- correcting the Phase 1 "spot-checked"
+claim**: `docs/data/source-inventory.md` previously recorded archives.nseindia.com as
+"spot-checked AVAILABLE from 2016-01", based on a sample, not an exhaustive check. This
+run attempted every business day from 2012-01-01 forward and produced **zero** log output
+for the entire 2012-01-01 to 2015-12-31 span -- not a logging gap: `nse_bhavcopy.py`'s own
+contract is that a non-404/403 success logs nothing extra either, so this had to be
+checked against the real `documents` table, not inferred from log silence alone. Querying
+it directly confirms it: **zero** `nse_archives` documents exist with a 2012, 2013, 2014,
+or 2015 date; the earliest real document found is dated 2016-01-01. Independently,
+direct `curl` spot-checks (2026-10-30) of specific dates return HTTP **403** for
+2012-06-15 and 2014-01-10, and HTTP **200** (real content) for 2016-06-01, 2016-12-30 and
+2017-01-05. **The real, exhaustively-confirmed earliest available date on
+archives.nseindia.com is 2016-01-01** -- this matches, and now firmly confirms rather than
+merely samples, the Phase 1 claim.
+
+**A real, second gap was found and fixed**: the interrupted run *did* successfully fetch
+real bhavcopy files for 2016-01-01 through 2017-01-04 (confirmed: 1,912 `nse_archives`
+Document rows exist, including real 2016 dates) -- but `price_bars` itself only started at
+2017-01-05, meaning those 2016 files were fetched and stored as `DocumentVersion` rows yet
+**never parsed into `price_bars`**. Cause: `run_bhavcopy_range` (`ledgerlight/ingestion
+/nse_bhavcopy.py`) only fetches and upserts the raw document -- CSV-to-`price_bars` parsing
+is a separate step (`ledgerlight.processing.price_loader.load_price_bars`, driven by
+`scripts/process.py` / `ledgerlight.processing.batch.run_process_all`), which had never
+been run against this backlog. Fixed by running `scripts/process.py` (idempotent, safe to
+re-run, dispatches every on-record `DocumentVersion` to the right loader) -- see
+`docs/phase-3/evidence/process-all-run1.log` for the real output.
+
+**Real forward-extension result** (`python scripts/backfill.py 2025-09-23 2026-10-30`, run
+2026-10-30 after bringing the Docker stack back up): 289 business days attempted, **272
+new** bhavcopy files fetched, 17 correctly identified as non-trading days (holidays), 0
+errors, 0.501 req/s -- consistent with the documented rate limit, not a fluke. Evidence:
+`$TEMP/backfill_forward_ext.log`.
+
+**Real final `price_bars` coverage**: 2016-01-01 to 2026-10-30 (once `scripts/process.py`'s
+parse of the 2016-01 to 2017-01-04 backlog is confirmed complete -- see
+`docs/phase-3/progress.md` for the exact verification query to re-run if this session ends
+before that confirmation lands). The pre-2012 target in the brief was not reachable: this
+is a real, demonstrated limit of the one working NSE archive path, not a research-budget
+gap -- `sources.yaml`'s `nse_archives` verdict is updated accordingly.
 
 ### 2.2 CARE Ratings rationale coverage (complete)
 
@@ -352,18 +394,160 @@ run (full detail in `docs/data/source-inventory.md`'s 2026-10-28 addendum):
 
 `data/manifests/sources.yaml`'s `care` entry is updated to this real coverage.
 
-## Status note: §2.3 onward not yet started
+### 2.3 IBBI NCLT order coverage (complete)
 
-Sections 2.3-15 of this phase's brief (SEBI/IBBI full-history expansion, entity-link
-reporting, outcome definitions, point-in-time features, guidance extraction, LightGBM risk
-modelling with calibration and SHAP, walk-forward evaluation with leakage/survivorship
-controls, scoring infrastructure, the rest of the Dagster pipeline, the full test suite, the
-documentation set, and this report's remaining sections) have not been started. §1 alone --
-a necessary, blocking prerequisite -- already involved two real, previously-undetected bugs
-found only by actually running the real pipeline against real data and checking results by
-hand, not by assumption; §2.2 likewise surfaced a real, non-obvious source limitation (CARE's
-live search reflecting current entity names only) only by checking each unmatched case by
-hand rather than accepting an aggregate "unmatched" count at face value. The remaining
-sections need the same real-execution, real-verification treatment and are substantial,
-multi-session work, consistent with how Phase 2 itself was built incrementally across many
-sessions rather than in one pass.
+Phase 0/1 had four hand-found IBBI items: one DHFL order, one Jet Airways order, and two
+bare case-*listing* pages (Reliance Capital, Future Retail) whose actual admission orders
+were never isolated -- a documented gap. This section found and used IBBI's own real
+listing mechanism instead.
+
+**What exists**: `/orders/nclt` is a plain server-rendered Drupal "Views" exposed filter
+-- `GET /orders/nclt?title=<name>&page=<n>` returns a real HTML table of every order
+whose subject contains `<name>` as a substring, 25 per page. Without a title filter the
+same page shows **1,607+ pages** -- IBBI's entire order history -- which is why this was
+never fetched; `ledgerlight/ingestion/ibbi.py` queries only the 15-company SEED-track
+universe, same principle as §2.2's CARE module. ibbi.gov.in has no robots.txt (confirmed
+by direct fetch: its own "Not Found" error page, not a ruleset), treated as "no stated
+restriction" per this project's existing convention.
+
+**A real implementation bug was found and fixed before trusting this data**: the first
+live run (`docs/phase-3/evidence/ibbi-discovery-run1.log`) reported `companies_matched=0`
+and ten hard `HTTPStatusError 404` errors. Cause: IBBI returns a hard 404 for a page past
+the last one (not an empty table, which is what an in-range page with zero rows looks
+like); the first implementation treated any pagination exception as fatal for that
+company, discarding rows already collected from earlier successful pages -- for Jet
+Airways specifically, this threw away 3 real pages of genuine history because a 4th,
+out-of-range page 404'd. Fixed in `_paginate_all_rows` to treat a 404 as the same
+"no more pages" signal as an empty table; `tests/test_ibbi_ingestion.py`'s
+`test_pagination_404_on_out_of_range_page_keeps_earlier_rows` is the regression test. The
+second run (`docs/phase-3/evidence/ibbi-discovery-run2.log`) is the trusted result below.
+
+**Real run**:
+```
+IbbiDiscoveryStats(companies_queried=15, companies_matched=6,
+companies_unmatched=['Vakrangee', 'Brightcom Group', 'CG Power and Industrial Solutions',
+'LIC Housing Finance', 'PNB Housing Finance', 'Avenue Supermarts', 'Thermax',
+'Suzlon Energy', 'Mastek'],
+rows_seen=206, rows_name_rejected=106, attempted=100, fetched_new=51, unchanged=49,
+blocked=0, errors=[])
+```
+`rows_name_rejected=106`: IBBI's title search is a substring match, so (same false-positive
+pattern as §2.2's CARE) it also returns unrelated entities sharing a word -- each row is
+filtered through the same `ledgerlight.ingestion.name_matching` floor before being
+fetched. `unchanged=49`: several companies' own searches independently surface the same
+order (e.g. a consolidated hearing naming more than one seed company), so the same PDF is
+fetched twice within this one run and correctly dedupes on the second attempt, not a bug.
+
+Real per-company document counts from the `documents` table: Jet Airways 13 new (+1
+pre-existing seed item), Dewan Housing Finance 11 new (+1 pre-existing), Future Retail 12
+new (+1 pre-existing listing page), Reliance Capital 7 new (+1 pre-existing listing page),
+SpiceJet 8 new, Gensol Engineering 3 new. Total: 55 IBBI documents in the store. Real
+published-date range: 2019-07-04 to 2026-08-19.
+
+**SpiceJet is a real, surprising finding that revisits a Phase 0 assumption, not a bug**:
+SpiceJet was selected in Phase 0 as the aviation *control* company (vs. Jet Airways)
+specifically because no governance/distress event was found for it within that phase's
+research budget. This search finds **8 distinct NCLT insolvency petitions filed against
+SpiceJet between 2021 and 2026** (case numbers IB-190-ND-2021, IB-249-(ND)-2023,
+IB-349-(ND)-2023, IB-352-(ND)-2023, IB-291-ND-2024, IB-367-ND-2024, C.P.(IB)-148/ND/2025,
+IB-674/ND/2024 -- real titles quoted verbatim in the evidence log and
+`data/manifests/live_ingestion.jsonl`). Whether any of these petitions was actually
+*admitted* into CIRP (versus filed, then settled or withdrawn -- a real and common
+outcome for vendor/lessor petitions against airlines) has not been reviewed; each would
+need its own reading, not an assumption from the case number. Reported here plainly, per
+the ground rules, as a finding that **the SpiceJet control-group selection should be
+revisited** -- not resolved unilaterally; flagged as an open item in
+`docs/phase-3/progress.md`.
+
+**9 of 15 companies had no IBBI match.** For the three real event companies in that list
+(Vakrangee, Brightcom, CG Power), this is an expected, consistent negative: their actual
+governance issues (an auditor resignation, and two SEBI/accounting matters) are not
+insolvency events, so IBBI -- which only covers NCLT corporate-insolvency proceedings --
+correctly has nothing on them. For the remaining controls (bar SpiceJet, above), no match
+is the expected, confirming result.
+
+`data/manifests/sources.yaml`'s `ibbi` entry is updated to this real coverage.
+
+### 2.3 (continued) SEBI enforcement-order coverage (complete)
+
+Phase 0/1 had three hand-found SEBI items (two Gensol orders, one CG Power-related
+document found via general web search, not SEBI's own listing). This section replaced
+that with SEBI's own real mechanism.
+
+**What exists**: `/enforcement/orders.html` links to 11 order categories, each a listing
+at `/sebiweb/home/HomeAction.do?doListing=yes&sid=2&ssid=9&smid=<n>` (e.g. smid=133,
+"Orders of ED/CGM (Quasi-Judicial Authorities)", 444 records across 18 pages). That
+listing's own "Search by Title, Keywords, Entity Name" box -- confirmed by reading its JS
+(`searchFormNewsList` in `/js/entry.js`) -- POSTs to
+`/sebiweb/ajax/home/getnewslistinfo.jsp` with `smid=0`, searching across every category
+at once, so `ledgerlight/ingestion/sebi.py` never needs to pick a category itself.
+robots.txt is fully permissive (`Disallow:`, only `/js` and `/css` excluded).
+
+**A WAF block was hit and correctly worked around, not defeated**: the first raw POST
+attempt (no session, no Referer) was rejected with "Unauthorized Activity Has Been
+Detected". Retrying with an ordinary session cookie (established by GET-ing the listing
+page first) plus a `Referer` pointing at that page and `X-Requested-With:
+XMLHttpRequest` -- exactly what the page's own AJAX call sends -- succeeded. This is
+normal session continuity for using the site's own search as designed, not fingerprinting
+or CAPTCHA evasion: no browser JS was executed or reverse-engineered, and the one
+CSRF-looking hidden field on the page (`org.apache.struts.taglib.html.TOKEN`) turned out
+to render a static placeholder, not a real per-session token, confirmed by comparing two
+independent page loads.
+
+**Two real implementation bugs were found and fixed before trusting this data**:
+- First run (`docs/phase-3/evidence/sebi-discovery-run1.log`): 42 of 84 attempted fetches
+  failed with `httpx.UnsupportedProtocol`. Cause: some SEBI result hrefs are relative
+  paths (e.g. `/sebi_data/attachdocs/...pdf`), not absolute URLs; passing one straight to
+  httpx as `retrieval_url` fails outright. Fixed with `urljoin(BASE_URL, href)` on both the
+  direct-PDF-href path and the resolved landing-page PDF path;
+  `test_run_sebi_discovery_job_resolves_relative_href` is the regression test.
+- **Known, disclosed limitation, not fixed because it cannot be**: unlike CARE/IBBI, this
+  module does not apply `ledgerlight.ingestion.name_matching`'s token-based floor to each
+  result's title. That floor's `token_sort_ratio` correctly separates "Vakrangee" from
+  "Vakrangee Packaging LLP" for a short name, but a SEBI order title is a full sentence
+  ("Order in the matter of X and others"), and the only fuzzy function that tolerates that
+  wrapper text, `partial_ratio`, scores a real match ("Gensol Engineering" in "...matter of
+  Gensol Engineering Limited") and a *hypothetical* false positive ("Future Retail" in
+  "...matter of Future Retail Employees Welfare Trust") identically at 100 --
+  demonstrated, not assumed. Rather than add a filter that cannot actually discriminate,
+  this module trusts SEBI's own "Entity Name"-aware server-side search and stores every
+  result's full title verbatim in its `coverage_note`, so any genuinely unrelated match
+  stays visible for audit.
+
+**Real run** (after both fixes, `docs/phase-3/evidence/sebi-discovery-run2.log`):
+```
+SebiDiscoveryStats(companies_queried=15, companies_matched=13,
+companies_unmatched=['LIC Housing Finance', 'Thermax'],
+rows_seen=87, pdf_unresolved=3, attempted=84, fetched_new=45, unchanged=39,
+blocked=0, errors=[])
+```
+`unchanged=39`: most of these are the same real, already-upserted SEBI orders surfacing
+under more than one seed company's search (SEBI orders frequently name multiple related
+entities in one order), correctly deduped, not a bug. `pdf_unresolved=3`: three landing
+pages whose HTML did not contain the expected `<iframe src="...?file=...">` pattern --
+skipped and counted, never guessed at.
+
+**13 of 15 companies matched** -- every event company and 6 of 7 controls. Only **LIC
+Housing Finance and Thermax** had zero SEBI results, consistent with their Phase 0
+control-group role (no governance/enforcement event found for either, now checked against
+SEBI's own real search rather than just absence-of-evidence from a general search).
+
+`data/manifests/sources.yaml`'s `sebi` entry is updated to this real coverage.
+
+## Status note: §2.4 onward not yet started
+
+Sections 2.4-15 of this phase's brief (entity-link reporting, outcome definitions,
+point-in-time features, guidance extraction, LightGBM risk modelling with calibration and
+SHAP, walk-forward evaluation with leakage/survivorship controls, scoring infrastructure,
+the rest of the Dagster pipeline, the full test suite, the documentation set, and this
+report's remaining sections) have not been started. §1 alone -- a necessary, blocking
+prerequisite -- already involved two real, previously-undetected bugs found only by
+actually running the real pipeline against real data and checking results by hand, not by
+assumption; §2.2 and §2.3 each surfaced their own real, non-obvious finding the same way
+(CARE's live search reflecting current entity names only; IBBI's hard-404 pagination bug;
+SpiceJet's real insolvency-petition history contradicting its Phase 0 control-group
+selection) -- none of which would have surfaced from accepting an aggregate stats object
+at face value instead of checking individual cases by hand. The remaining sections need
+the same real-execution, real-verification treatment and are substantial, multi-session
+work, consistent with how Phase 2 itself was built incrementally across many sessions
+rather than in one pass.

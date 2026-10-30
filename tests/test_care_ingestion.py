@@ -26,7 +26,6 @@ from ledgerlight.ingestion.care import (
     PRYEAR_ENDPOINT,
     SEARCH_ENDPOINT,
     CareDiscoveryStats,
-    _best_match,
     _CareDiscoveryClient,
     discover_pr_documents_for_company,
     run_care_discovery_job,
@@ -37,21 +36,6 @@ ROBOTS_URL = f"{BASE_URL}/robots.txt"
 
 def _allow_robots() -> None:
     respx.get(ROBOTS_URL).mock(return_value=httpx.Response(200, text="User-agent: *\nDisallow:\n"))
-
-
-def test_best_match_prefers_exact_and_rejects_unrelated_company() -> None:
-    candidates = [
-        {"CompanyID": "enc-1", "CompanyName": "Vakrangee Limited"},
-        {"CompanyID": "enc-2", "CompanyName": "Vakrangee Packaging LLP"},
-    ]
-    matched = _best_match("Vakrangee", candidates)
-    assert matched is not None
-    assert matched["CompanyID"] == "enc-1"
-
-
-def test_best_match_returns_none_below_floor() -> None:
-    candidates = [{"CompanyID": "enc-1", "CompanyName": "Completely Unrelated Industries Ltd"}]
-    assert _best_match("Gensol Engineering", candidates) is None
 
 
 @respx.mock

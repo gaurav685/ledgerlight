@@ -39,7 +39,6 @@ asks for, instead of linking separately after the fact.
 
 from __future__ import annotations
 
-import re
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -48,7 +47,6 @@ from urllib.parse import quote
 
 import httpx
 import structlog
-from rapidfuzz import fuzz
 from sqlalchemy.orm import Session
 
 from ledgerlight.acquisition.fetcher import (
@@ -61,7 +59,9 @@ from ledgerlight.acquisition.fetcher import (
 from ledgerlight.acquisition.manifest import CompanyIdentifiers
 from ledgerlight.acquisition.robots import RobotsCache
 from ledgerlight.ingestion.base import require_enabled_source
+from ledgerlight.ingestion.name_matching import best_name_match
 from ledgerlight.ingestion.run_tracking import finish_run, start_run
+from ledgerlight.ingestion.seed_track import SEED_COMPANY_SEARCH_NAMES
 from ledgerlight.ingestion.upsert import upsert_document_version
 from ledgerlight.storage.s3_store import ObjectStore
 
@@ -73,53 +73,6 @@ PRYEAR_ENDPOINT = f"{BASE_URL}/pryear"
 PRDOCUMENT_ENDPOINT = f"{BASE_URL}/getSearchprdocument"
 PR_FILE_BASE = f"{BASE_URL}/upload/CompanyFiles/PR/"
 TERMS_URL = "https://www.careratings.com/terms-condition"
-
-# Conservative floor for accepting a CARE search hit as the same company as
-# a seed-universe entry, applied AFTER stripping common corporate suffixes
-# (see _normalize_name) -- without stripping, a legitimate match like
-# "Vakrangee" vs "Vakrangee Limited" scores only ~69 (token_sort_ratio
-# penalizes the extra token), while the false positive "Vakrangee" vs
-# "Vakrangee Packaging LLP" scores ~56: both low, with too little
-# separation to set a single floor. After stripping suffixes the real
-# match hits 100 and the false positive drops to ~64 -- see
-# tests/test_care_ingestion.py for the exact real-data cases this floor
-# was picked against.
-NAME_MATCH_FLOOR = 75.0
-
-_CORPORATE_SUFFIX_PATTERN = re.compile(
-    r"\b(limited|ltd\.?|private|pvt\.?|llp|incorporated|inc\.?|corporation|corp\.?)\b",
-    re.IGNORECASE,
-)
-
-
-def _normalize_name(name: str) -> str:
-    stripped = _CORPORATE_SUFFIX_PATTERN.sub(" ", name)
-    cleaned = re.sub(r"[^a-z0-9 ]", " ", stripped.lower())
-    return re.sub(r"\s+", " ", cleaned).strip()
-
-
-# The Phase 3 Sec2.2 discovery universe: the real, individually-verified
-# SEED-track companies from docs/data/seed-universe.md (the event companies
-# plus the 7-company control group). search_name is the real legal/trading
-# name used against CARE's own search box; identifiers mirror
-# known_seed_items.py so Document rows link to the same company identity.
-SEED_COMPANY_SEARCH_NAMES: list[tuple[str, CompanyIdentifiers]] = [
-    ("Gensol Engineering", CompanyIdentifiers(nse_symbol="GENSOL")),
-    ("Dewan Housing Finance", CompanyIdentifiers(bse_scrip_code="511072")),
-    ("Jet Airways", CompanyIdentifiers(nse_symbol="JETAIRWAYS", bse_scrip_code="532617")),
-    ("Vakrangee", CompanyIdentifiers(nse_symbol="VAKRANGEE")),
-    ("Brightcom Group", CompanyIdentifiers(nse_symbol="BCG", bse_scrip_code="532368")),
-    ("CG Power and Industrial Solutions", CompanyIdentifiers(nse_symbol="CGPOWER")),
-    ("Reliance Capital", CompanyIdentifiers(bse_scrip_code="500111")),
-    ("Future Retail", CompanyIdentifiers(bse_scrip_code="540064")),
-    ("LIC Housing Finance", CompanyIdentifiers(nse_symbol="LICHSGFIN", bse_scrip_code="500253")),
-    ("PNB Housing Finance", CompanyIdentifiers(nse_symbol="PNBHOUSING")),
-    ("SpiceJet", CompanyIdentifiers(nse_symbol="SPICEJET")),
-    ("Avenue Supermarts", CompanyIdentifiers(nse_symbol="DMART", bse_scrip_code="540376")),
-    ("Thermax", CompanyIdentifiers(nse_symbol="THERMAX", bse_scrip_code="500411")),
-    ("Suzlon Energy", CompanyIdentifiers(nse_symbol="SUZLON")),
-    ("Mastek", CompanyIdentifiers(nse_symbol="MASTEK", bse_scrip_code="523704")),
-]
 
 
 @dataclass
@@ -189,21 +142,6 @@ class _CareDiscoveryClient:
         return docs
 
 
-def _best_match(query: str, candidates: list[dict[str, Any]]) -> dict[str, Any] | None:
-    normalized_query = _normalize_name(query)
-    best: dict[str, Any] | None = None
-    best_score = 0.0
-    for candidate in candidates:
-        name = candidate.get("CompanyName", "")
-        score = fuzz.token_sort_ratio(normalized_query, _normalize_name(name))
-        if score > best_score:
-            best_score = score
-            best = candidate
-    if best is not None and best_score >= NAME_MATCH_FLOOR:
-        return best
-    return None
-
-
 def discover_pr_documents_for_company(
     client: _CareDiscoveryClient, search_name: str
 ) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
@@ -212,7 +150,7 @@ def discover_pr_documents_for_company(
     simply has zero PR documents on file -- callers distinguish the two
     via the first element, not by document count alone."""
     candidates = client.search_companies(search_name)
-    matched = _best_match(search_name, candidates)
+    matched = best_name_match(search_name, candidates, lambda c: c.get("CompanyName", ""))
     if matched is None:
         return None, []
     company_id = matched["CompanyID"]

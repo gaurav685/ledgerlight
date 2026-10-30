@@ -7,9 +7,13 @@ Usage:
     python scripts/ingest.py SOURCE_ID [PARTITION_DATE]
 
 SOURCE_ID is any of the known_items sources (sebi, ibbi, care, *_ir),
-"nse_archives" (requires PARTITION_DATE, YYYY-MM-DD), "inbox", or
+"nse_archives" (requires PARTITION_DATE, YYYY-MM-DD), "inbox",
 "care_discovery" (Phase 3 Sec2.2 per-SEED-company CARE rationale discovery,
-broader than the single hardcoded "care" known_items entry).
+broader than the single hardcoded "care" known_items entry), or
+"ibbi_discovery" (Phase 3 Sec2.3 per-SEED-company IBBI NCLT order
+discovery, broader than the four hand-found "ibbi" known_items entries),
+or "sebi_discovery" (Phase 3 Sec2.3 per-SEED-company SEBI enforcement-order
+discovery, broader than the hand-found "sebi" known_items entries).
 """
 
 from __future__ import annotations
@@ -43,6 +47,12 @@ def main() -> int:
         result = job_def.execute_in_process(instance=instance)
     elif source_id == "care_discovery":
         job_def = defs.get_job_def("care_discovery_job")
+        result = job_def.execute_in_process(instance=instance)
+    elif source_id == "ibbi_discovery":
+        job_def = defs.get_job_def("ibbi_discovery_job")
+        result = job_def.execute_in_process(instance=instance)
+    elif source_id == "sebi_discovery":
+        job_def = defs.get_job_def("sebi_discovery_job")
         result = job_def.execute_in_process(instance=instance)
     elif source_id in _KNOWN_ITEM_SOURCES:
         job_def = defs.get_job_def(f"{source_id}_job")

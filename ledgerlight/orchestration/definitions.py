@@ -27,8 +27,10 @@ from ledgerlight.acquisition.import_local import import_inbox
 from ledgerlight.config.settings import load_settings
 from ledgerlight.db.session import make_session_factory
 from ledgerlight.ingestion.care import run_care_discovery_job
+from ledgerlight.ingestion.ibbi import run_ibbi_discovery_job
 from ledgerlight.ingestion.known_items import run_known_items_job
 from ledgerlight.ingestion.nse_bhavcopy import run_bhavcopy_range
+from ledgerlight.ingestion.sebi import run_sebi_discovery_job
 from ledgerlight.storage.s3_store import ObjectStore
 
 # Partitions start where the Correction-1 seed's own coverage starts.
@@ -166,6 +168,70 @@ def care_discovery_op(context: OpExecutionContext) -> None:
 @dg.job(name="care_discovery_job")
 def care_discovery_job() -> None:
     care_discovery_op()
+
+
+@dg.op(name="ibbi_discovery", retry_policy=_RETRY_POLICY)
+def ibbi_discovery_op(context: OpExecutionContext) -> None:
+    """Phase 3 Sec2.3: per-SEED-company IBBI NCLT order discovery (beyond
+    the four hand-found known_items entries) -- see ledgerlight.ingestion
+    .ibbi for the real discovery mechanism this drives."""
+    settings = load_settings()
+    store = ObjectStore(settings)
+    session_factory = make_session_factory(settings)
+
+    from ledgerlight.acquisition.fetcher import PoliteFetcher
+
+    with (
+        session_factory() as session,
+        PoliteFetcher(
+            contact_email=settings.contact_email,
+            data_dir=settings.data_dir,
+            manifest_path=settings.data_dir / "manifests" / "live_ingestion.jsonl",
+            rate_limit_seconds=settings.fetch_rate_limit_seconds,
+            timeout_seconds=settings.fetch_timeout_seconds,
+            max_retries=settings.fetch_max_retries,
+            max_file_size_bytes=settings.fetch_max_file_size_bytes,
+        ) as fetcher,
+    ):
+        stats = run_ibbi_discovery_job(session, store, fetcher, settings.contact_email)
+    context.log.info(f"ibbi_discovery: {stats}")
+
+
+@dg.job(name="ibbi_discovery_job")
+def ibbi_discovery_job() -> None:
+    ibbi_discovery_op()
+
+
+@dg.op(name="sebi_discovery", retry_policy=_RETRY_POLICY)
+def sebi_discovery_op(context: OpExecutionContext) -> None:
+    """Phase 3 Sec2.3: per-SEED-company SEBI enforcement-order discovery
+    (beyond the hand-found known_items entries) -- see ledgerlight
+    .ingestion.sebi for the real discovery mechanism this drives."""
+    settings = load_settings()
+    store = ObjectStore(settings)
+    session_factory = make_session_factory(settings)
+
+    from ledgerlight.acquisition.fetcher import PoliteFetcher
+
+    with (
+        session_factory() as session,
+        PoliteFetcher(
+            contact_email=settings.contact_email,
+            data_dir=settings.data_dir,
+            manifest_path=settings.data_dir / "manifests" / "live_ingestion.jsonl",
+            rate_limit_seconds=settings.fetch_rate_limit_seconds,
+            timeout_seconds=settings.fetch_timeout_seconds,
+            max_retries=settings.fetch_max_retries,
+            max_file_size_bytes=settings.fetch_max_file_size_bytes,
+        ) as fetcher,
+    ):
+        stats = run_sebi_discovery_job(session, store, fetcher, settings.contact_email)
+    context.log.info(f"sebi_discovery: {stats}")
+
+
+@dg.job(name="sebi_discovery_job")
+def sebi_discovery_job() -> None:
+    sebi_discovery_op()
 
 
 bhavcopy_job = dg.define_asset_job(name="bhavcopy_job", selection=[bhavcopy_daily])
@@ -317,6 +383,8 @@ defs = dg.Definitions(
         inbox_import_job,
         knowledge_pipeline_job,
         care_discovery_job,
+        ibbi_discovery_job,
+        sebi_discovery_job,
         *known_items_jobs.values(),
     ],
     schedules=[bhavcopy_daily_schedule],
