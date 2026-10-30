@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "C:\ledger light\scripts\ibbi_universe_discovery.py", line 119, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\ledger light\scripts\ibbi_universe_discovery.py", line 104, in main
+    all_companies.extend(_parse_master_csv(body.decode("utf-8")))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ledger light\scripts\ibbi_universe_discovery.py", line 61, in _parse_master_csv
+    row = {k.strip(): v.strip() for k, v in row.items() if k}
+                      ^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'strip'
