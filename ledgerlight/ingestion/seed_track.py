@@ -10,6 +10,17 @@ later Phase 3 sections ask for.
 search_name is the real legal/trading name used against each source's
 own search box; identifiers mirror known_seed_items.py so Document rows
 link to the same company identity across sources.
+
+Dewan Housing Finance, Reliance Capital and Future Retail carry an
+`nse_symbol` here (DHFL/RELCAPITAL/FRETAIL -- their real, historical NSE
+tickers before CIRP/delisting), not just `bse_scrip_code`: a Phase 3
+§2.4 investigation found `company_identifiers` has almost no BSE_CODE
+rows at all (the company bootstrap is NSE-bhavcopy-only), so a
+`bse_scrip_code`-only identifier never auto-links to a real `Company`
+row for these three -- see `docs/phase-3/phase-3-report.md`'s §2.4
+addendum and `scripts/migrate_company_dedup.py` for the real bug this
+also surfaced and fixed (one `Company` row per ISIN instead of per real
+company, fragmenting debt-heavy issuers like DHFL into dozens of rows).
 """
 
 from __future__ import annotations
@@ -18,13 +29,13 @@ from ledgerlight.acquisition.manifest import CompanyIdentifiers
 
 SEED_COMPANY_SEARCH_NAMES: list[tuple[str, CompanyIdentifiers]] = [
     ("Gensol Engineering", CompanyIdentifiers(nse_symbol="GENSOL")),
-    ("Dewan Housing Finance", CompanyIdentifiers(bse_scrip_code="511072")),
+    ("Dewan Housing Finance", CompanyIdentifiers(nse_symbol="DHFL", bse_scrip_code="511072")),
     ("Jet Airways", CompanyIdentifiers(nse_symbol="JETAIRWAYS", bse_scrip_code="532617")),
     ("Vakrangee", CompanyIdentifiers(nse_symbol="VAKRANGEE")),
     ("Brightcom Group", CompanyIdentifiers(nse_symbol="BCG", bse_scrip_code="532368")),
     ("CG Power and Industrial Solutions", CompanyIdentifiers(nse_symbol="CGPOWER")),
-    ("Reliance Capital", CompanyIdentifiers(bse_scrip_code="500111")),
-    ("Future Retail", CompanyIdentifiers(bse_scrip_code="540064")),
+    ("Reliance Capital", CompanyIdentifiers(nse_symbol="RELCAPITAL", bse_scrip_code="500111")),
+    ("Future Retail", CompanyIdentifiers(nse_symbol="FRETAIL", bse_scrip_code="540064")),
     ("LIC Housing Finance", CompanyIdentifiers(nse_symbol="LICHSGFIN", bse_scrip_code="500253")),
     ("PNB Housing Finance", CompanyIdentifiers(nse_symbol="PNBHOUSING")),
     ("SpiceJet", CompanyIdentifiers(nse_symbol="SPICEJET")),

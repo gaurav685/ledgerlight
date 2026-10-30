@@ -99,22 +99,34 @@ exact next step is below, not left to be re-derived.
     (`processed: 34, rows_upserted: 125186, rows_quarantined: 0, errors: 0` for its final
     pass).
 
-- **§2.4 entity-link reporting**: COMPLETE. Scope judgement made explicitly: §2.2/§2.3's
-  discovery jobs already attach `CompanyIdentifiers` by construction (driven by a known
-  seed company, not fuzzy text matching), so there is no "review-queued" ambiguous tier
-  to report -- only auto-linked vs. unmatched. `scripts/entity_link_report.py` (new)
-  verifies every care/ibbi/sebi document's identifiers against the real
-  `company_identifiers` table. Real result
-  (`docs/phase-3/evidence/entity-link-report-run1.log`): care 133/162 auto-linked, ibbi
-  25/55, sebi 67/84 -- **every single unmatched document traces to one of three BSE
-  codes** (511072 DHFL, 540064 Future Retail, 500111 Reliance Capital), because
-  `company_identifiers` has only 6 distinct `BSE_CODE` values total (vs. 5,295
-  `NSE_SYMBOL`, 5,675 `ISIN`): `scripts/bootstrap_companies.py` derives identity purely
-  from NSE bhavcopy, and these three companies' CIRP/delisting removed them from NSE
-  trading, making them invisible to that bootstrap. The three companies most central to
-  this project's own event universe cannot currently be auto-linked -- a real,
-  root-caused bootstrap-source gap, not a bug in §2.2/§2.3, and not patched by guessing a
-  mapping here (see "Open defects" below).
+- **§2.4 entity-link reporting**: COMPLETE, including a real, deeper fix the user
+  explicitly asked for after two check-in questions. Initial result
+  (`docs/phase-3/evidence/entity-link-report-run1.log`): care 133/162, ibbi 25/55,
+  sebi 67/84 -- every unmatched document traced to one of three BSE codes (DHFL,
+  Future Retail, Reliance Capital), because `company_identifiers` had only 6 `BSE_CODE`
+  values (bootstrap is NSE-bhavcopy-only). Checking whether these three already had a
+  usable NSE_SYMBOL/ISIN surfaced a second, much bigger, unrelated bug: `Company` rows
+  were created **per ISIN, not per real company** -- DHFL alone was fragmented into 29
+  rows; a full scan found **422** real companies fragmented this way (1,122 duplicate
+  rows), overwhelmingly NBFCs/bond issuers. Fixed, with the user's explicit sign-off:
+  - `ledgerlight/ingestion/company_grouping.py` (new): union-find over ISIN/symbol
+    co-occurrence. `tests/test_company_grouping.py` (6 tests).
+  - `scripts/bootstrap_companies.py` rewritten to use the corrected grouping.
+  - `scripts/migrate_company_dedup.py` (new): one-time migration, `--dry-run` first
+    (422 groups found, plan written to `docs/phase-3/evidence/company-dedup-dry-run.json`,
+    spot-checked by hand -- every multi-symbol group traced to one real company, e.g.
+    REC Limited's ~13 bond series, Indiabulls Housing Finance's 2023 rename to Sammaan
+    Capital). Tables backed up (`../ledgerlight-backups/pre-company-dedup-backup.sql`)
+    before `--apply`. Real result
+    (`docs/phase-3/evidence/company-dedup-apply-run1.log`): 422 groups fixed, 1,122
+    duplicate rows deleted, 2,555 identifiers regenerated, 0 existing
+    filings/events/label_items/entities needed re-pointing. `companies` row count now
+    exactly equals distinct `display_name` count -- zero duplicates remain.
+  - `ledgerlight/ingestion/seed_track.py` updated (DHFL/Reliance Capital/Future Retail
+    now carry `nse_symbol`); the 76 already-fetched Document rows (19+14+43) had
+    `nse_symbol` added directly, dry-run first.
+  - **Final result** (`docs/phase-3/evidence/entity-link-report-run2-post-fix.log`): all
+    301 CARE/IBBI/SEBI documents now auto-link -- care 162/162, ibbi 55/55, sebi 84/84.
 
 ## Not yet started
 
@@ -131,11 +143,9 @@ leakage controls), §8 (scoring + storage), §9 (rest of the Dagster pipeline + 
    admission OR rating downgrade to D, within 12 months. Secondary outcomes: severe
    drawdown, SEBI order, bhavcopy disappearance. Handle censoring explicitly.
    `docs/modelling/outcomes.md` + a spec file; `docs/modelling/outcome-evidence-review.csv`;
-   a release-gate addition. Note the real §2.4 finding above when deciding how DHFL/Future
-   Retail/Reliance Capital's own outcome rows get keyed, since they can't currently be
-   auto-linked by BSE code alone -- may need an explicit manual/CIN-based linking decision
-   for just these three, flagged to the user rather than resolved unilaterally if it
-   matters for the outcome definitions themselves.
+   a release-gate addition. DHFL/Future Retail/Reliance Capital now auto-link cleanly
+   (§2.4's fix), so their IBBI-based primary-outcome positives can be populated via the
+   normal auto-link path -- no special-casing needed.
    ICRA and CRISIL stay excluded (CRISIL by its own exclusion terms, per `docs/data/
    source-inventory.md`).
 2. If a future session hits an apparent background-job hang with near-zero CPU growth on
@@ -171,12 +181,11 @@ leakage controls), §8 (scoring + storage), §9 (rest of the Dagster pipeline + 
   did not contain the expected `<iframe src="...?file=...">` PDF-embed pattern. Skipped
   and counted, not guessed at -- a real, small, disclosed gap in that source's coverage,
   not yet individually investigated.
-- **BSE_CODE bootstrap gap (§2.4)**: `company_identifiers` has only 6 distinct
-  `BSE_CODE` values (vs. 5,295 `NSE_SYMBOL`, 5,675 `ISIN`) because
-  `scripts/bootstrap_companies.py` derives identity purely from NSE bhavcopy price
-  history. DHFL (511072), Future Retail (540064) and Reliance Capital (500111) -- three
-  of the project's own most central event companies -- left NSE trading via
-  CIRP/delisting and are invisible to that bootstrap, so 76 real documents (29 CARE + 30
-  IBBI + 17 SEBI) carrying only a BSE code cannot currently be auto-linked to a `Company`
-  row. Not patched by guessing a mapping; a real fix needs a BSE-code source independent
-  of NSE bhavcopy, a decision for §4 or a dedicated follow-up, not invented here.
+- ~~BSE_CODE bootstrap gap (§2.4)~~ -- **RESOLVED** 2026-10-30: DHFL/Future
+  Retail/Reliance Capital now carry `nse_symbol` and auto-link cleanly; see "§2.4" above
+  for the fix (which also resolved the much larger 422-company fragmentation bug). The
+  underlying `BSE_CODE` scarcity in `company_identifiers` (still only 6 values) remains a
+  real, disclosed gap for any FUTURE delisted company not already covered by an
+  NSE_SYMBOL/ISIN fallback -- not urgent now that the three companies this project
+  actually needs are fixed, but worth remembering if a new delisted company enters the
+  SEED-track universe later.

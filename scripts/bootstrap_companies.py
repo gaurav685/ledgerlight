@@ -1,9 +1,20 @@
-"""Bootstrap companies/company_identifiers from real bhavcopy data
-(ISIN + NSE symbol history via price_bars) -- the ISIN is the stable
-identifier; a symbol change over time produces two CompanyIdentifier
-rows (old symbol valid_to = change date, new symbol valid_from = change
-date), never an overwrite. Idempotent: skips an ISIN that already has a
-company_identifiers row.
+"""Bootstrap companies/company_identifiers from real bhavcopy data (ISIN +
+NSE symbol history via price_bars).
+
+A real company is grouped by `ledgerlight.ingestion.company_grouping`'s
+union-find over (isin, symbol) co-occurrence, NOT by ISIN alone -- see
+that module's docstring for the real bug this fixes (DHFL-like bond
+issuers fragmenting into one "company" per ISIN). A symbol change over
+time still produces two NSE_SYMBOL CompanyIdentifier rows (old symbol
+valid_to = change date, new symbol valid_from = change date), never an
+overwrite; multiple ISINs belonging to one real company (equity + bonds)
+each get their own ISIN identifier row, all under the same `company_id`.
+
+Idempotent: skips an ISIN that already has a company_identifiers row --
+on a database already migrated by `scripts/migrate_company_dedup.py`,
+this means every ISIN from the old, over-fragmented bootstrap is seen as
+"already bootstrapped" and skipped, which is correct; this script only
+bootstraps genuinely new ISINs going forward.
 """
 
 from __future__ import annotations
@@ -11,7 +22,6 @@ from __future__ import annotations
 import datetime as dt
 import sys
 import uuid
-from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
@@ -22,14 +32,11 @@ from sqlalchemy import text  # noqa: E402
 
 from ledgerlight.config.settings import load_settings  # noqa: E402
 from ledgerlight.db.session import make_session_factory  # noqa: E402
+from ledgerlight.ingestion.company_grouping import (  # noqa: E402
+    IsinSegment,
+    group_segments_into_companies,
+)
 from ledgerlight.knowledge.models import Company, CompanyIdentifier  # noqa: E402
-
-
-@dataclass
-class _Segment:
-    symbol: str
-    seg_start: dt.date
-    first_price_bar_id: uuid.UUID
 
 
 def main() -> int:
@@ -47,7 +54,7 @@ def main() -> int:
             ).all()
         }
 
-        segments = session.execute(
+        rows = session.execute(
             text(
                 """
                 select isin, symbol, source_id, min(trade_date) as seg_start,
@@ -63,52 +70,56 @@ def main() -> int:
             )
         ).all()
 
-        by_isin: dict[str, list[_Segment]] = {}
-        for isin, symbol, _source_id, seg_start, _seg_end, first_price_bar_id in segments:
+        by_isin: dict[str, list[IsinSegment]] = {}
+        for isin, symbol, _source_id, seg_start, _seg_end, first_price_bar_id in rows:
             isin_str = str(isin)
+            if isin_str in already_bootstrapped:
+                continue
             by_isin.setdefault(isin_str, []).append(
-                _Segment(str(symbol), cast(dt.date, seg_start), cast(uuid.UUID, first_price_bar_id))
+                IsinSegment(
+                    isin_str,
+                    str(symbol),
+                    cast(dt.date, seg_start),
+                    cast(uuid.UUID, first_price_bar_id),
+                )
             )
+
+        skipped_already_bootstrapped = len(already_bootstrapped)
+        groups = group_segments_into_companies(by_isin)
 
         companies_created = 0
         identifiers_created = 0
-        skipped_already_bootstrapped = 0
 
-        for isin, segs in by_isin.items():
-            if isin in already_bootstrapped:
-                skipped_already_bootstrapped += 1
-                continue
-
-            segs.sort(key=lambda s: s.seg_start)
-            latest_symbol = segs[-1].symbol
-
-            company = Company(display_name=latest_symbol)
+        for group in groups:
+            company = Company(display_name=group.latest_symbol)
             session.add(company)
             session.flush()
             companies_created += 1
 
-            session.add(
-                CompanyIdentifier(
-                    company_id=company.id,
-                    identifier_type="ISIN",
-                    value=isin,
-                    valid_from=segs[0].seg_start,
-                    valid_to=None,
-                    source_price_bar_id=segs[0].first_price_bar_id,
+            for isin, (seg_start, first_price_bar_id) in group.isin_earliest.items():
+                session.add(
+                    CompanyIdentifier(
+                        company_id=company.id,
+                        identifier_type="ISIN",
+                        value=isin,
+                        valid_from=seg_start,
+                        valid_to=None,
+                        source_price_bar_id=first_price_bar_id,
+                    )
                 )
-            )
-            identifiers_created += 1
+                identifiers_created += 1
 
-            for i, seg in enumerate(segs):
-                valid_to = segs[i + 1].seg_start if i + 1 < len(segs) else None
+            windows = group.symbol_windows
+            for i, (symbol, seg_start, first_price_bar_id) in enumerate(windows):
+                valid_to = windows[i + 1][1] if i + 1 < len(windows) else None
                 session.add(
                     CompanyIdentifier(
                         company_id=company.id,
                         identifier_type="NSE_SYMBOL",
-                        value=seg.symbol,
-                        valid_from=seg.seg_start,
+                        value=symbol,
+                        valid_from=seg_start,
                         valid_to=valid_to,
-                        source_price_bar_id=seg.first_price_bar_id,
+                        source_price_bar_id=first_price_bar_id,
                     )
                 )
                 identifiers_created += 1

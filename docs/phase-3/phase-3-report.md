@@ -9,11 +9,12 @@ complete. §3 onward not yet started** -- see the note at the end of §2. §2.1'
 backfill surfaced real findings of its own: the exhaustively-confirmed 2016-01-01
 earliest-available-date boundary, a parsing-pipeline gap for 2016-01 to 2017-01-04, and a
 real environment constraint (a low-memory kill) that took three attempts to work around
--- final, directly-verified `price_bars` coverage is 2016-01-01 to 2026-10-30. §2.4 found
-that the three companies most central to this project's event universe (DHFL, Future
-Retail, Reliance Capital) are structurally invisible to the identifier-resolution
-bootstrap and cannot yet be auto-linked. This report will grow as later sections land; it
-is not a placeholder, every number in it is real and verified.
+-- final, directly-verified `price_bars` coverage is 2016-01-01 to 2026-10-30. §2.4 found,
+and with the user's explicit sign-off fixed, a real company-identity fragmentation bug
+affecting 422 companies across the whole universe (one `Company` row was created per
+ISIN instead of per real company, fragmenting debt-heavy issuers like DHFL into dozens of
+rows) -- all 301 CARE/IBBI/SEBI documents now auto-link cleanly. This report will grow as
+later sections land; it is not a placeholder, every number in it is real and verified.
 
 ## §1. Preflight: selection fix and detector hardening
 
@@ -573,21 +574,67 @@ sebi: total=84  auto_linked=67  unmatched=17   (unmatched: bse_code_only, codes 
 company_identifiers totals: NSE_SYMBOL 5295, BSE_CODE 6, ISIN 5675 distinct values
 ```
 
-**A real, root-caused data-lineage gap, not a bug in §2.2/§2.3's own code**: every single
-unmatched document traces to exactly one of three BSE scrip codes -- 511072 (Dewan
-Housing Finance), 540064 (Future Retail), 500111 (Reliance Capital) -- each carrying only
-a `bse_code`, no `nse_symbol`/`isin` fallback. `company_identifiers` has only **6** distinct
-`BSE_CODE` values in total (vs. 5,295 `NSE_SYMBOL` and 5,675 `ISIN`), because
-`scripts/bootstrap_companies.py` derives company identity purely from NSE bhavcopy price
-history -- and these three are exactly the companies whose CIRP/delisting removed them
-from NSE trading, making them structurally invisible to that bootstrap. The companies
-most central to this project's own event universe are the ones its identifier-resolution
-mechanism cannot currently see. This is reported plainly as a limitation of the bootstrap
-source, not patched by guessing or hand-inserting a mapping here -- a real fix (adding a
-BSE-code-to-company source independent of NSE bhavcopy) is a decision for §4's
-point-in-time feature work or a dedicated follow-up, not invented unilaterally in this
-reporting pass. Per the brief, these 76 unmatched documents (29+30+17) are **not** usable
-in any downstream point-in-time company-indexed feature until resolved.
+**Root cause investigated rather than patched over, and it led to a second, much larger
+bug** -- disclosed in full, with the user's explicit sign-off at each step, not resolved
+unilaterally:
+
+Every unmatched document traced to one of three BSE scrip codes -- 511072 (Dewan Housing
+Finance), 540064 (Future Retail), 500111 (Reliance Capital) -- carrying only a `bse_code`.
+`company_identifiers` has only **6** distinct `BSE_CODE` values in total (vs. 5,295
+`NSE_SYMBOL`/5,675 `ISIN` at the time), because `scripts/bootstrap_companies.py` derives
+identity purely from NSE bhavcopy. The user chose to fix this properly rather than patch
+just these three companies. Checking whether these three already had a usable,
+bootstrapped `NSE_SYMBOL`/`ISIN` from before their delisting (they did: `DHFL`,
+`FRETAIL`, `RELCAPITAL`) surfaced a second, unrelated, much bigger bug: `Company` rows
+were created **per distinct ISIN**, not per real company -- correct for a single-equity-ISIN
+company, wrong for any company that has also issued listed debt (every bond/NCD tranche
+gets its own ISIN but trades under the same `symbol` as the issuer's equity in this
+corpus). DHFL alone was fragmented into **29** separate `Company` rows; a full scan found
+**422** real companies fragmented this way across the whole universe (1,122 duplicate
+rows), overwhelmingly NBFCs/bond issuers -- exactly this project's core sector. The user
+chose to fix this properly too, rather than defer it.
+
+**The fix, in order**:
+1. `ledgerlight/ingestion/company_grouping.py` (new): a union-find over ISIN/symbol
+   co-occurrence, replacing "one company per ISIN" with "one company per set of ISINs
+   that ever shared a symbol string" -- `tests/test_company_grouping.py` (6 tests)
+   covering the DHFL-fragmentation pattern, a genuine symbol rename (still must produce
+   two chronological windows, unaffected), transitive merging, and a safety test proving
+   two companies that never share a symbol stay separate.
+2. `scripts/bootstrap_companies.py` rewritten to use the corrected grouping for any
+   future bootstrap.
+3. `scripts/migrate_company_dedup.py` (new): a one-time migration for the data already
+   in the database -- `--dry-run` first (422 groups, 1,122 rows to delete, written to
+   `docs/phase-3/evidence/company-dedup-dry-run.json` for inspection), spot-checked by
+   hand before applying (every multi-symbol group inspected traced to one real company:
+   REC Limited's ~13 coupon-coded bond series, Indiabulls Housing Finance's 2023 rename
+   to Sammaan Capital, Indiabulls Ventures' rename to Dhani, etc. -- no evidence of two
+   unrelated companies being wrongly merged). A full backup of the affected tables
+   (`companies`, `company_identifiers`, `filings`, `events`, `label_items`, `entities`)
+   was taken before applying. Real result
+   (`docs/phase-3/evidence/company-dedup-apply-run1.log`): 422 groups fixed, 1,122
+   duplicate `Company` rows deleted, 2,555 identifiers regenerated correctly, 0 existing
+   `filings`/`events`/`label_items`/`entities` references needed re-pointing (none
+   happened to reference a row being removed). `companies` now has exactly as many rows
+   as distinct `display_name` values -- zero duplicates remain, verified directly.
+4. `ledgerlight/ingestion/seed_track.py` updated to carry `nse_symbol` (not just
+   `bse_scrip_code`) for these three companies, and the 76 already-fetched CARE/IBBI/SEBI
+   `Document` rows (19 DHFL, 14 Reliance Capital, 43 Future Retail) had their `nse_symbol`
+   added directly -- a small, targeted, auditable one-time fix, dry-run first.
+
+**Real, final result** (`docs/phase-3/evidence/entity-link-report-run2-post-fix.log`):
+```
+care: total=162 auto_linked=162 unmatched=0
+ibbi: total=55  auto_linked=55  unmatched=0
+sebi: total=84  auto_linked=84  unmatched=0
+
+company_identifiers totals: NSE_SYMBOL 5333, BSE_CODE 6, ISIN 5732 distinct values
+```
+All 301 documents across CARE/IBBI/SEBI now auto-link. The deeper company-fragmentation
+bug is fixed for the whole universe, not just these three companies -- directly relevant
+to §4's point-in-time features, which are keyed by `company_id` and would otherwise have
+silently mis-aggregated any debt-heavy company's history across dozens of fragmented
+identities.
 
 ## Status note: §3 onward not yet started
 

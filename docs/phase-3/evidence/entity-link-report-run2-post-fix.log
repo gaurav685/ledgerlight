@@ -1,0 +1,8 @@
+care: total=162 auto_linked=162 unmatched=0
+ibbi: total=55 auto_linked=55 unmatched=0
+sebi: total=84 auto_linked=84 unmatched=0
+
+company_identifiers totals:
+  NSE_SYMBOL: 5333 distinct values
+  BSE_CODE: 6 distinct values
+  ISIN: 5732 distinct values
