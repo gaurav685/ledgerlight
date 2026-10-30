@@ -81,6 +81,9 @@ test-corpus:
 taxonomy-load:
 	uv run python scripts/taxonomy_load.py data/taxonomy/taxonomy-v1.0.yaml
 
+outcomes-taxonomy-load:
+	uv run python scripts/taxonomy_load.py data/taxonomy/outcomes-v1.0.yaml
+
 bootstrap-companies:
 	uv run python scripts/bootstrap_companies.py
 

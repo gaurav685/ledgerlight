@@ -1,0 +1,119 @@
+version: "outcomes-1.0"
+status: active
+source_doc: docs/modelling/outcomes.md
+notes: >
+  A separate taxonomy from taxonomy-v1.0.yaml's governance red-flag event
+  types -- these event types represent REALIZED OUTCOME TRIGGERS (a real,
+  dated, evidenced occurrence of severe credit/insolvency distress or a
+  market-observable proxy for it), not disclosure-pattern red flags. Each
+  is the Event that an outcomes row's event_id points to, per ADR 0005's
+  "Phase 3 defines real outcome_type values and populates this table."
+  A risk score built from these is an analytical signal, not a finding
+  of wrongdoing or investment advice -- same neutral-language rule as
+  the rest of this project's taxonomy.
+
+changelog:
+  - version: "outcomes-1.0"
+    date: "2026-10-31"
+    changes:
+      - "Initial version for Phase 3 §3 (outcome definitions)."
+
+event_types:
+  - code: IBBI_CIRP_ADMISSION
+    name: IBBI CIRP admission (or public announcement)
+    definition: >
+      A National Company Law Tribunal order admitting a company into
+      Corporate Insolvency Resolution Process under the Insolvency and
+      Bankruptcy Code, as evidenced by a real IBBI order document
+      (auto-linked to the company per Phase 3 §2.3/§2.4). Detection is a
+      disclosed heuristic, not a hand-verified classification of every
+      order's legal effect: the EARLIEST-dated real IBBI order found for
+      a given case number is treated as the admission proxy, since the
+      initiating order in a CIRP case is typically its earliest. This can
+      be wrong when an earlier admission order exists but was not
+      discovered (Phase 3 §2.3's IBBI coverage, while broadened to the
+      full currently-listed universe, is not a complete archive of every
+      order ever issued) or when the earliest-found order is itself a
+      pre-admission procedural order. Every positive instance this
+      produces is written to docs/modelling/outcome-evidence-review.csv
+      for the human spot-check the brief's own release gate requires --
+      this taxonomy entry exists precisely because that review has not
+      happened yet, not as a claim that detection is exact.
+    required_fields: [case_number, order_date, retrieval_url]
+    optional_fields: [order_title]
+    severity_rules: []
+    detection_approach: auto_linked_document_heuristic
+    thresholds: {}
+
+  - code: RATING_DOWNGRADE_D
+    name: Rating downgraded to default grade (D)
+    definition: >
+      A credit rating agency (CARE, the only AVAILABLE rating agency per
+      docs/data/source-inventory.md -- ICRA is BLOCKED, CRISIL excluded)
+      assigns a "D" (default) rating symbol to any instrument of the
+      company, in a real, span-verified extracted document: the rating
+      symbol and a date must both be present in the cited evidence span,
+      per the brief's own requirement -- never inferred without that
+      span. Detected by a literal, case-insensitive search for the
+      pattern "CARE D" (or "rated D", "downgraded to D") within extracted
+      DocumentPage text for CARE source documents, with the matched
+      page/character span recorded as the evidence citation.
+    required_fields: [rating_symbol, rating_date, agency, retrieval_url]
+    optional_fields: [instrument_description]
+    severity_rules: []
+    detection_approach: span_verified_text_search
+    thresholds: {}
+
+  - code: SEBI_ORDER_AGAINST_COMPANY
+    name: SEBI final or interim order against the company or its promoters
+    definition: >
+      A real SEBI enforcement order exists, auto-linked to the company
+      per Phase 3 §2.3/§2.4 (SEBI's own entity/title/keyword search
+      already confirms the order names the company; no further text
+      classification distinguishes "against the company" from "against
+      its promoters" -- the brief treats both as this one outcome).
+    required_fields: [order_date, retrieval_url]
+    optional_fields: [order_title]
+    severity_rules: []
+    detection_approach: auto_linked_document
+    thresholds: {}
+
+  - code: SEVERE_DRAWDOWN
+    name: Severe relative 12-month drawdown
+    definition: >
+      The company's trailing 12-month return, at a given month-end
+      as_of, is at least X percentage points below that month's
+      cross-sectional median return across the real EQ-series universe
+      trading that month. X and its real empirical justification are in
+      docs/modelling/outcomes.md -- computed from price_bars, not
+      assumed; a disclosed, imperfect ETF-pattern filter and
+      winsorization bound are applied first (see
+      scripts/compute_drawdown_threshold.py) because price_bars is not
+      corporate-action/split-adjusted and a handful of real gold-ETF
+      unit restructurings would otherwise contaminate the threshold.
+    required_fields: [as_of, trailing_12m_return, market_median_return, excess_return_pp]
+    optional_fields: []
+    severity_rules: []
+    detection_approach: rule_over_structured_data
+    thresholds:
+      lookback_days: 365
+      tolerance_days: 10
+
+  - code: BHAVCOPY_DISAPPEARANCE
+    name: Disappearance from bhavcopy without an identifiable corporate action
+    definition: >
+      A company that was trading stops appearing in price_bars (EQ
+      series) with no later re-appearance found through the end of this
+      project's bhavcopy coverage, and no corporate-action record (a
+      merger, voluntary delisting notice, or similar) was found to
+      explain it. Explicitly disclosed as noisy: this project has no
+      compliant corporate-actions source, so a benign disappearance
+      (acquisition, scheme of arrangement, voluntary delisting) cannot
+      be reliably distinguished from a distress-driven one at this
+      event's own detection step -- see docs/modelling/outcomes.md.
+    required_fields: [last_trade_date, as_of_checked]
+    optional_fields: []
+    severity_rules: []
+    detection_approach: rule_over_structured_data
+    thresholds:
+      min_gap_days: 90
