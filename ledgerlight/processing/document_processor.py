@@ -24,7 +24,7 @@ from ledgerlight.db.models import DocumentPage, DocumentVersion
 from ledgerlight.processing import html as html_mod
 from ledgerlight.processing import pdf as pdf_mod
 from ledgerlight.processing.limits import LimitExceededError, ProcessingLimits
-from ledgerlight.processing.mime_sniff import is_html, is_pdf, sniff_mime
+from ledgerlight.processing.mime_sniff import find_pdf_offset, is_html, is_pdf, sniff_mime
 from ledgerlight.processing.ocr import OCR_ENGINE_NAME, OcrUnavailableError, run_ocr
 from ledgerlight.processing.runner import run_with_timeout
 
@@ -115,9 +115,15 @@ def process_version(
     outcome.mime_type = mime
 
     if is_pdf(mime):
+        # A real PDF signature may sit a few bytes into the body (see
+        # mime_sniff.find_pdf_offset's docstring for the real case this
+        # handles) -- slice it off so the PDF extractor sees a clean PDF,
+        # not a wrapper-stub-plus-PDF blob.
+        pdf_offset = find_pdf_offset(body) or 0
+        pdf_body = body[pdf_offset:]
         extractor_version = pdf_mod.EXTRACTOR_VERSION
         page_results = run_with_timeout(
-            _process_pdf_worker, (body, limits), limits.per_document_timeout_seconds
+            _process_pdf_worker, (pdf_body, limits), limits.per_document_timeout_seconds
         )
     elif is_html(mime):
         extractor_version = html_mod.EXTRACTOR_VERSION
@@ -140,14 +146,21 @@ def process_version(
             outcome.pages_already_present += 1
             continue
 
-        text_sha256 = hashlib.sha256(pr.raw_text.encode("utf-8")).hexdigest()
+        # Postgres text columns reject NUL bytes outright -- a hard DB
+        # constraint, not a style choice. The real cause for a PDF is
+        # handled above (find_pdf_offset); this is a defensive floor so
+        # one unexpected NUL from any other source never crashes a whole
+        # batch run. Stripped before hashing so text_sha256 matches what
+        # is actually stored.
+        raw_text = pr.raw_text.replace("\x00", "")
+        text_sha256 = hashlib.sha256(raw_text.encode("utf-8")).hexdigest()
         session.add(
             DocumentPage(
                 version_id=version.id,
                 page_number=pr.page_number,
-                raw_text=pr.raw_text,
+                raw_text=raw_text,
                 text_sha256=text_sha256,
-                char_count=len(pr.raw_text),
+                char_count=len(raw_text),
                 extraction_method=pr.extraction_method,
                 ocr_engine=pr.ocr_engine,
                 ocr_engine_version=pr.ocr_engine_version,
