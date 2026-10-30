@@ -61,31 +61,43 @@ exact next step is below, not left to be re-derived.
   `tests/test_sebi_ingestion.py` (7 tests, all passing). `data/manifests/sources.yaml`'s
   `sebi` entry updated. New Dagster op/job `sebi_discovery`
   (`python scripts/ingest.py sebi_discovery`).
-- **§2.1 bhavcopy backfill**: COMPLETE (with a real interruption and two real findings
-  along the way). The original `2012-01-01 2026-10-28` run was killed by a machine
-  restart (which also took the local Docker stack down) before reaching its forward end,
-  stuck at 2023-07-20 in `$TEMP/backfill_2012_present.log`. On resuming this session
-  (2026-10-30): Docker Desktop and the Postgres/Garage containers were restarted
+- **§2.1 bhavcopy backfill**: COMPLETE, verified. The original `2012-01-01 2026-10-28`
+  run was killed by a machine restart (which also took the local Docker stack down)
+  before reaching its forward end, stuck at 2023-07-20 in
+  `$TEMP/backfill_2012_present.log`. On resuming this session (2026-10-30): Docker
+  Desktop and the Postgres/Garage containers were restarted
   (`docker compose --env-file .env -f infra/docker-compose.yml up -d`; both came back
   healthy with their existing volumes intact). Real findings:
-  - **Earliest-date boundary now exhaustively confirmed, not just spot-checked**: zero
+  - **Earliest-date boundary exhaustively confirmed, not just spot-checked**: zero
     successful fetches exist in the `documents` table for 2012-2015; direct `curl`
     spot-checks return 403 for 2012-06-15/2014-01-10 and 200 for 2016-06-01/2016-12-30.
     Real earliest date: **2016-01-01**. The brief's 2012 target is not reachable on this
     path -- a real source limit, not a gap to keep chasing.
   - **A real parsing-pipeline gap was found and fixed**: 2016-01-01 to 2017-01-04
-    bhavcopy files were fetched into the document store by the interrupted run but never
-    parsed into `price_bars` (a separate step, `ledgerlight.processing.price_loader`, not
-    part of the fetch job). Fixed by running `scripts/process.py` (idempotent;
-    `docs/phase-3/evidence/process-all-run1.log` -- this run also processes the ~350 new
-    CARE/IBBI/SEBI PDFs from §2.2/§2.3 through page extraction for the first time, and
-    was still finishing as of the last checkpoint this session -- **re-verify its
-    completion and the real final `price_bars` min/max date before relying on full 2016+
-    coverage**, using the query in "Exact next step" below.
+    bhavcopy files were fetched into the document store but never parsed into
+    `price_bars` (a separate step, `ledgerlight.processing.price_loader`, not part of the
+    fetch job). `scripts/process.py` (the full, idempotent reprocess over every
+    `DocumentVersion`, including the ~350 new CARE/IBBI/SEBI PDFs from §2.2/§2.3 that had
+    never been through page extraction) closed the 2016 part of this gap (confirmed
+    directly: `price_bars`' minimum moved from 2017-01-05 to 2016-01-01) but never reached
+    the newest (forward-extension) bhavcopy files. Its own completion evidence was lost
+    separately by an operator mistake (its placeholder log file was deleted while still an
+    open redirect target); the more likely real cause of it stopping was a low-memory
+    condition in this environment -- directly confirmed later, when a much smaller scoped
+    job was explicitly killed with "system is running low on memory" (no evidence that
+    job itself leaked memory; general desktop load from other running applications was
+    the likely trigger). Rather than re-run the full heavy reprocess, a small scoped
+    script (parsing only the `DocumentVersion`s still missing a `price_bars` row,
+    committing after every file) closed the remaining gap in two passes, the second
+    narrower after the same low-memory kill interrupted the first.
   - **Forward extension completed cleanly**: `python scripts/backfill.py 2025-09-23
     2026-10-30` (run after the Docker stack was back up): 289 business days attempted,
     272 new files, 17 correctly-identified non-trading days, 0 errors, 0.501 req/s
     (`$TEMP/backfill_forward_ext.log`).
+  - **Real, final, directly-verified coverage**: `price_bars` now spans **2016-01-01 to
+    2026-10-30, 3,020,745 rows** -- re-queried after the scoped parse's clean completion
+    (`processed: 34, rows_upserted: 125186, rows_quarantined: 0, errors: 0` for its final
+    pass).
 
 ## Not yet started
 
@@ -99,19 +111,7 @@ definitions, frozen before any training), §4 (point-in-time features + migratio
 
 ## Exact next step
 
-1. **Verify `scripts/process.py` (started 2026-10-30, see §2.1 above) has actually
-   finished** -- check `powershell -Command "Get-CimInstance Win32_Process | Where-Object {$_.CommandLine -like '*scripts/process.py*'}"`;
-   if it's still running, wait (it is idempotent and safe to just let finish, nothing
-   else depends on blocking for it). Once done, confirm real final coverage:
-   ```
-   python -c "from sqlalchemy import select,func; from ledgerlight.config.settings import load_settings; from ledgerlight.db.session import make_session_factory; from ledgerlight.db.models import PriceBar; s=load_settings(); S=make_session_factory(s); 
-   with S() as sess: print(sess.execute(select(func.min(PriceBar.trade_date), func.max(PriceBar.trade_date), func.count())).one())"
-   ```
-   Expect min close to 2016-01-01 and max close to 2026-10-30. If Docker isn't running
-   when you read this, start it first: `"/c/Program Files/Docker/Docker/Docker Desktop.exe" &`,
-   wait for `docker ps` to respond, then
-   `docker compose --env-file .env -f infra/docker-compose.yml up -d`.
-2. Begin §2.4: write the per-source (CARE/IBBI/SEBI) name/CIN-to-company link report the
+1. Begin §2.4: write the per-source (CARE/IBBI/SEBI) name/CIN-to-company link report the
    brief asks for -- §2.2/§2.3's discovery jobs already link by construction (every fetch
    carries `CompanyIdentifiers`), so this is mostly a reporting pass over what already
    exists in the `documents` table, not new linking logic. Or move to §3 (outcome
@@ -120,6 +120,14 @@ definitions, frozen before any training), §4 (point-in-time features + migratio
    silently.
    ICRA and CRISIL stay excluded (CRISIL by its own exclusion terms, per `docs/data/
    source-inventory.md`).
+2. If a future session hits an apparent background-job hang with near-zero CPU growth on
+   a heavy document/OCR batch: check this environment's free memory
+   (`Get-CimInstance Win32_OperatingSystem`) and the Docker/Garage container logs for
+   fresh timestamps before assuming a real code bug -- this session's `scripts/process.py`
+   stall and a follow-up scoped job's explicit low-memory kill both turned out to be a
+   genuine environment resource constraint, not application-level hangs. Prefer smaller,
+   explicitly-committed, narrowly-scoped batch jobs over one large reprocess when memory
+   is tight.
 
 ## Open defects / known limitations (not yet resolved)
 

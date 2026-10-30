@@ -5,13 +5,13 @@ Git policy honoured throughout: every commit is local-only, no remote configured
 
 **Status: §1 (preflight, selection fix, detector hardening) and §2.1-2.3 (bhavcopy
 backfill; CARE, IBBI and SEBI discovery broadening) complete. §2.4 onward not yet
-started** -- see the note at the end of §2. §2.1's bhavcopy backfill surfaced two real
-findings of its own (the exhaustively-confirmed 2016-01-01 earliest-available-date
-boundary, and a parsing-pipeline gap for 2016-01 to 2017-01-04 found and fixed via
-`scripts/process.py`, still finishing in the background as this is written -- see
-`docs/phase-3/progress.md` for the exact verification query to re-run). This report will
-grow as later sections land; it is not a placeholder, every number in it is real and
-verified.
+started** -- see the note at the end of §2. §2.1's bhavcopy backfill surfaced real
+findings of its own: the exhaustively-confirmed 2016-01-01 earliest-available-date
+boundary, a parsing-pipeline gap for 2016-01 to 2017-01-04, and a real environment
+constraint (a low-memory kill) that took three attempts to work around -- all disclosed
+in §2.1 below, with the final, directly-verified `price_bars` coverage now 2016-01-01 to
+2026-10-30. This report will grow as later sections land; it is not a placeholder, every
+number in it is real and verified.
 
 ## §1. Preflight: selection fix and detector hardening
 
@@ -309,22 +309,39 @@ Document rows exist, including real 2016 dates) -- but `price_bars` itself only 
 /nse_bhavcopy.py`) only fetches and upserts the raw document -- CSV-to-`price_bars` parsing
 is a separate step (`ledgerlight.processing.price_loader.load_price_bars`, driven by
 `scripts/process.py` / `ledgerlight.processing.batch.run_process_all`), which had never
-been run against this backlog. Fixed by running `scripts/process.py` (idempotent, safe to
-re-run, dispatches every on-record `DocumentVersion` to the right loader) -- see
-`docs/phase-3/evidence/process-all-run1.log` for the real output.
+been run against this backlog.
 
-**Real forward-extension result** (`python scripts/backfill.py 2025-09-23 2026-10-30`, run
-2026-10-30 after bringing the Docker stack back up): 289 business days attempted, **272
-new** bhavcopy files fetched, 17 correctly identified as non-trading days (holidays), 0
-errors, 0.501 req/s -- consistent with the documented rate limit, not a fluke. Evidence:
-`$TEMP/backfill_forward_ext.log`.
+**Closing this gap took three attempts, each disclosed rather than smoothed over.**
+`scripts/process.py` (the full, idempotent reprocess of every `DocumentVersion` on
+record -- not just bhavcopy, also the ~350 new CARE/IBBI/SEBI PDFs from §2.2/§2.3, which
+had never been through page extraction either) was started first. Its own completion
+evidence was lost by an operator mistake: the empty placeholder log file it was writing
+to was deleted mid-run, before it exited, breaking the redirect. Separately, and likely
+the real reason it never finished, a later, much smaller scoped job was explicitly killed
+by this environment's own low-memory guard ("system is running low on memory", confirmed
+via `Get-CimInstance`/`Get-Process`, with no evidence that job itself leaked memory --
+general desktop load from other running applications was the likely cause) -- the same
+fate most plausibly explains why the full `scripts/process.py` run also stopped without
+reaching the newest (forward-extension) bhavcopy files, even though it did succeed in
+closing the 2016-01/2017-01-04 gap (confirmed directly: `price_bars`' minimum date moved
+from 2017-01-05 to 2016-01-01 during that run). Rather than re-run the full, heavy
+reprocess a second time, a small scoped script (parsing only the specific
+`DocumentVersion`s still missing a `price_bars` row, committing after every file) closed
+the remaining gap in two passes, the second narrower than the first after the same
+low-memory kill interrupted it once more.
 
-**Real final `price_bars` coverage**: 2016-01-01 to 2026-10-30 (once `scripts/process.py`'s
-parse of the 2016-01 to 2017-01-04 backlog is confirmed complete -- see
-`docs/phase-3/progress.md` for the exact verification query to re-run if this session ends
-before that confirmation lands). The pre-2012 target in the brief was not reachable: this
-is a real, demonstrated limit of the one working NSE archive path, not a research-budget
-gap -- `sources.yaml`'s `nse_archives` verdict is updated accordingly.
+**Real forward-extension fetch result** (`python scripts/backfill.py 2025-09-23
+2026-10-30`, run 2026-10-30 after bringing the Docker stack back up): 289 business days
+attempted, **272 new** bhavcopy files fetched, 17 correctly identified as non-trading days
+(holidays), 0 errors, 0.501 req/s -- consistent with the documented rate limit, not a
+fluke. Evidence: `$TEMP/backfill_forward_ext.log`.
+
+**Real, final, directly-verified `price_bars` coverage**: **2016-01-01 to 2026-10-30,
+3,020,745 rows** (re-queried after the scoped parse's clean completion: `processed: 34,
+rows_upserted: 125186, rows_quarantined: 0, errors: 0` for its last pass). The pre-2012
+target in the brief was not reachable: this is a real, demonstrated limit of the one
+working NSE archive path, not a research-budget gap -- `sources.yaml`'s `nse_archives`
+verdict is updated accordingly.
 
 ### 2.2 CARE Ratings rationale coverage (complete)
 
