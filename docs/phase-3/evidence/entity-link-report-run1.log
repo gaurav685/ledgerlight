@@ -1,0 +1,14 @@
+care: total=162 auto_linked=133 unmatched=29
+  unmatched breakdown: {'bse_code_only': 29}
+  distinct unmatched BSE codes: ['511072', '540064']
+ibbi: total=55 auto_linked=25 unmatched=30
+  unmatched breakdown: {'bse_code_only': 30}
+  distinct unmatched BSE codes: ['500111', '511072', '540064']
+sebi: total=84 auto_linked=67 unmatched=17
+  unmatched breakdown: {'bse_code_only': 17}
+  distinct unmatched BSE codes: ['500111', '511072', '540064']
+
+company_identifiers totals:
+  NSE_SYMBOL: 5295 distinct values
+  BSE_CODE: 6 distinct values
+  ISIN: 5675 distinct values

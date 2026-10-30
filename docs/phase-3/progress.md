@@ -99,25 +99,43 @@ exact next step is below, not left to be re-derived.
     (`processed: 34, rows_upserted: 125186, rows_quarantined: 0, errors: 0` for its final
     pass).
 
+- **§2.4 entity-link reporting**: COMPLETE. Scope judgement made explicitly: §2.2/§2.3's
+  discovery jobs already attach `CompanyIdentifiers` by construction (driven by a known
+  seed company, not fuzzy text matching), so there is no "review-queued" ambiguous tier
+  to report -- only auto-linked vs. unmatched. `scripts/entity_link_report.py` (new)
+  verifies every care/ibbi/sebi document's identifiers against the real
+  `company_identifiers` table. Real result
+  (`docs/phase-3/evidence/entity-link-report-run1.log`): care 133/162 auto-linked, ibbi
+  25/55, sebi 67/84 -- **every single unmatched document traces to one of three BSE
+  codes** (511072 DHFL, 540064 Future Retail, 500111 Reliance Capital), because
+  `company_identifiers` has only 6 distinct `BSE_CODE` values total (vs. 5,295
+  `NSE_SYMBOL`, 5,675 `ISIN`): `scripts/bootstrap_companies.py` derives identity purely
+  from NSE bhavcopy, and these three companies' CIRP/delisting removed them from NSE
+  trading, making them invisible to that bootstrap. The three companies most central to
+  this project's own event universe cannot currently be auto-linked -- a real,
+  root-caused bootstrap-source gap, not a bug in §2.2/§2.3, and not patched by guessing a
+  mapping here (see "Open defects" below).
+
 ## Not yet started
 
-§2.4 (entity-link reporting -- partly addressed in passing by §2.2/§2.3's name-driven
-discovery, but a dedicated per-source linking report hasn't been written), §3 (outcome
-definitions, frozen before any training), §4 (point-in-time features + migrations), §5
-(guidance extraction), §6 (LightGBM models), §7 (walk-forward eval + leakage controls),
-§8 (scoring + storage), §9 (rest of the Dagster pipeline + commands), §10 (tests), §11
-(documentation set), §12 (run and verify), §13 (final commit/backup for §2-15,
-`phase-3:` prefix), §14 (exit gates), §15 (final report).
+§3 (outcome definitions, frozen before any training), §4 (point-in-time features +
+migrations), §5 (guidance extraction), §6 (LightGBM models), §7 (walk-forward eval +
+leakage controls), §8 (scoring + storage), §9 (rest of the Dagster pipeline + commands),
+§10 (tests), §11 (documentation set), §12 (run and verify), §13 (final commit/backup for
+§2-15, `phase-3:` prefix), §14 (exit gates), §15 (final report).
 
 ## Exact next step
 
-1. Begin §2.4: write the per-source (CARE/IBBI/SEBI) name/CIN-to-company link report the
-   brief asks for -- §2.2/§2.3's discovery jobs already link by construction (every fetch
-   carries `CompanyIdentifiers`), so this is mostly a reporting pass over what already
-   exists in the `documents` table, not new linking logic. Or move to §3 (outcome
-   definitions) if §2.4 is judged already substantially covered by §2.2/§2.3's own
-   per-company match/unmatch reporting -- a judgement call to make explicitly, not skip
-   silently.
+1. Begin §3: freeze the outcome definitions (hashed, stored in `model_registry`) *before*
+   any training code runs, per the brief's own ordering. Primary outcome: IBBI CIRP
+   admission OR rating downgrade to D, within 12 months. Secondary outcomes: severe
+   drawdown, SEBI order, bhavcopy disappearance. Handle censoring explicitly.
+   `docs/modelling/outcomes.md` + a spec file; `docs/modelling/outcome-evidence-review.csv`;
+   a release-gate addition. Note the real §2.4 finding above when deciding how DHFL/Future
+   Retail/Reliance Capital's own outcome rows get keyed, since they can't currently be
+   auto-linked by BSE code alone -- may need an explicit manual/CIN-based linking decision
+   for just these three, flagged to the user rather than resolved unilaterally if it
+   matters for the outcome definitions themselves.
    ICRA and CRISIL stay excluded (CRISIL by its own exclusion terms, per `docs/data/
    source-inventory.md`).
 2. If a future session hits an apparent background-job hang with near-zero CPU growth on
@@ -153,3 +171,12 @@ definitions, frozen before any training), §4 (point-in-time features + migratio
   did not contain the expected `<iframe src="...?file=...">` PDF-embed pattern. Skipped
   and counted, not guessed at -- a real, small, disclosed gap in that source's coverage,
   not yet individually investigated.
+- **BSE_CODE bootstrap gap (§2.4)**: `company_identifiers` has only 6 distinct
+  `BSE_CODE` values (vs. 5,295 `NSE_SYMBOL`, 5,675 `ISIN`) because
+  `scripts/bootstrap_companies.py` derives identity purely from NSE bhavcopy price
+  history. DHFL (511072), Future Retail (540064) and Reliance Capital (500111) -- three
+  of the project's own most central event companies -- left NSE trading via
+  CIRP/delisting and are invisible to that bootstrap, so 76 real documents (29 CARE + 30
+  IBBI + 17 SEBI) carrying only a BSE code cannot currently be auto-linked to a `Company`
+  row. Not patched by guessing a mapping; a real fix needs a BSE-code source independent
+  of NSE bhavcopy, a decision for §4 or a dedicated follow-up, not invented here.

@@ -3,15 +3,17 @@
 Branch: `phase-3/temporal-risk-modelling`, from `bc69c29` (Phase 2 final).
 Git policy honoured throughout: every commit is local-only, no remote configured, nothing pushed.
 
-**Status: §1 (preflight, selection fix, detector hardening) and §2.1-2.3 (bhavcopy
-backfill; CARE, IBBI and SEBI discovery broadening) complete. §2.4 onward not yet
-started** -- see the note at the end of §2. §2.1's bhavcopy backfill surfaced real
-findings of its own: the exhaustively-confirmed 2016-01-01 earliest-available-date
-boundary, a parsing-pipeline gap for 2016-01 to 2017-01-04, and a real environment
-constraint (a low-memory kill) that took three attempts to work around -- all disclosed
-in §2.1 below, with the final, directly-verified `price_bars` coverage now 2016-01-01 to
-2026-10-30. This report will grow as later sections land; it is not a placeholder, every
-number in it is real and verified.
+**Status: §1 (preflight, selection fix, detector hardening) and §2 in full (2.1 bhavcopy
+backfill; 2.2 CARE; 2.3 IBBI and SEBI discovery broadening; 2.4 entity-link reporting)
+complete. §3 onward not yet started** -- see the note at the end of §2. §2.1's bhavcopy
+backfill surfaced real findings of its own: the exhaustively-confirmed 2016-01-01
+earliest-available-date boundary, a parsing-pipeline gap for 2016-01 to 2017-01-04, and a
+real environment constraint (a low-memory kill) that took three attempts to work around
+-- final, directly-verified `price_bars` coverage is 2016-01-01 to 2026-10-30. §2.4 found
+that the three companies most central to this project's event universe (DHFL, Future
+Retail, Reliance Capital) are structurally invisible to the identifier-resolution
+bootstrap and cannot yet be auto-linked. This report will grow as later sections land; it
+is not a placeholder, every number in it is real and verified.
 
 ## §1. Preflight: selection fix and detector hardening
 
@@ -551,20 +553,57 @@ SEBI's own real search rather than just absence-of-evidence from a general searc
 
 `data/manifests/sources.yaml`'s `sebi` entry is updated to this real coverage.
 
-## Status note: §2.4 onward not yet started
+## §2.4 Entity-link reporting (complete)
 
-Sections 2.4-15 of this phase's brief (entity-link reporting, outcome definitions,
-point-in-time features, guidance extraction, LightGBM risk modelling with calibration and
-SHAP, walk-forward evaluation with leakage/survivorship controls, scoring infrastructure,
-the rest of the Dagster pipeline, the full test suite, the documentation set, and this
-report's remaining sections) have not been started. §1 alone -- a necessary, blocking
-prerequisite -- already involved two real, previously-undetected bugs found only by
-actually running the real pipeline against real data and checking results by hand, not by
-assumption; §2.2 and §2.3 each surfaced their own real, non-obvious finding the same way
-(CARE's live search reflecting current entity names only; IBBI's hard-404 pagination bug;
-SpiceJet's real insolvency-petition history contradicting its Phase 0 control-group
-selection) -- none of which would have surfaced from accepting an aggregate stats object
-at face value instead of checking individual cases by hand. The remaining sections need
-the same real-execution, real-verification treatment and are substantial, multi-session
-work, consistent with how Phase 2 itself was built incrementally across many sessions
-rather than in one pass.
+**Scope judgement, made explicitly, not skipped silently**: §2.2/§2.3's discovery jobs
+already attach `CompanyIdentifiers` to every fetched document *by construction* -- each
+job is driven by a known SEED-track company, not by fuzzy text matching, so there is no
+"review-queued" (ambiguous-match) tier to report; a document's identifiers either resolve
+exactly against the real `companies`/`company_identifiers` table or they don't. §2.4 is
+therefore a verification report over what already exists, not new linking logic:
+`scripts/entity_link_report.py` (new), run against the real database
+(`docs/phase-3/evidence/entity-link-report-run1.log`).
+
+**Real result**:
+```
+care: total=162 auto_linked=133 unmatched=29   (unmatched: bse_code_only, codes 511072/540064)
+ibbi: total=55  auto_linked=25  unmatched=30   (unmatched: bse_code_only, codes 500111/511072/540064)
+sebi: total=84  auto_linked=67  unmatched=17   (unmatched: bse_code_only, codes 500111/511072/540064)
+
+company_identifiers totals: NSE_SYMBOL 5295, BSE_CODE 6, ISIN 5675 distinct values
+```
+
+**A real, root-caused data-lineage gap, not a bug in §2.2/§2.3's own code**: every single
+unmatched document traces to exactly one of three BSE scrip codes -- 511072 (Dewan
+Housing Finance), 540064 (Future Retail), 500111 (Reliance Capital) -- each carrying only
+a `bse_code`, no `nse_symbol`/`isin` fallback. `company_identifiers` has only **6** distinct
+`BSE_CODE` values in total (vs. 5,295 `NSE_SYMBOL` and 5,675 `ISIN`), because
+`scripts/bootstrap_companies.py` derives company identity purely from NSE bhavcopy price
+history -- and these three are exactly the companies whose CIRP/delisting removed them
+from NSE trading, making them structurally invisible to that bootstrap. The companies
+most central to this project's own event universe are the ones its identifier-resolution
+mechanism cannot currently see. This is reported plainly as a limitation of the bootstrap
+source, not patched by guessing or hand-inserting a mapping here -- a real fix (adding a
+BSE-code-to-company source independent of NSE bhavcopy) is a decision for §4's
+point-in-time feature work or a dedicated follow-up, not invented unilaterally in this
+reporting pass. Per the brief, these 76 unmatched documents (29+30+17) are **not** usable
+in any downstream point-in-time company-indexed feature until resolved.
+
+## Status note: §3 onward not yet started
+
+Sections 3-15 of this phase's brief (outcome definitions, point-in-time features,
+guidance extraction, LightGBM risk modelling with calibration and SHAP, walk-forward
+evaluation with leakage/survivorship controls, scoring infrastructure, the rest of the
+Dagster pipeline, the full test suite, the documentation set, and this report's remaining
+sections) have not been started. §1 alone -- a necessary, blocking prerequisite -- already
+involved two real, previously-undetected bugs found only by actually running the real
+pipeline against real data and checking results by hand, not by assumption; §2.2-2.4 each
+surfaced their own real, non-obvious finding the same way (CARE's live search reflecting
+current entity names only; IBBI's hard-404 pagination bug; SpiceJet's real
+insolvency-petition history contradicting its Phase 0 control-group selection; the
+BSE_CODE bootstrap gap hiding exactly the three most central event companies from
+identifier resolution) -- none of which would have surfaced from accepting an aggregate
+stats object at face value instead of checking individual cases by hand. The remaining
+sections need the same real-execution, real-verification treatment and are substantial,
+multi-session work, consistent with how Phase 2 itself was built incrementally across
+many sessions rather than in one pass.
