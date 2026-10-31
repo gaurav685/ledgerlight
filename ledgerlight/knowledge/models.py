@@ -96,6 +96,30 @@ class CompanyIdentifier(Base):
     company: Mapped[Company] = relationship(back_populates="identifiers")
 
 
+class IdentifierWindowCorrection(Base):
+    """Audit trail for every real widen-only correction ever applied to a
+    `company_identifiers` row's `valid_from` -- see
+    `ledgerlight.ingestion.identifier_window_repair`. Append-only: a row
+    here is never updated or deleted, so the full correction history for
+    any identifier is always reconstructable from this table alone, not
+    only from a point-in-time pg_dump backup."""
+
+    __tablename__ = "identifier_window_corrections"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    identifier_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("company_identifiers.id"), nullable=False
+    )
+    old_valid_from: Mapped[dt.date] = mapped_column(Date, nullable=False)
+    new_valid_from: Mapped[dt.date] = mapped_column(Date, nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    script_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    script_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    applied_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 class Filing(Base):
     """Links a document_version to the company/companies it relates to.
     A version may relate to several companies (e.g. an NCLT listing page
@@ -517,6 +541,70 @@ class LabelItemField(Base):
 
 
 # --- Outcomes (Phase 3 populates; schema + constraints only) -------------
+
+
+class FeatureDefinition(Base):
+    """One versioned feature's own metadata -- Phase 3 Sec4. A feature's
+    `name` can be redefined by a later `version` (e.g. a lookback window
+    changes); old snapshots keep citing the version they were built
+    under, so this table is append-only, never edited in place."""
+
+    __tablename__ = "feature_definitions"
+    __table_args__ = (
+        UniqueConstraint("name", "version", name="uq_feature_definitions_name_version"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    version: Mapped[str] = mapped_column(String(32), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    inputs: Mapped[list[object]] = mapped_column(
+        JSONB, nullable=False, doc="source tables/columns this feature reads"
+    )
+    provenance_tier: Mapped[str] = mapped_column(
+        String(16), nullable=False, doc="STRUCTURED | RULE_VERIFIED | EVENT_CANDIDATE"
+    )
+    as_of_semantics: Mapped[str] = mapped_column(
+        Text, nullable=False, doc="the point-in-time rule, e.g. 'month-end close, t<=as_of'"
+    )
+    lookback_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    track: Mapped[str] = mapped_column(String(16), nullable=False, doc="UNIVERSE | SEED")
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class FeatureSnapshot(Base):
+    """One company's full feature vector at one monthly as_of -- Phase 3
+    Sec4. `max_input_known_at` is the latest known_at among every input
+    this snapshot read, so a leakage check can assert it never exceeds
+    `as_of`'s own cutoff. `data_quality_flags` records real per-snapshot
+    caveats (e.g. insufficient price history, a right-censored window) --
+    never silently dropped or imputed."""
+
+    __tablename__ = "feature_snapshots"
+    __table_args__ = (
+        UniqueConstraint(
+            "company_id",
+            "as_of",
+            "feature_set_version",
+            name="uq_feature_snapshots_company_asof_version",
+        ),
+        Index("ix_feature_snapshots_as_of", "as_of"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
+    as_of: Mapped[dt.date] = mapped_column(Date, nullable=False)
+    feature_set_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    values: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
+    max_input_known_at: Mapped[dt.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    data_quality_flags: Mapped[list[object]] = mapped_column(JSONB, nullable=False, default=list)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
 
 
 class Outcome(Base):

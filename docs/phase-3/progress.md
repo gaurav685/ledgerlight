@@ -160,25 +160,93 @@ exact next step is below, not left to be re-derived.
   decision), so `RATING_DOWNGRADE_D` coverage stays SEED-track-only for now. Commit:
   `ff55920` (outcomes rows) plus this `phase-3:` doc commit.
 
+- **§4.0 real data-integrity bug found and fixed (stale `company_identifiers.valid_from`)**:
+  COMPLETE. While building §4's price-feature engine (joining `price_bars` to `company_id`),
+  found that 1,484 of 3,764 real EQ symbols (39%) and 1,452 ISINs had a `valid_from` LATER
+  than their own real earliest EQ trade_date, by up to 613 days -- a naive join silently
+  dropped 393,553 real EQ rows (16.6% of the total) from company-keyed analysis. Root cause:
+  `scripts/bootstrap_companies.py` is idempotent (skips already-bootstrapped identifiers), so
+  identifiers bootstrapped before the §2.1 bhavcopy backfill (which filled the real
+  2016-01-01..2017-01-04 parsing-gap and other earlier history) never got their `valid_from`
+  refreshed. Confirmed by root cause, not just pattern: most stale windows were stale by
+  exactly 370 days, matching that known gap precisely.
+  - User-approved fix, with four mandatory conditions: (1) a SYMBOL-REUSE GUARD -- a window
+    widens only if every real price_bars row in the newly-covered period shares the same
+    paired (symbol, isin) with the already-trusted period just after it
+    (`ledgerlight/ingestion/identifier_window_repair.py`'s `check_widen_guard`); (2) a real
+    audit trail (`identifier_window_corrections` table, migration `40592218ac8b`) recording
+    every correction's old/new `valid_from`, reason, script name/version, timestamp; (3) apply
+    in one transaction with before/after verification; (4) fix the root cause in
+    `bootstrap_companies.py` itself (`widen_existing_windows`, called every re-run, never
+    narrows) plus a regression test (`tests/test_identifier_window_repair.py`, 3 tests,
+    reproducing the exact backfill-gap scenario and a real symbol-reuse rejection).
+  - Backed up `company_identifiers` first
+    (`../ledgerlight-backups/pre-identifier-window-repair-backup.sql`). Dry run found 2,936
+    stale windows; the guard correctly rejected 87 as genuine ambiguous cases (temporary
+    dual-ISIN periods, e.g. GRASIM; mid-gap renames, e.g. SKSMICRO->BHARATFIN,
+    MAX->MFSL) rather than guessing. Applied 2,849 corrections in one transaction (0 narrowed,
+    all logged to the audit trail); recovered 311,833 of the ~393,553 theoretical rows -- the
+    gap is exactly the 87 guarded skips, reported plainly, not rounded up. Evidence:
+    `docs/phase-3/evidence/identifier-window-repair-dry-run.json`,
+    `identifier-window-repair-apply-run1.log`.
+  - **Downstream rebuild check (evidence-based, not assumed)**: grepped every real usage of
+    `company_identifiers` validity windows. `ledgerlight/knowledge/filings.py`'s
+    `link_filings()` is the only date-windowed resolver that writes a stored artifact
+    (`Filing` rows) -- but the earliest Filing-linked document's `known_at` (2019-07-04) is
+    AFTER the latest stale-window gap end (2018-12-20), so **0 Filing rows were affected**.
+    `scripts/populate_outcomes.py`'s company resolution (`_company_id_for_symbol`,
+    `_company_id_for_document_identifiers`) uses no date window at all, so **0 Outcome rows
+    were affected**. Entity/Mention/EntityLink tables never reference `company_identifiers`.
+    `feature_snapshots` has 0 rows (not yet built) -- nothing to rebuild there, it will be
+    built fresh on the corrected windows. Re-ran `scripts/entity_link_report.py` to confirm:
+    care 162/162, sebi 84/84 unchanged; ibbi 55/55 -> 100/100 (the full-universe crawl's own
+    progress, unrelated to this fix) -- all still 100% auto-linked.
+  - Re-ran `scripts/bootstrap_companies.py` live end-to-end: `widen_existing_windows` found
+    0 remaining widenable windows (confirms the one-time repair already converged) and 65
+    still-guarded cases (down from 87 -- some were resolved properly through ordinary
+    multi-ISIN company grouping instead of the cruder single-window widen, once the backlog
+    below was cleared). As a real, disclosed side effect, this same re-run also bootstrapped
+    1,819 companies (3,650 identifiers) that had NEVER been bootstrapped at all -- a separate,
+    pre-existing backlog unrelated to the stale-window bug, confirmed via a direct company
+    count (4,553 -> 6,372). These are net-new companies with previously zero
+    `company_identifiers` rows, so no previously-resolved Filing/Outcome could have been
+    wrongly linked -- this only adds coverage, it does not change past results.
+  - Mid-task, Docker Desktop itself crashed (0 docker processes, its service Stopped) --
+    confirmed as a real environment failure (consistent with this environment's documented
+    low-memory-kill pattern), not a code bug, and the still-running full-universe IBBI crawl
+    died as a side effect. Restarted Docker, confirmed via `docker compose up -d` plus a
+    `pg_isready` wait, and confirmed the already-committed 2,849 audit rows survived intact.
+    The IBBI crawl needs restarting (tracked in Exact next step below).
+  - All tests green: `tests/test_identifier_window_repair.py` (3/3), full non-integration
+    suite (232/232), ruff + mypy clean on every touched file.
+
 ## Not yet started
 
-§4 (point-in-time features + migrations), §5 (guidance extraction), §6 (LightGBM models),
+§4.1 onward (point-in-time features proper), §5 (guidance extraction), §6 (LightGBM models),
 §7 (walk-forward eval + leakage controls), §8 (scoring + storage), §9 (rest of the Dagster
 pipeline + commands), §10 (tests), §11 (documentation set), §12 (run and verify), §13
 (final commit/backup for §2-15, `phase-3:` prefix), §14 (exit gates), §15 (final report).
 
 ## Exact next step
 
-1. Once the full-universe IBBI discovery crawl finishes: run `scripts/process.py` (or a
-   scoped extraction job) on whatever new IBBI documents it found, then re-run
-   `scripts/populate_outcomes.py` and refresh the counts in `docs/modelling/outcomes.md`,
-   `docs/modelling/outcome-evidence-review.csv`, and this file. Consider broadening CARE
-   discovery to the full universe too (not yet decided/done).
-2. Begin §4: point-in-time feature engineering + migrations, strictly respecting
-   `known_at`/`as_of` temporal integrity (no feature may see data not yet known at
-   `as_of`). This is where the project's leakage-control discipline matters most -- read
-   §4 of the brief closely before writing any feature code.
-3. If a future session hits an apparent background-job hang with near-zero CPU growth on
+1. Restart the full-universe IBBI discovery crawl (`scripts/ibbi_universe_discovery.py`) --
+   it died when Docker Desktop crashed mid-session (2026-10-31); its progress up to that
+   point (55 -> 100 real IBBI documents) is safely committed. Check free memory first
+   (`Get-CimInstance Win32_OperatingSystem`) before relaunching, per the note below.
+2. Once it finishes: run `scripts/process.py` (or a scoped extraction job) on whatever new
+   IBBI documents it found, then re-run `scripts/populate_outcomes.py` and refresh the
+   counts in `docs/modelling/outcomes.md`, `docs/modelling/outcome-evidence-review.csv`, and
+   this file. Consider broadening CARE discovery to the full universe too (not yet
+   decided/done).
+3. Continue §4.1: build the real price/liquidity STRUCTURED feature engine against
+   `price_bars` (now correctly joinable to `company_id` for the full 2016-01-01..2026-10-30
+   window) -- this is the task that surfaced the stale-window bug above and was paused to
+   fix it properly first. Strictly respect `known_at`/`as_of` temporal integrity (no feature
+   may see data not yet known at `as_of`). Then the rest of §4 (ratings/SEBI/IBBI
+   RULE-VERIFIED features, SEED-track governance features, financial features -- note no
+   structured pledge-level source exists in this project's real corpus, see
+   `docs/data/source-inventory.md`; disclose rather than fabricate one).
+4. If a future session hits an apparent background-job hang with near-zero CPU growth on
    a heavy document/OCR batch: check this environment's free memory
    (`Get-CimInstance Win32_OperatingSystem`) and the Docker/Garage container logs for
    fresh timestamps before assuming a real code bug -- this session's `scripts/process.py`

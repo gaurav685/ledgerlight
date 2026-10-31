@@ -1,0 +1,64 @@
+stale windows passing symbol-reuse guard (to widen): 2849
+  NSE_SYMBOL: 1440
+  ISIN: 1409
+stale windows FAILING symbol-reuse guard (skipped): 87
+  NSE_SYMBOL: 44
+    SKIP 8KMILES: symbol_reuse_multiple_paired_values_in_gap (distinct_paired=['INE650K01013', 'INE650K01021'], anchor=INE650K01021)
+    SKIP ACROPETAL: no_anchor_data_at_or_after_recorded_valid_from (distinct_paired=[], anchor=None)
+    SKIP AGRODUTCH: no_anchor_data_at_or_after_recorded_valid_from (distinct_paired=[], anchor=None)
+    SKIP ALANKIT: symbol_reuse_multiple_paired_values_in_gap (distinct_paired=['INE914E01032', 'INE914E01040'], anchor=INE914E01040)
+    SKIP BHAGERIA: symbol_reuse_multiple_paired_values_in_gap (distinct_paired=['INE354C01019', 'INE354C01027'], anchor=INE354C01027)
+    SKIP CAPLIPOINT: symbol_reuse_multiple_paired_values_in_gap (distinct_paired=['INE475E01018', 'INE475E01026'], anchor=INE475E01026)
+    SKIP GAL: symbol_reuse_multiple_paired_values_in_gap (distinct_paired=['INE482J01013', 'INE482J01021'], anchor=INE482J01021)
+    SKIP GEINDSYS: no_anchor_data_at_or_after_recorded_valid_from (distinct_paired=[], anchor=None)
+    SKIP GRASIM: symbol_reuse_multiple_paired_values_in_gap (distinct_paired=['INE047A01013', 'INE047A01021'], anchor=INE047A01021)
+    SKIP GREENPLY: symbol_reuse_multiple_paired_values_in_gap (distinct_paired=['INE461C01020', 'INE461C01038'], anchor=INE461C01038)
+  ISIN: 43
+    SKIP IN9623B01058: symbol_reuse_multiple_paired_values_in_gap (distinct_paired=['FELDVR', 'FRLDVR'], anchor=FELDVR)
+    SKIP INE019C01026: symbol_reuse_multiple_paired_values_in_gap (distinct_paired=['HCIL', 'HSCL'], anchor=HSCL)
+    SKIP INE019J01013: symbol_reuse_multiple_paired_values_in_gap (distinct_paired=['MICROSEC', 'SASTASUNDR'], anchor=SASTASUNDR)
+    SKIP INE034S01021: symbol_reuse_multiple_paired_values_in_gap (distinct_paired=['ARVINFRA', 'ARVSMART'], anchor=ARVSMART)
+    SKIP INE055L01013: no_anchor_data_at_or_after_recorded_valid_from (distinct_paired=[], anchor=None)
+    SKIP INE135B01014: no_anchor_data_at_or_after_recorded_valid_from (distinct_paired=[], anchor=None)
+    SKIP INE180A01020: symbol_reuse_multiple_paired_values_in_gap (distinct_paired=['MAX', 'MFSL'], anchor=MFSL)
+    SKIP INE180K01011: symbol_reuse_multiple_paired_values_in_gap (distinct_paired=['BHARATFIN', 'SKSMICRO'], anchor=BHARATFIN)
+    SKIP INE189B01011: symbol_reuse_multiple_paired_values_in_gap (distinct_paired=['INEOSSTYRO', 'STYABS'], anchor=INEOSSTYRO)
+    SKIP INE193B01039: symbol_reuse_multiple_paired_values_in_gap (distinct_paired=['AYMSYNTEX', 'WELSYNTEX'], anchor=AYMSYNTEX)
+
+--- BEFORE ---
+EQ price_bars rows joinable to a company (NSE_SYMBOL window): 1977103
+  BEFORE 20MICRONS: valid_from=2017-01-05
+  BEFORE 3IINFOTECH: valid_from=2017-01-05
+  BEFORE 3MINDIA: valid_from=2017-01-05
+  BEFORE 3PLAND: valid_from=2018-05-07
+  BEFORE 63MOONS: valid_from=2017-01-20
+  BEFORE A2ZINFRA: valid_from=2017-01-05
+  BEFORE AARTIDRUGS: valid_from=2017-01-05
+  BEFORE AARTIIND: valid_from=2017-01-05
+  BEFORE AARVEEDEN: valid_from=2017-01-05
+  BEFORE AAVAS: valid_from=2018-10-22
+
+updated: 2849 company_identifiers rows
+narrowed (should be 0): 0
+
+--- AFTER ---
+EQ price_bars rows joinable to a company (NSE_SYMBOL window): 2288936
+recovered rows: 311833
+  AFTER  20MICRONS: valid_from=2016-01-01
+  AFTER  3IINFOTECH: valid_from=2016-01-01
+  AFTER  3MINDIA: valid_from=2016-01-01
+  AFTER  3PLAND: valid_from=2018-05-04
+  AFTER  63MOONS: valid_from=2017-01-19
+  AFTER  A2ZINFRA: valid_from=2016-01-01
+  AFTER  AARTIDRUGS: valid_from=2016-01-01
+  AFTER  AARTIIND: valid_from=2016-01-01
+  AFTER  AARVEEDEN: valid_from=2016-01-01
+  AFTER  AAVAS: valid_from=2018-10-08
+
+--- SQL used for verification ---
+
+SELECT count(*) FROM price_bars pb
+JOIN company_identifiers ci ON ci.identifier_type = 'NSE_SYMBOL' AND ci.value = pb.symbol
+  AND pb.trade_date >= ci.valid_from AND (ci.valid_to IS NULL OR pb.trade_date <= ci.valid_to)
+WHERE pb.series = 'EQ'
+
