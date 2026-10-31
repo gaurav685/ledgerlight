@@ -600,31 +600,61 @@ exact next step is below, not left to be re-derived.
     sensitivity split. Real result: rating-default-only = 3 distinct events/3 companies;
     IBBI-only = 2 distinct events/2 companies (3+2=5, consistent with the combined
     PRIMARY count).
-  - All new modules lint/format/mypy clean; full suite green after each commit.
+  - `ledgerlight/modelling/leakage.py`: outcome-date-after-as_of check (0 real
+    violations), embargo-enforcement check (0 real violations), label-permutation
+    (permuted pooled LightGBM PR-AUC 0.242, close to prevalence 0.25 -- consistent with
+    the no-skill finding), feature-shift, and `univariate_pr_auc_flags`. Real, disclosed
+    anomaly: the feature-shift test's pooled PR-AUC (0.349) is HIGHER than the real
+    unshifted PR-AUC (0.267) -- the brief flags this case for investigation rather than
+    silent acceptance. Likely cause (stated, not hidden): with only 4-5 distinct real
+    events and the 12-month forward-window labeling producing long runs of consecutive
+    positive company-months per event, a 1-month feature shift usually still lands inside
+    the same distress episode rather than genuinely testing future information -- a real
+    limitation of this check under this dataset's sparsity. The deliberately-leaky
+    synthetic feature IS caught (`tests/test_leakage.py`, PR-AUC 1.0), proving the
+    detection mechanism itself works. The univariate flag also catches a real feature,
+    `days_since_last_downgrade`, at PR-AUC 1.0 in the real data -- disclosed for the final
+    report, not necessarily proof of leakage given the tiny sample.
+  - `ledgerlight/modelling/survivorship.py`: real, surprising finding -- ALL 5 companies
+    in the verified-coverage universe have a real confirmed trading-stop gap before the
+    current `price_bars` coverage end (2026-10-30), so the "without later-delisted
+    companies" variant is empty. Not a bug: this restricted universe, by construction,
+    consists only of companies with both real IBBI and CARE coverage, which in practice
+    means companies that actually went through distress.
+  - `ledgerlight/modelling/data_quality_report.py`: real missingness by feature and year
+    (censored rows included in the denominator). Real finding: most price-liquidity
+    features are 55-100% missing in 2023-2025 within this universe -- disclosed coverage
+    degradation in the most recent years.
+  - `ledgerlight/modelling/ablation.py`: arms (a) STRUCTURED, (b) +RULE-VERIFIED, (c)
+    +EVENT-CANDIDATE (the real SEED-track `seed-governance-1.0` features, merged in as a
+    deliberate, disclosed exception to the feature-policy guard for this one comparison).
+    Real result: all three arms produce IDENTICAL pooled PR-AUC/BSS -- every fold's
+    LightGBM selection falls back to the base-rate prevalence regardless of which features
+    are offered. Per the brief's own instruction, reported plainly: (c) adds nothing
+    measurable over (a) or (b) in this dataset.
+  - **§7 is now functionally complete.** All new modules lint/format/mypy clean; full
+    suite green (336 tests) after each commit.
 
 ## Not yet started
 
-§7's remaining pieces: leakage checks as automated tests AND a report (outcome-date>as_of,
-embargo enforcement -- partially covered by `tests/test_folds.py`, label-permutation,
-feature-shift, univariate PR-AUC flag, the deliberately-leaky-synthetic-feature catch),
-survivorship reporting (with/without later-delisted companies), the §7 data-quality
-report, and the ablation arms (a) STRUCTURED / (b) +RULE-VERIFIED / (c)
-+EVENT-CANDIDATE. §8 (scoring + storage: `scores`/`experiments` migrations, `get_score`).
-The remaining parts of §9 (train-risk/backtest/leakage-check/ablation/score/model-card
-commands -- `guidance-extract`/`guidance-match` deliberately NOT built, already decided)
-and §11 (model-card.md, docs/experiments/<id>.md). The remaining parts of §10
-(calibration-rule test -- done in `tests/test_models.py`; get_score test, the
-small-real-slice integration test). §12 (run and verify), §13 (final commit/backup for
-§2-15, `phase-3:` prefix), §14 (exit gates), §15 (final report).
+§8 (scoring + storage: `scores`/`experiments` migrations, `get_score`). The remaining
+parts of §9 (train-risk/backtest/leakage-check/ablation/score/model-card commands --
+`guidance-extract`/`guidance-match` deliberately NOT built, already decided) and §11
+(model-card.md, docs/experiments/<id>.md). The remaining parts of §10 (get_score test,
+the small-real-slice integration test -- the embargo/fold test, calibration-rule test,
+and leakage tests are already done, see above and `tests/test_folds.py`/
+`tests/test_models.py`/`tests/test_leakage.py`). §12 (run and verify), §13 (final
+commit/backup for §2-15, `phase-3:` prefix), §14 (exit gates), §15 (final report).
 
 ## Exact next step
 
-1. **§6-7 modelling core is built and real-smoke-tested** (coverage restriction,
+1. **§6-7 are now functionally complete and real-smoke-tested** (coverage restriction,
    censoring, dataset, folds, B0-B3+LightGBM+calibration+SHAP, metrics, backtest,
-   sensitivity split -- see above). Next: §7's remaining leakage checks, survivorship,
-   data-quality report and ablation arms, then §8 scoring/storage, then §9 CLI scripts,
-   §10 remaining tests, §11 docs, §12 run-and-verify, §13 commit/backup, §14 exit gates,
-   §15 final report.
+   sensitivity split, leakage checks, survivorship, data-quality report, ablation arms --
+   see above). Next: §8 scoring/storage (`scores`/`experiments` migrations, `get_score`),
+   then §9 CLI scripts, §10 remaining tests (get_score test, small-real-slice integration
+   test), §11 docs (model-card.md, docs/experiments/<id>.md), §12 run-and-verify, §13
+   commit/backup, §14 exit gates, §15 final report.
 3. Note the real pooled positive count under the verified-coverage restriction is just 5
    distinct events (far below the unrestricted-universe count of 31 noted in the §3 entry
    above, and below the brief's own 30-event floor) -- already reported as inconclusive
