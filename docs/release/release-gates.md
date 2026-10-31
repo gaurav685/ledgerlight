@@ -117,3 +117,36 @@ quantitative, management-issued forward guidance (candidates: exchange-filed inv
 presentations at scale, a compliant earnings-call-transcript archive) before any extraction
 code is written -- building the machinery first, with nothing real to run it against, was
 explicitly rejected (see the assessment doc's "Decision" section).
+
+## Gap: Sec6/7 primary risk model is statistically inconclusive -- no predictive-skill claim
+
+**Status:** stated plainly, per the user's own explicit condition (2026-10-31: "if pooled
+distinct positive events number fewer than 30, run everything anyway, but state that the
+results are statistically inconclusive and make no claim of predictive skill"). **Deferred
+to:** a future phase, contingent on a materially larger verified-coverage universe.
+
+**What's missing:** real predictive skill. The restricted universe of companies with BOTH
+real IBBI and real CARE Filing coverage is only 5 companies (DHFL, Future Retail, Gensol, Jet
+Airways, SpiceJet) -- the real pooled distinct positive event count is 5, far below the
+30-event floor. No model variant (B0 base rate, B1 rating rule, B2/B3 logistic, LightGBM)
+beats the training-fold base rate pooled across walk-forward folds; every Brier skill score
+is negative. See `docs/modelling/model-card.md` (generated) and `scripts/backtest.py`'s real
+output for the full numbers, with company-clustered bootstrap intervals.
+
+**What this blocks:** using any score this pipeline produces for a real decision of any kind.
+`scripts/score.py`'s own docstring and `docs/modelling/model-card.md`'s "Intended use" section
+both state this is not investment advice.
+
+**Also disclosed, not hidden:** (1) the Sec7 feature-shift leakage test shows shifted PR-AUC
+higher than unshifted, attributable to long same-episode label runs in this tiny dataset
+rather than a demonstrated leak; (2) the univariate PR-AUC flag catches
+`days_since_last_downgrade` at 1.0 in the real data; (3) `scripts/score.py`'s deployment-time
+imputation and calibration are simplified relative to training time, since persisting the
+exact training-time medians and the per-fold calibration map was not built given there is no
+real predictive signal at stake either way; (4) SpiceJet's original Phase 0 role as a "no
+known distress" control company is now known to be questionable (8 real NCLT petitions found
+against it, 2021-2026) -- not resolved unilaterally, flagged for human review.
+
+**Closing this gap requires:** a materially larger real verified-coverage universe (more
+companies with both real IBBI and real CARE Filing coverage) before any predictive-skill
+claim can be made, plus a human decision on SpiceJet's control-group status.

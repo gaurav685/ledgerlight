@@ -71,14 +71,21 @@ was assessed and limits stated: 0 real management-issued guidance
 statements exist anywhere in this project's corpus, so no extraction
 machinery was built. Exit gate 4 (point-in-time integrity) is proven:
 100% of feature rows with a real input satisfy `max_input_known_at <=
-as_of`, 0 violations. **§6-§7 (LightGBM training, walk-forward
-evaluation) are explicitly blocked** until the full-universe IBBI
-discovery crawl finishes or is honestly stopped with its coverage
-recorded. It does **not** yet include a trained model, scores, the
-investigation agent, API endpoints, or frontend. See
-`docs/phase-3/phase-3-report.md` for the full report and
-`docs/modelling/` for outcomes, features, guidance, data-quality, and
-evaluation-protocol design docs.
+as_of`, 0 violations. **§6-§10 (LightGBM training, walk-forward
+evaluation, leakage/survivorship/ablation, scoring and storage, CLI
+commands, tests) are now functionally complete.** The real,
+verified-coverage universe (companies with both real IBBI and real
+CARE Filing coverage) is only 5 companies, giving a pooled distinct
+positive-event count of 5 -- **statistically inconclusive** per the
+brief's own 30-event floor; no model variant beats the training-fold
+base rate. A final LightGBM model is trained and deployed to real
+scores via `scripts/train_risk.py` / `scripts/score.py`, but **makes
+no predictive-skill claim** -- see `docs/modelling/model-card.md`
+(generated) for the full real metrics, intervals, limitations and
+ethical considerations. It does **not** yet include the investigation
+agent, API endpoints, or frontend. See `docs/phase-3/phase-3-report.md`
+for the full report and `docs/modelling/` for outcomes, features,
+guidance, data-quality, evaluation-protocol and model-card design docs.
 
 ## Setup
 
@@ -124,7 +131,7 @@ All commands are exposed as `uv run <script>` entry points (see
 | `uv run python scripts/ingest_report.py` | Per-source health / dead-letter / failure-class report |
 | `uv run dagster dev -m ledgerlight.orchestration.definitions` | Dagster webserver (needs `DAGSTER_HOME`, see `docs/ingestion/runbook.md`) |
 
-A `Makefile` wraps these as `make setup|lint|typecheck|test|verify-env|verify-manifests|acquire-seed|infra-up|infra-check|infra-down|db-upgrade|sources-sync|store-backfill|ingest|backfill|process|reprocess|ingest-report|dagster-dev|test-integration|test-corpus`, plus the Phase 2 targets `taxonomy-load|bootstrap-companies|link-filings|chunk-corpus|embed-chunks|build-bm25-index|labels-propose|label-review|labels-split|train-classifier|evaluate|extract|resolve-entities|retrieval-eval|review-queue|knowledge-pipeline` (see `docs/phase-2/phase-2-report.md`), plus the Phase 3 targets `outcomes-taxonomy-load|freeze-eval-data|select-classifiers|backfill-universe|outcomes-build|features-build|outcomes-and-features-build|point-in-time-proof` (see `docs/phase-3/phase-3-report.md`).
+A `Makefile` wraps these as `make setup|lint|typecheck|test|verify-env|verify-manifests|acquire-seed|infra-up|infra-check|infra-down|db-upgrade|sources-sync|store-backfill|ingest|backfill|process|reprocess|ingest-report|dagster-dev|test-integration|test-corpus`, plus the Phase 2 targets `taxonomy-load|bootstrap-companies|link-filings|chunk-corpus|embed-chunks|build-bm25-index|labels-propose|label-review|labels-split|train-classifier|evaluate|extract|resolve-entities|retrieval-eval|review-queue|knowledge-pipeline` (see `docs/phase-2/phase-2-report.md`), plus the Phase 3 targets `outcomes-taxonomy-load|freeze-eval-data|select-classifiers|backfill-universe|outcomes-build|features-build|outcomes-and-features-build|point-in-time-proof|train-risk|backtest|leakage-check|ablation|score|model-card` (see `docs/phase-3/phase-3-report.md`).
 
 ## Data policy
 
