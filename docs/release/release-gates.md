@@ -90,3 +90,30 @@ span, and records a verdict, their name, and the review date in the correspondin
 not be done by Claude or any other AI agent -- same human-only restriction as gold-label review
 elsewhere in this project (see the gap above). Must also be re-run against any new rows produced
 once the full-universe IBBI discovery crawl (Phase 3 §3) finishes and is extracted.
+
+## Gap: GUIDANCE_MISS extraction not built -- no real guidance statements in the corpus
+
+**Status:** limits stated (Phase 3 exit gate 5's own explicit fallback). **Deferred to:** a
+future phase, contingent on acquiring a compliant guidance-statement source.
+
+**What's missing:** `GUIDANCE_MISS` (guidance vs. actual miss) has a taxonomy definition
+(`detection_approach: deferred_phase3`) but no extraction code, no events, no feature, and no
+credibility series. See `docs/modelling/guidance-extraction-assessment.md` for the full
+real-evidence writeup.
+
+**Why:** searched all 4,759 real pages in the corpus (every document type, not just
+`investor_presentation`) for quantitative, forward-looking, management-stated guidance
+language. 64 raw keyword hits, 0 real matches -- 58 are the unrelated ICAI "Guidance Note"
+auditing-standard phrase or generic CSR "career guidance" language; the other 6 are false
+positives (CARE's own analyst commentary, SEBI procedural language), each checked and cited
+by document/page/span in the assessment doc. This project's real document acquisition was
+scoped to compliant structured/semi-structured sources (bhavcopy, CARE rationales,
+NCLT/IBBI/SEBI orders) -- none of which is the natural home for forward guidance, which
+lives in earnings-call transcripts and dedicated guidance press releases this project never
+identified a compliant bulk source for.
+
+**Closing this gap requires:** identifying and acquiring a compliant source of real,
+quantitative, management-issued forward guidance (candidates: exchange-filed investor
+presentations at scale, a compliant earnings-call-transcript archive) before any extraction
+code is written -- building the machinery first, with nothing real to run it against, was
+explicitly rejected (see the assessment doc's "Decision" section).

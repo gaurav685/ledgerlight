@@ -385,12 +385,41 @@ exact next step is below, not left to be re-derived.
     abandoned rather than productionized).
   - All tests green: full suite including integration, 336/336; ruff + mypy clean.
 
+- **§5 guidance extraction (`GUIDANCE_MISS`)**: ASSESSED, limits stated -- exit gate 5's
+  own explicit fallback, user-approved before building anything ("verify before building").
+  Searched all 4,759 real pages in the entire corpus (every document type, not just
+  `investor_presentation`) for quantitative, management-stated, forward-looking guidance
+  language. 64 raw keyword hits, 0 real matches: 58 are the unrelated ICAI "Guidance Note"
+  auditing-standard phrase or generic CSR "career guidance" text; the other 6 are false
+  positives from generic "we expect" phrasing (CARE's own analyst commentary, SEBI
+  procedural language) -- each checked and cited by document/page/char-span in
+  `docs/modelling/guidance-extraction-assessment.md`. No management-issued quantitative
+  guidance statement exists anywhere in this project's real corpus, because Phase 0/1's
+  compliant-source acquisition never targeted earnings-call transcripts or dedicated
+  guidance press releases -- confirmed, not assumed (even the one real
+  `investor_presentation` document was checked directly: 0 hits across its 13 pages).
+  **No extraction machinery built** -- there is nothing real for it to run on; building it
+  anyway would mean fabricating synthetic guidance or shipping code untestable against a
+  single real case. Added to `docs/release/release-gates.md` as its own tracked gap.
+  Evidence: `docs/phase-3/evidence/guidance-search-full-corpus.log`.
+- **Point-in-time integrity proof (exit gate 4)**: DONE, both halves. Query:
+  `docs/phase-3/evidence/point-in-time-proof.log` -- **100% of the 230,144 feature_snapshot
+  rows with a real `max_input_known_at` satisfy `max_input_known_at <= as_of`, 0
+  violations**, across all three built feature tiers (`price-liquidity-1.0` 228,678/228,678;
+  `rule-verified-1.0` 1,464/1,464 with a real input, 1,777 correctly `NULL` for companies
+  never rated/linked as of that month; `seed-governance-1.0` 2/2 with a real input, 1,404
+  correctly `NULL`). Test: `tests/test_point_in_time_integrity.py` (asserts the same query's
+  `violating` count is 0 for every `feature_set_version`) -- real regression caught in my
+  own first draft of the summary script (a wrong column index inflated a bogus "1.36%"
+  figure before I caught and fixed it; the real result is unambiguous: 100%, 0 violations).
+
 ## Not yet started
 
-§5 (guidance extraction), §6 (LightGBM models), §7 (walk-forward eval + leakage controls), §8 (scoring +
-storage), §9 (rest of the Dagster pipeline + commands), §10 (tests), §11 (documentation
-set), §12 (run and verify), §13 (final commit/backup for §2-15, `phase-3:` prefix), §14
-(exit gates), §15 (final report).
+§6 (LightGBM models), §7 (walk-forward eval + leakage controls -- BLOCKED until the
+full-universe IBBI crawl finishes or is honestly stopped, per the user's explicit
+condition), §8 (scoring + storage), §9 (rest of the Dagster pipeline + commands), §10
+(tests), §11 (documentation set), §12 (run and verify), §13 (final commit/backup for
+§2-15, `phase-3:` prefix), §14 (exit gates), §15 (final report).
 
 ## Exact next step
 
@@ -409,14 +438,18 @@ set), §12 (run and verify), §13 (final commit/backup for §2-15, `phase-3:` pr
    are safely re-runnable (upsert on conflict).
 3. §4 is now fully complete (4.0-4.3: two real bugs fixed; STRUCTURED price/liquidity,
    RULE-VERIFIED rating/auto-link, and SEED-track governance features all built and
-   verified; financial features explicitly excluded with real evidence). Begin §5:
-   guidance extraction and `GUIDANCE_MISS` (guidance credibility) -- not yet started, not
-   yet even designed. Read §5 of the brief closely; this needs a source of real forward
-   guidance statements (management commentary on future results) to compare against later
-   actual results, which this project has not yet confirmed it has in the real corpus --
-   check `docs/data/source-inventory.md` and the real document corpus before assuming a
-   source exists, same discipline as the pledge-data and financial-features checks above.
-4. If a future session hits an apparent background-job hang with near-zero CPU growth on
+   verified; financial features explicitly excluded with real evidence). §5 is also now
+   complete -- assessed, limits stated (see the §5 entry below); nothing further to build
+   there unless a new compliant guidance-statement source is acquired in a future phase.
+4. Do NOT run §6 (models)/§7 (walk-forward evaluation) until the full-universe IBBI crawl
+   has finished or is honestly stopped with its coverage recorded (user's explicit
+   condition, 2026-10-31) -- then rebuild the outcomes table and affected feature
+   snapshots, report outcome counts by year before vs. after, and record IBBI date
+   coverage in `docs/data/data-quality.md` (create it if it doesn't exist) before
+   proceeding. The outcome DEFINITIONS stay frozen (same spec hash,
+   `d879a2874d063b0025820ce52223e443b5b14d7c8746aa8d9e3117e4f3503e1b`) -- only the
+   populated rows refresh.
+5. If a future session hits an apparent background-job hang with near-zero CPU growth on
    a heavy document/OCR batch: check this environment's free memory
    (`Get-CimInstance Win32_OperatingSystem`) and the Docker/Garage container logs for
    fresh timestamps before assuming a real code bug -- this session's `scripts/process.py`

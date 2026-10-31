@@ -1,0 +1,22 @@
+SQL:
+
+SELECT feature_set_version,
+       count(*) AS total_rows,
+       count(*) FILTER (WHERE max_input_known_at IS NOT NULL) AS rows_with_known_at,
+       count(*) FILTER (WHERE max_input_known_at IS NULL) AS rows_with_no_real_input,
+       count(*) FILTER (WHERE max_input_known_at IS NOT NULL AND max_input_known_at::date <= as_of) AS satisfying,
+       count(*) FILTER (WHERE max_input_known_at IS NOT NULL AND max_input_known_at::date > as_of) AS violating
+FROM feature_snapshots
+GROUP BY feature_set_version
+ORDER BY feature_set_version;
+
+feature_set_version | total_rows | rows_with_known_at | rows_with_no_real_input | satisfying | violating
+price-liquidity-1.0 | 228678 | 228678 | 0 | 228678 | 0
+rule-verified-1.0 | 3241 | 1464 | 1777 | 1464 | 0
+seed-governance-1.0 | 1406 | 2 | 1404 | 2 | 0
+
+TOTAL rows across all feature_set_version: 233325
+TOTAL rows with a real max_input_known_at: 230144
+TOTAL satisfying (known_at <= as_of): 230144
+TOTAL violating (known_at > as_of): 0
+Result: 100.0000% of rows with a real input satisfy max_input_known_at <= as_of

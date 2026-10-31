@@ -6,10 +6,12 @@ Git policy honoured throughout: every commit is local-only, no remote configured
 **Status: §1 (preflight, selection fix, detector hardening), §2 in full (2.1 bhavcopy
 backfill; 2.2 CARE; 2.3 IBBI and SEBI discovery broadening; 2.4 entity-link reporting),
 §3 (outcome definitions, spec complete, data population partial and disclosed as such),
-and §4 in full (4.0 two real data-integrity bugs found and fixed; 4.1 UNIVERSE track
+§4 in full (4.0 two real data-integrity bugs found and fixed; 4.1 UNIVERSE track
 price/liquidity STRUCTURED features; 4.2 RULE-VERIFIED rating/auto-link features; 4.3
-SEED-track governance features, financial features excluded with real evidence) complete.
-§5 onward not yet started** -- see the note at the end of §4.3. §2.1's bhavcopy
+SEED-track governance features, financial features excluded with real evidence), §5
+(guidance extraction, limits stated), and the exit-gate-4 point-in-time proof complete.
+§6-7 BLOCKED pending the full-universe IBBI crawl (user's explicit condition)** -- see the
+note at the end of §5. §2.1's bhavcopy
 backfill surfaced real findings of its own: the exhaustively-confirmed 2016-01-01
 earliest-available-date boundary, a parsing-pipeline gap for 2016-01 to 2017-01-04, and a
 real environment constraint (a low-memory kill) that took three attempts to work around
@@ -844,11 +846,61 @@ price/liquidity (§4.1), RULE-VERIFIED rating/auto-link (§4.2), and SEED-track 
 (§4.3) features all built, tested and spot-verified against real company history;
 financial features explicitly excluded with real evidence, not silently skipped.
 
-## Status note: §5 onward not yet started
+## §5: Guidance extraction assessment -- limits stated
 
-Sections 5-15 of this phase's brief (guidance
-extraction,
-LightGBM risk modelling with calibration and SHAP, walk-forward evaluation with
+Exit gate 5 (brief §14) permits this explicitly: "Guidance extraction and matching work
+with span verification... or limits are stated." Verified before building anything, per
+the user's own condition. Searched all 4,759 real pages in the entire corpus (every
+document type) for quantitative, management-stated, forward-looking guidance language.
+64 raw keyword hits, 0 real matches -- 58 are the unrelated ICAI "Guidance Note" auditing
+standard or generic CSR text; the other 6 are false positives from generic "we expect"
+phrasing (CARE's own analyst commentary, SEBI procedural correspondence), each checked and
+cited by document/page/char-span in `docs/modelling/guidance-extraction-assessment.md`. The
+one real `investor_presentation` document was checked directly: 0 hits across its 13
+pages. No management-issued quantitative guidance statement exists anywhere in this
+project's real corpus -- Phase 0/1's compliant-source acquisition never targeted
+earnings-call transcripts or dedicated guidance press releases.
+
+**No extraction machinery was built.** There is nothing real for it to run on; building it
+anyway would mean fabricating synthetic guidance or shipping code untestable against a
+single real case -- the same principle as §4.3's financial-features exclusion. Tracked as
+its own gap in `docs/release/release-gates.md`. Evidence:
+`docs/phase-3/evidence/guidance-search-full-corpus.log`.
+
+## Point-in-time integrity proof (exit gate 4)
+
+Both halves done. Real query result (`docs/phase-3/evidence/point-in-time-proof.log`):
+
+```
+feature_set_version | total_rows | rows_with_known_at | rows_with_no_real_input | satisfying | violating
+price-liquidity-1.0 | 228678 | 228678 | 0 | 228678 | 0
+rule-verified-1.0 | 3241 | 1464 | 1777 | 1464 | 0
+seed-governance-1.0 | 1406 | 2 | 1404 | 2 | 0
+
+TOTAL rows with a real max_input_known_at: 230144
+TOTAL satisfying (known_at <= as_of): 230144
+TOTAL violating (known_at > as_of): 0
+Result: 100.0000% of rows with a real input satisfy max_input_known_at <= as_of
+```
+
+**100% of feature_snapshot rows with a real input satisfy `max_input_known_at <= as_of`,
+0 violations, across all three built feature tiers.** Rows with no real input correctly
+have `max_input_known_at = NULL` (e.g. a company never rated or never auto-linked as of
+that month) -- never a fabricated value. `tests/test_point_in_time_integrity.py` makes
+this a permanent regression test, not a one-time check. A real bug was caught and fixed in
+my own first draft of the summary script before this result was trusted: a wrong column
+index produced a bogus "1.36%" figure; re-derived correctly, the real result is
+unambiguous.
+
+## Status note: §6-7 BLOCKED pending the full-universe IBBI crawl
+
+Per the user's explicit condition (2026-10-31): no training, tuning, or backtest (§6-7)
+until the full-universe IBBI discovery crawl has finished, or has been honestly stopped
+with its coverage recorded. After it ends: rebuild the outcomes table and affected
+snapshots, report outcome counts by year before vs. after, and record IBBI date coverage
+in `docs/data/data-quality.md`. The outcome definitions stay frozen (same spec hash) --
+only the populated rows refresh. §8-15 of this phase's brief (scoring infrastructure, the
+rest of the Dagster pipeline,
 leakage/survivorship controls, scoring infrastructure, the rest of the Dagster pipeline,
 the full test suite, the documentation set, and this report's remaining sections) have not
 been started. §1, §2 and now §4.0 each involved real, previously-undetected bugs found
