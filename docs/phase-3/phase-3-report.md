@@ -6,8 +6,9 @@ Git policy honoured throughout: every commit is local-only, no remote configured
 **Status: §1 (preflight, selection fix, detector hardening), §2 in full (2.1 bhavcopy
 backfill; 2.2 CARE; 2.3 IBBI and SEBI discovery broadening; 2.4 entity-link reporting),
 §3 (outcome definitions, spec complete, data population partial and disclosed as such),
-and §4.0 (two real data-integrity bugs found and fixed while starting the price-feature
-engine) complete. §4.1 onward not yet started** -- see the note at the end of §4.0. §2.1's bhavcopy
+§4.0 (two real data-integrity bugs found and fixed while starting the price-feature
+engine), and §4.1 (UNIVERSE track price/liquidity STRUCTURED features, real snapshots
+built) complete. §4.2 onward not yet started** -- see the note at the end of §4.1. §2.1's bhavcopy
 backfill surfaced real findings of its own: the exhaustively-confirmed 2016-01-01
 earliest-available-date boundary, a parsing-pipeline gap for 2016-01 to 2017-01-04, and a
 real environment constraint (a low-memory kill) that took three attempts to work around
@@ -751,9 +752,40 @@ on an identifier row surviving forever.
 Both fixes converged: a third `bootstrap_companies.py` run found 0 new work needed. Full
 test suite (312 tests, including integration) green; ruff and mypy clean throughout.
 
-## Status note: §4.1 onward not yet started
+## §4.1: UNIVERSE track price/liquidity STRUCTURED features
 
-Sections 4.1-15 of this phase's brief (point-in-time features proper, guidance extraction,
+10 pure feature functions (`ledgerlight/modelling/price_features.py`), each operating on
+one company's real trading-day-indexed price history, returning `None` plus a reason flag
+rather than a fabricated value when there isn't enough real lookback history:
+`ret_1m/3m/6m/12m` (simple return, 21/63/126/252 real trading days), `volatility_3m`
+(annualized stdev of daily returns), `downside_volatility_12m` (same, negative days only),
+`max_drawdown_12m`, `turnover_trend_1m_12m`, `amihud_illiquidity_1m` (Amihud 2002
+proxy), `distance_from_52w_high`. 12 unit tests, each checked against hand-computed
+arithmetic. Found and fixed a real off-by-one in `turnover_trend`/`amihud_illiquidity`'s own
+lookback guards (required one more day of history than the function actually reads) --
+caught by a boundary-exact test, not inspection.
+
+`scripts/build_feature_snapshots.py` registers the 10 `FeatureDefinition` rows
+(`price-liquidity-1.0`, STRUCTURED, UNIVERSE track) and builds real `FeatureSnapshot` rows,
+monthly, with universe membership exactly per the brief's own wording -- a company is
+snapshotted for a month only if it has a real trade that month, never carried forward on
+stale data. Point-in-time safety: the snapshot trading date is the latest real trade in
+that month whose bhavcopy `known_at` <= `as_of`; `max_input_known_at` is that trade's own
+`known_at`.
+
+Real run: 3,359 companies (every company with real EQ trading history), 228,678
+`FeatureSnapshot` rows, `as_of` 2016-01-31 to 2026-10-31 (matches real `price_bars`
+coverage exactly). Spot-checked DHFL directly: early 2016 snapshots correctly show `None` +
+`insufficient_history_*` flags; by 2019 (DHFL's real, documented insolvency collapse)
+`ret_12m` worsens from -77.9% (Jan) to -93.7% (Sep), `distance_from_52w_high` bottoms near
+-93.7%, `downside_volatility_12m` rises to ~0.92 -- consistent with DHFL's real public
+history, not assumed. Full suite green (324/324 including integration); ruff and mypy
+clean.
+
+## Status note: §4.2 onward not yet started
+
+Sections 4.2-15 of this phase's brief (RULE-VERIFIED and SEED-track/financial features,
+guidance extraction,
 LightGBM risk modelling with calibration and SHAP, walk-forward evaluation with
 leakage/survivorship controls, scoring infrastructure, the rest of the Dagster pipeline,
 the full test suite, the documentation set, and this report's remaining sections) have not

@@ -269,10 +269,43 @@ exact next step is below, not left to be re-derived.
   - All tests green: full suite including integration, 312/312 (was 232/232
     non-integration-only before this entry); ruff + mypy clean on every touched file.
 
+- **§4.1 UNIVERSE track price/liquidity STRUCTURED features**: COMPLETE for this feature
+  group. `ledgerlight/modelling/price_features.py` -- 10 pure, trading-day-lookback feature
+  functions (never fabricate; return `None` + a reason flag when there isn't enough real
+  history): `ret_1m/3m/6m/12m` (simple return, 21/63/126/252 trading days), `volatility_3m`
+  (annualized stdev of daily returns), `downside_volatility_12m` (same, negative days only),
+  `max_drawdown_12m`, `turnover_trend_1m_12m` (21d mean turnover / 252d mean turnover),
+  `amihud_illiquidity_1m` (Amihud 2002 |return|/turnover proxy), `distance_from_52w_high`.
+  12 unit tests (`tests/test_price_features.py`), each checked against hand-computed
+  arithmetic, not just "it runs". Found and fixed a real off-by-one in
+  `turnover_trend`/`amihud_illiquidity`'s own lookback guards (required one day more history
+  than the function's own loop actually reads) -- caught by a boundary-exact test, not
+  inspection.
+  - `scripts/build_feature_snapshots.py`: registers the 10 `FeatureDefinition` rows
+    (`price-liquidity-1.0`, STRUCTURED tier, UNIVERSE track), then builds real monthly
+    `FeatureSnapshot` rows. Universe membership per the brief's own wording ("the universe at
+    each as_of is the companies trading in that period's bhavcopy") -- a company is snapshotted
+    for a month ONLY if it has a real trade that month, never carried forward on stale data.
+    Point-in-time safety: snapshot trading date = the latest real trade in that month whose
+    bhavcopy `known_at` <= `as_of`; `max_input_known_at` = that trade's own `known_at` (a true
+    upper bound, since one reliable source means `known_at` is non-decreasing in `trade_date`).
+  - Real run (`docs/phase-3/evidence/build-feature-snapshots-run1.log`): 3,359 companies
+    (every company with real EQ trading history -- not all 6,278 companies have equity,
+    some identifiers are bond-only), 228,678 real `FeatureSnapshot` rows, `as_of` range
+    2016-01-31 to 2026-10-31 (matches real `price_bars` coverage exactly).
+  - **Spot-checked DHFL** (the discipline this project has used throughout -- never trust an
+    aggregate count without checking a concrete real example): early 2016 snapshots correctly
+    show `None` + `insufficient_history_*` flags (not enough lookback yet); by 2019 (DHFL's
+    real, documented insolvency collapse) `ret_12m` worsens from -77.9% (Jan) to -93.7% (Sep),
+    `distance_from_52w_high` bottoms near -93.7%, `downside_volatility_12m` rises to ~0.92 --
+    all consistent with DHFL's real public history, not assumed.
+  - All tests green: full suite including integration, 324/324; ruff + mypy clean.
+
 ## Not yet started
 
-§4.1 onward (point-in-time features proper), §5 (guidance extraction), §6 (LightGBM models),
-§7 (walk-forward eval + leakage controls), §8 (scoring + storage), §9 (rest of the Dagster
+§4.2 onward (RULE-VERIFIED ratings/SEBI/IBBI prior-history features; SEED-track governance
+features; financial features), §5 (guidance extraction), §6 (LightGBM models), §7
+(walk-forward eval + leakage controls), §8 (scoring + storage), §9 (rest of the Dagster
 pipeline + commands), §10 (tests), §11 (documentation set), §12 (run and verify), §13
 (final commit/backup for §2-15, `phase-3:` prefix), §14 (exit gates), §15 (final report).
 
@@ -287,14 +320,18 @@ pipeline + commands), §10 (tests), §11 (documentation set), §12 (run and veri
    counts in `docs/modelling/outcomes.md`, `docs/modelling/outcome-evidence-review.csv`, and
    this file. Consider broadening CARE discovery to the full universe too (not yet
    decided/done).
-3. Continue §4.1: build the real price/liquidity STRUCTURED feature engine against
-   `price_bars` (now correctly joinable to `company_id` for the full 2016-01-01..2026-10-30
-   window) -- this is the task that surfaced the stale-window bug above and was paused to
-   fix it properly first. Strictly respect `known_at`/`as_of` temporal integrity (no feature
-   may see data not yet known at `as_of`). Then the rest of §4 (ratings/SEBI/IBBI
-   RULE-VERIFIED features, SEED-track governance features, financial features -- note no
-   structured pledge-level source exists in this project's real corpus, see
-   `docs/data/source-inventory.md`; disclose rather than fabricate one).
+3. Begin §4.2: RULE-VERIFIED features -- rating symbols/actions extracted and span-verified
+   from CARE documents (similar rule-based approach to §3's `_RATING_D_PATTERN`, generalized
+   to extract every rating symbol with evidence, not just "D"), and prior SEBI-order /
+   IBBI-mention counts via the existing Sec2.3/2.4 auto-links. Per the brief's feature
+   policy, these -- NOT the Phase 2 zero-shot RATING_ACT events, which are EVENT-CANDIDATE,
+   not RULE-VERIFIED -- are what the PRIMARY model may use alongside §4.1's STRUCTURED
+   features. Then SEED-track governance features (full event set with tier shown, from
+   existing Phase 2 Event/EventField data) and financial features (span-cited extraction of
+   revenue/receivables/CFO/PAT from seed annual reports, ONLY if a checked sample clears the
+   brief's own 90% span-verification pass-rate gate; otherwise exclude and say why). Note: no
+   structured pledge-level data source exists in this project's real corpus (see
+   `docs/data/source-inventory.md`) -- disclose that gap rather than fabricate one.
 4. If a future session hits an apparent background-job hang with near-zero CPU growth on
    a heavy document/OCR batch: check this environment's free memory
    (`Get-CimInstance Win32_OperatingSystem`) and the Docker/Garage container logs for
