@@ -9,8 +9,9 @@ backfill; 2.2 CARE; 2.3 IBBI and SEBI discovery broadening; 2.4 entity-link repo
 §4 in full (4.0 two real data-integrity bugs found and fixed; 4.1 UNIVERSE track
 price/liquidity STRUCTURED features; 4.2 RULE-VERIFIED rating/auto-link features; 4.3
 SEED-track governance features, financial features excluded with real evidence), §5
-(guidance extraction, limits stated), the exit-gate-4 point-in-time proof, and §9/§11's
-unblocked parts (real Dagster wiring, Makefile targets, documentation set) complete.
+(guidance extraction, limits stated), the exit-gate-4 point-in-time proof, §9/§11's
+unblocked parts (real Dagster wiring, Makefile targets, documentation set), and §10's
+unblocked parts (censoring rules, the feature-policy guard) complete.
 §6-7 BLOCKED pending the full-universe IBBI crawl (user's explicit condition)** -- see the
 note at the end of §9/§11. §2.1's bhavcopy
 backfill surfaced real findings of its own: the exhaustively-confirmed 2016-01-01
@@ -892,6 +893,26 @@ this a permanent regression test, not a one-time check. A real bug was caught an
 my own first draft of the summary script before this result was trusted: a wrong column
 index produced a bogus "1.36%" figure; re-derived correctly, the real result is
 unambiguous.
+
+## §10 (the parts not blocked by training)
+
+Two real gaps found and closed. **Outcome rules and censoring** were, until now, only
+documented prose/JSON, not real code: `ledgerlight/modelling/censoring.py` implements
+both rules for real. Found and fixed a real design bug while writing it: the first draft
+flagged a currently-trading company as "disappeared" just because its own last trade
+equalled the project's overall data coverage end -- fixed by requiring a real confirmed
+gap (>= 90 days) before `unknown_trading_stop` can fire. 6 unit tests, each a concrete
+real scenario. **The feature-policy guard** (§10's own explicit requirement -- "the
+primary model rejects EVENT-CANDIDATE features"):
+`ledgerlight/modelling/feature_policy.py` checks the real `feature_definitions` table and
+raises if a requested feature set includes a non-STRUCTURED/RULE_VERIFIED tier. 3
+integration tests against the real rows already built: `seed-governance-1.0` (the real
+EVENT_CANDIDATE tier from §4.3) is correctly rejected, including mixed with an allowed
+tier. Built now, before any training code, so a future PRIMARY-model script cannot
+accidentally include ablation-only features. Full suite green (346/346 including
+integration); ruff and mypy clean. The remaining §10 items (embargo/fold test,
+calibration-rule test, `get_score` test, leakage tests, small-real-slice integration
+test) all genuinely need a trained model or fold builder -- blocked.
 
 ## §9 and §11 (the parts not blocked by training)
 

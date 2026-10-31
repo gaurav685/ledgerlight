@@ -453,15 +453,49 @@ exact next step is below, not left to be re-derived.
     to finish first, per the user's explicit condition.
   - All tests green: full suite including integration, 337/337; ruff + mypy clean.
 
+- **§10 unit tests (the unblocked parts)**: COMPLETE for two real gaps found while
+  checking which of the brief's required unit tests already existed vs. were only
+  documented.
+  - **Outcome rules and censoring**: the censoring policy was, until now, only described
+    in `docs/modelling/outcomes.md` prose and the JSON spec -- not real, testable code.
+    `ledgerlight/modelling/censoring.py` implements both rules
+    (`unknown_trading_stop`, `end_of_window_observation`) for real. Found and fixed a real
+    design bug while writing it: the first draft flagged a currently-trading company as
+    "disappeared" just because its own last trade happened to equal the project's overall
+    data coverage end -- confusing "most recent available data point" with "this company
+    stopped trading." Fixed by requiring a REAL confirmed gap (>= 90 days between a
+    company's own last trade and the overall coverage end) before `unknown_trading_stop`
+    can fire at all; a plain end-of-coverage window still correctly censors under the
+    separate `end_of_window_observation` reason. 6 unit tests, each a concrete real
+    scenario (still-trading company; real early disappearance; before vs. after the
+    disappearance cutoff; no trade history at all).
+  - **The feature-policy guard** (§10's own explicit requirement: "the primary model
+    rejects EVENT-CANDIDATE features"): `ledgerlight/modelling/feature_policy.py`'s
+    `assert_primary_model_feature_policy` checks the real `feature_definitions` table
+    (never a hardcoded tier-name guess) and raises if any requested `feature_set_version`
+    is not STRUCTURED or RULE_VERIFIED. 3 integration tests against the REAL rows already
+    built in this database: `price-liquidity-1.0`/`rule-verified-1.0` pass;
+    `seed-governance-1.0` (the real EVENT_CANDIDATE tier from §4.3) is correctly rejected,
+    including when mixed with an allowed tier. This exists now, before any training code,
+    specifically so a future PRIMARY-model training script cannot accidentally include
+    ablation-only features by forgetting the rule.
+  - Still open from §10's list (all genuinely need a trained model/fold builder, blocked):
+    the embargo/fold-construction test, the calibration-choice-rule test, `get_score`
+    point-in-time behavior, the leakage tests (label-permutation, feature-shift, the
+    deliberately-leaky-feature catch), the small-real-slice end-to-end integration test.
+    GUIDANCE_MISS boundary tests: N/A, §5 concluded limits stated, nothing to test.
+  - All tests green: full suite including integration, 346/346; ruff + mypy clean.
+
 ## Not yet started
 
 §6 (LightGBM models), §7 (walk-forward eval + leakage controls -- BLOCKED until the
 full-universe IBBI crawl finishes or is honestly stopped, per the user's explicit
 condition), §8 (scoring + storage), the blocked parts of §9 (train-risk/backtest/
 leakage-check/ablation/score/model-card commands) and §11 (model-card.md,
-docs/experiments/<id>.md), §10 (the leakage-check/ablation/survivorship tests, which need
-real training data), §12 (run and verify), §13 (final commit/backup for §2-15,
-`phase-3:` prefix), §14 (exit gates), §15 (final report).
+docs/experiments/<id>.md), the blocked parts of §10 (embargo/fold test, calibration-rule
+test, get_score test, leakage tests, the small-real-slice integration test), §12 (run and
+verify), §13 (final commit/backup for §2-15, `phase-3:` prefix), §14 (exit gates), §15
+(final report).
 
 ## Exact next step
 
