@@ -429,6 +429,63 @@ def outcomes_and_features_build_job() -> None:
     feature_snapshots_build_op(after=built)
 
 
+@dg.op(name="train_risk", retry_policy=_RETRY_POLICY)
+def train_risk_op(context: OpExecutionContext) -> None:
+    """Phase 3 §6/§9 asset stage "train" -- deliberately MANUAL (no
+    schedule): trains one final LightGBM model on the full real
+    labeled dataset and records it in model_registry -- see
+    scripts/train_risk.py. Idempotent per model_name/model_version
+    (deterministic seeds; a second run uploads nothing new to Garage)."""
+    exit_code = _run_script_main("scripts/train_risk.py")
+    context.log.info(f"train_risk: exit_code={exit_code}")
+
+
+@dg.op(name="score", retry_policy=_RETRY_POLICY)
+def score_op(context: OpExecutionContext) -> None:
+    """Phase 3 §8/§9 asset stage "score": loads the trained artifact
+    from Garage and writes real scores for the verified-coverage
+    universe at each company's own latest real feature snapshot -- see
+    scripts/score.py. Idempotent per (company_id, as_of, model_name,
+    model_version) via the real ON CONFLICT upsert in
+    ledgerlight.modelling.scoring.write_scores."""
+    exit_code = _run_script_main("scripts/score.py")
+    context.log.info(f"score: exit_code={exit_code}")
+
+
+@dg.op(name="reports", retry_policy=_RETRY_POLICY, ins={"after": dg.In(dg.Nothing)})
+def reports_op(context: OpExecutionContext) -> None:
+    """Phase 3 §9/§11 asset stage "reports": regenerates
+    docs/modelling/model-card.md directly from the real pipeline
+    results -- see scripts/model_card.py."""
+    exit_code = _run_script_main("scripts/model_card.py")
+    context.log.info(f"reports: exit_code={exit_code}")
+
+
+@dg.job(name="risk_train_job")
+def risk_train_job() -> None:
+    """The real "train" asset stage -- manual trigger only, per the
+    brief's own §9 asset chain ("train (manual)"); never scheduled."""
+    train_risk_op()
+
+
+@dg.job(name="risk_score_and_report_job")
+def risk_score_and_report_job() -> None:
+    """The real "score -> reports" asset chain -- see
+    risk_score_monthly_schedule for the brief's §9 "score (monthly
+    schedule)" requirement."""
+    scored = score_op()
+    reports_op(after=scored)
+
+
+@dg.schedule(cron_schedule="0 6 1 * *", job=risk_score_and_report_job)
+def risk_score_monthly_schedule(context: ScheduleEvaluationContext) -> dg.RunRequest:
+    """06:00 UTC on the 1st of each month -- the brief's §9 "score
+    (monthly schedule)" requirement. Scores whatever real feature
+    snapshots exist as of run time; never a future date."""
+    run_key = context.scheduled_execution_time.date().isoformat()
+    return dg.RunRequest(run_key=run_key)
+
+
 defs = dg.Definitions(
     assets=[bhavcopy_daily],
     jobs=[
@@ -439,8 +496,10 @@ defs = dg.Definitions(
         ibbi_discovery_job,
         sebi_discovery_job,
         outcomes_and_features_build_job,
+        risk_train_job,
+        risk_score_and_report_job,
         *known_items_jobs.values(),
     ],
-    schedules=[bhavcopy_daily_schedule],
+    schedules=[bhavcopy_daily_schedule, risk_score_monthly_schedule],
     sensors=[inbox_sensor],
 )
