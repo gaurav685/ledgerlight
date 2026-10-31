@@ -653,3 +653,62 @@ class ModelRegistryEntry(Base):
     created_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class Score(Base):
+    """One real model score for one company at one as_of -- Phase 3
+    Sec8. `calibrated_probability` is the one meant for display;
+    `raw_probability` is the model's own uncalibrated output, kept for
+    audit. `percentile` is this score's real rank among the same
+    model_name/model_version's real scores at the same as_of (never a
+    fabricated value when there is only one score that month).
+    `outcome_spec_hash` pins exactly which frozen outcome definition
+    this score was trained against."""
+
+    __tablename__ = "scores"
+    __table_args__ = (
+        UniqueConstraint(
+            "company_id",
+            "as_of",
+            "model_name",
+            "model_version",
+            name="uq_scores_company_asof_model",
+        ),
+        Index("ix_scores_as_of", "as_of"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
+    as_of: Mapped[dt.date] = mapped_column(Date, nullable=False)
+    model_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    model_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    raw_probability: Mapped[float] = mapped_column(Float, nullable=False)
+    calibrated_probability: Mapped[float] = mapped_column(Float, nullable=False)
+    percentile: Mapped[float | None] = mapped_column(Float, nullable=True)
+    top_shap_contributors: Mapped[list[object] | None] = mapped_column(JSONB, nullable=True)
+    feature_set_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    outcome_spec_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class Experiment(Base):
+    """One real backtest/train run -- Phase 3 Sec8. `config_json` and
+    `data_snapshot_hashes` pin exactly what was run so a later
+    `backtest` re-run on the same snapshot can be diffed against this
+    row (Sec9's reproducibility requirement); `artifacts_uri` points at
+    the real Garage object, never a path inside this repo (model
+    artifacts are gitignored)."""
+
+    __tablename__ = "experiments"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    config_json: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
+    data_snapshot_hashes: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
+    git_sha: Mapped[str] = mapped_column(String(40), nullable=False)
+    metrics_json: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
+    artifacts_uri: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
