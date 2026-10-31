@@ -28,10 +28,11 @@ from ledgerlight.modelling.coverage import compute_verified_coverage  # noqa: E4
 from ledgerlight.modelling.dataset import DatasetRow, build_primary_outcome_dataset  # noqa: E402
 from ledgerlight.modelling.folds import print_fold_table  # noqa: E402
 from ledgerlight.modelling.reporting import print_positive_counts  # noqa: E402
-from ledgerlight.modelling.scoring import record_experiment  # noqa: E402
+from ledgerlight.modelling.scoring import record_experiment, write_experiment_doc  # noqa: E402
 
 CONFIG: dict[str, object] = {"command": "backtest", "seed": 42}
 SEED = 42
+EXPERIMENTS_DOC_DIR = REPO_ROOT / "docs" / "experiments"
 
 
 def _git_sha() -> str:
@@ -100,14 +101,25 @@ def main() -> int:
             {"hash": snapshot_hash},
         ).one_or_none()
 
-        record_experiment(
+        git_sha = _git_sha()
+        experiment_id = record_experiment(
             session,
             config=config,
             data_snapshot_hashes={"dataset": snapshot_hash},
-            git_sha=_git_sha(),
+            git_sha=git_sha,
             metrics=metrics_summary,
         )
         session.commit()
+
+        doc_path = write_experiment_doc(
+            experiment_id,
+            config=config,
+            data_snapshot_hashes={"dataset": snapshot_hash},
+            git_sha=git_sha,
+            metrics=metrics_summary,
+            output_dir=EXPERIMENTS_DOC_DIR,
+        )
+        print(f"wrote {doc_path}")
 
     if previous is None:
         print(

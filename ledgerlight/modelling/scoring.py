@@ -17,6 +17,7 @@ import datetime as dt
 import json
 import uuid
 from dataclasses import dataclass
+from pathlib import Path
 from typing import cast
 
 from sqlalchemy import text
@@ -176,3 +177,43 @@ def record_experiment(
         },
     )
     return experiment_id
+
+
+def write_experiment_doc(
+    experiment_id: uuid.UUID,
+    config: dict[str, object],
+    data_snapshot_hashes: dict[str, object],
+    git_sha: str,
+    metrics: dict[str, object],
+    output_dir: Path,
+) -> Path:
+    """Phase 3 §11: `docs/experiments/<id>.md`, auto-generated -- a
+    direct rendering of the real experiment row just written by
+    `record_experiment`, never hand-edited."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    path = output_dir / f"{experiment_id}.md"
+    lines = [
+        f"# Experiment {experiment_id} (generated)",
+        "",
+        f"git SHA: `{git_sha}`",
+        "",
+        "## Config",
+        "",
+        "```json",
+        json.dumps(config, indent=2),
+        "```",
+        "",
+        "## Data snapshot hashes",
+        "",
+        "```json",
+        json.dumps(data_snapshot_hashes, indent=2),
+        "```",
+        "",
+        "## Metrics",
+        "",
+        "```json",
+        json.dumps(metrics, indent=2),
+        "```",
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
