@@ -554,43 +554,90 @@ exact next step is below, not left to be re-derived.
     populated rows refreshed, per the user's explicit condition.
   - All tests green: full suite including integration, 352/352; ruff + mypy clean.
 
+- **§6/§7 modelling layer, in progress (2026-10-31), per the user's newest condition
+  (outcome-coverage restriction, honest distinct-event/company counting, sensitivity,
+  no-peeking, inconclusive-is-acceptable)**:
+  - `ledgerlight/modelling/coverage.py`: `compute_verified_coverage` -- the real,
+    DB-computed (never hardcoded) intersection of companies with both a real IBBI Filing
+    and a real CARE Filing. Real result: exactly 5 companies (DHFL, FRETAIL, GENSOL,
+    JETAIRWAYS, SPICEJET), window `[2017-08-17, 2026-07-21]`. This is far smaller than
+    the 15-company SEED-track set used elsewhere.
+  - `ledgerlight/modelling/censoring.py`: added a third rule, `unverified_source_coverage`
+    (checked first), so any as_of/forward-window outside the verified coverage window is
+    censored, not labelled negative.
+  - `ledgerlight/modelling/dataset.py`: `build_primary_outcome_dataset` -- the real
+    labeled dataset restricted to the verified universe, with `outcome_types` now
+    parametrized for the sensitivity split. Real smoke test: 243 total rows, 99 censored,
+    144 labeled, 36 positive company-months, 4 distinct positive companies, 5 distinct
+    positive events. (SpiceJet has 2 real raw outcome events but 0 labeled positives --
+    confirmed correct, not a bug: both events fall after its own real trading-stop
+    cutoff, so every window that could observe them is censored by
+    `unknown_trading_stop` first.)
+  - `ledgerlight/modelling/dates.py`: shared `add_months` (de-duplicated from three
+    separate copies in censoring.py/folds.py/dataset.py).
+  - `ledgerlight/modelling/folds.py`: `build_walk_forward_folds` -- expanding-window,
+    yearly outer folds, 24-month (12mo horizon + 12mo embargo) train cutoff, per the
+    already-frozen `docs/modelling/evaluation-protocol.md`. Real fold table: 2017-2019
+    have zero training rows (too early in the expanding window); only 2021-2024 have any
+    real train positives.
+  - `ledgerlight/modelling/reporting.py`: `count_positives` (distinct events/companies,
+    not just company-month rows) and `company_clustered_bootstrap` (company-level
+    resampling), per the user's explicit condition.
+  - `ledgerlight/modelling/models.py`: B0 (base rate), B1 (non-learned rating-distress
+    rule), B2/B3 (logistic regression), and LightGBM with inner-fold-only hyperparameter
+    + imbalance selection (`split_inner_validation`, `select_lightgbm_config`), the
+    isotonic-only-if->=50-positives calibration rule, and SHAP TreeExplainer
+    interpretability. Added `lightgbm`, `shap`, `pandas` as real dependencies (pip
+    installed directly -- `uv` unavailable in this environment, `uv.lock` left stale).
+  - `ledgerlight/modelling/metrics.py`: PR-AUC, ROC-AUC, precision@K, recall@alert-rate,
+    Brier/BSS, ECE + reliability bins, lead time -- every metric returns `None` rather
+    than a fabricated number when it cannot be honestly computed.
+  - `ledgerlight/modelling/backtest.py`: `run_backtest` orchestrates all of the above per
+    fold and pooled. Real pooled result: 5 distinct positive events (**inconclusive**,
+    below the user's 30-event floor); no model beats the base rate (all pooled Brier
+    skill scores negative) -- no predictive-skill claim is made.
+  - `ledgerlight/modelling/sensitivity.py`: the user's explicit rating-only/IBBI-only
+    sensitivity split. Real result: rating-default-only = 3 distinct events/3 companies;
+    IBBI-only = 2 distinct events/2 companies (3+2=5, consistent with the combined
+    PRIMARY count).
+  - All new modules lint/format/mypy clean; full suite green after each commit.
+
 ## Not yet started
 
-§6 (LightGBM models), §7 (walk-forward eval + leakage controls -- **UNBLOCKED** as of
-2026-10-31: the IBBI crawl's stop-and-rebuild condition is satisfied), §8 (scoring +
-storage), the remaining parts of §9 (train-risk/backtest/leakage-check/ablation/score/
-model-card commands) and §11 (model-card.md, docs/experiments/<id>.md), the remaining
-parts of §10 (embargo/fold test, calibration-rule test, get_score test, leakage tests,
-the small-real-slice integration test), §12 (run and verify), §13 (final commit/backup
-for §2-15, `phase-3:` prefix), §14 (exit gates), §15 (final report).
+§7's remaining pieces: leakage checks as automated tests AND a report (outcome-date>as_of,
+embargo enforcement -- partially covered by `tests/test_folds.py`, label-permutation,
+feature-shift, univariate PR-AUC flag, the deliberately-leaky-synthetic-feature catch),
+survivorship reporting (with/without later-delisted companies), the §7 data-quality
+report, and the ablation arms (a) STRUCTURED / (b) +RULE-VERIFIED / (c)
++EVENT-CANDIDATE. §8 (scoring + storage: `scores`/`experiments` migrations, `get_score`).
+The remaining parts of §9 (train-risk/backtest/leakage-check/ablation/score/model-card
+commands -- `guidance-extract`/`guidance-match` deliberately NOT built, already decided)
+and §11 (model-card.md, docs/experiments/<id>.md). The remaining parts of §10
+(calibration-rule test -- done in `tests/test_models.py`; get_score test, the
+small-real-slice integration test). §12 (run and verify), §13 (final commit/backup for
+§2-15, `phase-3:` prefix), §14 (exit gates), §15 (final report).
 
 ## Exact next step
 
-1. **§6-7 are now unblocked.** The full-universe IBBI crawl was honestly stopped
-   (2026-10-31, after real throughput showed the original estimate was wrong by ~2 orders
-   of magnitude -- see the entry above), its coverage recorded in
-   `docs/modelling/data-quality.md`, and outcomes + affected feature snapshots rebuilt
-   (real counts reported by year, before vs. after, in the entry above). Begin §6: build
-   the real LightGBM PRIMARY model, STRUCTURED + RULE-VERIFIED features only (enforced by
-   `ledgerlight.modelling.feature_policy.assert_primary_model_feature_policy`, already
-   built and tested). Read §6 of the brief closely. Given the real pooled positive count
-   is 31 (right at the brief's own 30-positive inconclusive floor), be prepared for -- and
-   report plainly if it occurs -- a statistically inconclusive result; this was explicitly
-   flagged in advance in `docs/modelling/evaluation-protocol.md`, not discovered after
-   the fact.
-2. Then §7: implement the real walk-forward fold builder per
-   `docs/modelling/evaluation-protocol.md`'s already-designed methodology (expanding
-   yearly outer folds, >=12-month embargo), the remaining leakage tests (outcome-date,
-   embargo enforcement, label-permutation, feature-shift, the deliberately-leaky-feature
-   catch), survivorship reporting, and the ablation arms (a)/(b)/(c).
-3. Consider broadening CARE discovery to the full universe too (not yet decided/done) --
+1. **§6-7 modelling core is built and real-smoke-tested** (coverage restriction,
+   censoring, dataset, folds, B0-B3+LightGBM+calibration+SHAP, metrics, backtest,
+   sensitivity split -- see above). Next: §7's remaining leakage checks, survivorship,
+   data-quality report and ablation arms, then §8 scoring/storage, then §9 CLI scripts,
+   §10 remaining tests, §11 docs, §12 run-and-verify, §13 commit/backup, §14 exit gates,
+   §15 final report.
+3. Note the real pooled positive count under the verified-coverage restriction is just 5
+   distinct events (far below the unrestricted-universe count of 31 noted in the §3 entry
+   above, and below the brief's own 30-event floor) -- already reported as inconclusive
+   in the real backtest smoke test; this is not a new finding to re-discover, just to
+   carry through §7's remaining pieces, §8-§15, and the final report honestly.
+4. Consider broadening CARE discovery to the full universe too (not yet decided/done) --
    would also broaden §4.2's rating features and `RATING_DOWNGRADE_D` past the 15
    SEED-track companies; currently still SEED-track-only.
-4. Re-run `scripts/build_feature_snapshots.py`, `scripts/build_rule_verified_features.py`,
+5. Re-run `scripts/build_feature_snapshots.py`, `scripts/build_rule_verified_features.py`,
    and `scripts/build_seed_governance_features.py` after any further change to
    `price_bars`/`filings`/`events` data, so the feature snapshots stay current -- all
    three are safely re-runnable (upsert on conflict).
-5. If a future session hits an apparent background-job hang with near-zero CPU growth on
+6. If a future session hits an apparent background-job hang with near-zero CPU growth on
    a heavy document/OCR batch: check this environment's free memory
    (`Get-CimInstance Win32_OperatingSystem`) and the Docker/Garage container logs for
    fresh timestamps before assuming a real code bug -- this session's `scripts/process.py`
