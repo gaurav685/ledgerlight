@@ -635,26 +635,52 @@ exact next step is below, not left to be re-derived.
   - **§7 is now functionally complete.** All new modules lint/format/mypy clean; full
     suite green (336 tests) after each commit.
 
+- **§8-§11 complete (2026-10-31)**:
+  - §8: migration `6d4589929764` adds `scores`/`experiments` tables (verified reversible).
+    `ledgerlight/modelling/scoring.py`: `write_scores`, `get_score` (real integration test
+    proves it never returns a future score), `record_experiment`, `write_experiment_doc`.
+  - §9: `scripts/train_risk.py` (trains one final deployable LightGBM model on the full
+    real labeled dataset, uploads to Garage, records in `model_registry` -- real run
+    confirmed deterministic/idempotent: identical artifact_hash on a second run).
+    `scripts/backtest.py` (records each run as an `experiments` row + auto-generates
+    `docs/experiments/<id>.md`; real two-run test confirms "IDENTICAL... 0 diffs", proving
+    §9's reproducibility requirement). `scripts/leakage_check.py`, `scripts/ablation.py`,
+    `scripts/score.py` (loads the trained artifact from Garage; two deployment-time
+    simplifications disclosed in its own docstring -- 0.0 imputation and
+    calibrated==raw_probability, since neither training medians nor the per-fold
+    calibration map were persisted), `scripts/model_card.py`. Makefile targets added.
+    Dagster: `train_risk_op`/`risk_train_job` (manual only), `score_op` -> `reports_op` /
+    `risk_score_and_report_job` with a monthly cron schedule -- `dagster definitions
+    validate` passes.
+  - §10: `tests/test_end_to_end_risk_pipeline.py` runs coverage -> dataset -> folds ->
+    backtest -> leakage-check -> write_scores/get_score against the real DB in one test,
+    using the real 5-company universe itself as the "small real slice". All other §10
+    items were already covered by earlier commits (embargo/fold, calibration-rule,
+    get_score, leakage tests).
+  - §11: `docs/modelling/model-card.md` generated directly from the real pipeline
+    (intended use, data/outcomes/metrics with company-clustered bootstrap intervals,
+    calibration, coverage limits, failure modes, ethical considerations -- including the
+    disclosed SpiceJet control-group concern). `docs/experiments/<id>.md` auto-generated.
+    `docs/release/release-gates.md` and `README.md` updated with the real, inconclusive
+    Sec6-10 result.
+
 ## Not yet started
 
-§8 (scoring + storage: `scores`/`experiments` migrations, `get_score`). The remaining
-parts of §9 (train-risk/backtest/leakage-check/ablation/score/model-card commands --
-`guidance-extract`/`guidance-match` deliberately NOT built, already decided) and §11
-(model-card.md, docs/experiments/<id>.md). The remaining parts of §10 (get_score test,
-the small-real-slice integration test -- the embargo/fold test, calibration-rule test,
-and leakage tests are already done, see above and `tests/test_folds.py`/
-`tests/test_models.py`/`tests/test_leakage.py`). §12 (run and verify), §13 (final
-commit/backup for §2-15, `phase-3:` prefix), §14 (exit gates), §15 (final report).
+§12 (run and verify -- the full raw-output command sequence), §13 (final commit/backup for
+§2-15, `phase-3:` prefix already used throughout), §14 (re-mark all exit gates with
+evidence), §15 (final report, `docs/phase-3/phase-3-report.md`).
 
 ## Exact next step
 
-1. **§6-7 are now functionally complete and real-smoke-tested** (coverage restriction,
-   censoring, dataset, folds, B0-B3+LightGBM+calibration+SHAP, metrics, backtest,
-   sensitivity split, leakage checks, survivorship, data-quality report, ablation arms --
-   see above). Next: §8 scoring/storage (`scores`/`experiments` migrations, `get_score`),
-   then §9 CLI scripts, §10 remaining tests (get_score test, small-real-slice integration
-   test), §11 docs (model-card.md, docs/experiments/<id>.md), §12 run-and-verify, §13
-   commit/backup, §14 exit gates, §15 final report.
+1. **§6-§11 are now complete** (coverage restriction, censoring, dataset, folds,
+   B0-B3+LightGBM+calibration+SHAP, metrics, backtest, sensitivity split, leakage checks,
+   survivorship, data-quality report, ablation arms, scores/experiments storage, all §9
+   CLI commands + Dagster wiring, the end-to-end integration test, model-card.md and
+   docs/experiments/<id>.md -- see above). Next: §12 run and verify (the full raw-output
+   command sequence: lint, typecheck, all tests, migrations from empty, hardening eval,
+   backfill-universe, outcomes-build, features-build, backtest, leakage-check, ablation,
+   score, model-card, pre-commit, gitleaks), then §13 final commit/backup, §14 re-mark all
+   exit gates with evidence, §15 final report.
 3. Note the real pooled positive count under the verified-coverage restriction is just 5
    distinct events (far below the unrestricted-universe count of 31 noted in the §3 entry
    above, and below the brief's own 30-event floor) -- already reported as inconclusive
