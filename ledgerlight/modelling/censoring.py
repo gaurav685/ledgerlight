@@ -13,6 +13,8 @@ from __future__ import annotations
 import datetime as dt
 from dataclasses import dataclass
 
+from ledgerlight.modelling.dates import add_months
+
 HORIZON_MONTHS = 12
 BHAVCOPY_DISAPPEARANCE_MIN_GAP_DAYS = 90
 
@@ -21,19 +23,6 @@ BHAVCOPY_DISAPPEARANCE_MIN_GAP_DAYS = 90
 class CensoringResult:
     censored: bool
     reason: str | None  # None iff censored is False
-
-
-def _add_months(d: dt.date, months: int) -> dt.date:
-    month_index = d.month - 1 + months
-    year = d.year + month_index // 12
-    month = month_index % 12 + 1
-    # Clamp the day for short months (e.g. 2026-01-31 + 1mo -> 2026-02-28).
-    day = d.day
-    while True:
-        try:
-            return dt.date(year, month, day)
-        except ValueError:
-            day -= 1
 
 
 def check_censoring(
@@ -86,7 +75,7 @@ def check_censoring(
        company disappeared early. Applies to every company near the
        end of the dataset.
     """
-    window_end = _add_months(as_of, HORIZON_MONTHS)
+    window_end = add_months(as_of, HORIZON_MONTHS)
 
     if verified_coverage_window is not None:
         coverage_start, coverage_end = verified_coverage_window

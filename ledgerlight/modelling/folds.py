@@ -17,6 +17,7 @@ import datetime as dt
 from dataclasses import dataclass
 
 from ledgerlight.modelling.dataset import DatasetRow
+from ledgerlight.modelling.dates import add_months
 
 HORIZON_MONTHS = 12
 EMBARGO_MONTHS = 12
@@ -30,18 +31,6 @@ class Fold:
     test_end: dt.date  # exclusive
     train_rows: list[DatasetRow]
     test_rows: list[DatasetRow]
-
-
-def _add_months(d: dt.date, months: int) -> dt.date:
-    month_index = d.month - 1 + months
-    year = d.year + month_index // 12
-    month = month_index % 12 + 1
-    day = d.day
-    while True:
-        try:
-            return dt.date(year, month, day)
-        except ValueError:
-            day -= 1
 
 
 def build_walk_forward_folds(rows: list[DatasetRow]) -> list[Fold]:
@@ -61,7 +50,7 @@ def build_walk_forward_folds(rows: list[DatasetRow]) -> list[Fold]:
     for test_year in years:
         test_start = dt.date(test_year, 1, 1)
         test_end = dt.date(test_year + 1, 1, 1)
-        train_cutoff = _add_months(test_start, -(HORIZON_MONTHS + EMBARGO_MONTHS))
+        train_cutoff = add_months(test_start, -(HORIZON_MONTHS + EMBARGO_MONTHS))
         test_rows = [r for r in labeled if test_start <= r.as_of < test_end]
         if not test_rows:
             continue

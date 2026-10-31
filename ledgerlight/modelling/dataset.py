@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 
 from ledgerlight.modelling.censoring import check_censoring
 from ledgerlight.modelling.coverage import VerifiedCoverage, compute_verified_coverage
+from ledgerlight.modelling.dates import add_months
 from ledgerlight.modelling.feature_policy import assert_primary_model_feature_policy
 
 PRIMARY_FEATURE_SET_VERSIONS = ["price-liquidity-1.0", "rule-verified-1.0"]
@@ -140,17 +141,6 @@ def build_primary_outcome_dataset(
     events_by_company = load_primary_outcome_events(session, coverage.company_ids)
     last_trade_by_company = load_last_real_trade_dates(session, coverage.company_ids)
     features_by_key = load_feature_rows(session, coverage.company_ids)
-
-    def add_months(d: dt.date, months: int) -> dt.date:
-        month_index = d.month - 1 + months
-        year = d.year + month_index // 12
-        month = month_index % 12 + 1
-        day = d.day
-        while True:
-            try:
-                return dt.date(year, month, day)
-            except ValueError:
-                day -= 1
 
     rows: list[DatasetRow] = []
     for idx, company_id in enumerate(coverage.company_ids):
