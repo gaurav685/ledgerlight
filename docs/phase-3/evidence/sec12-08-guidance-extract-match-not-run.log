@@ -1,0 +1,8 @@
+Phase 3 §12 step 8 (guidance-extract, guidance-match): deliberately NOT run.
+
+Real reason (already documented, not decided here): Sec5's real search of all
+4,759 real pages in the corpus found 0 real management-issued forward-guidance
+statements -- see docs/modelling/guidance-extraction-assessment.md. There is
+nothing real for guidance-extract/guidance-match to run against, so neither
+command was built (Makefile.md's own comment above the Sec9 commands section
+states this). Limits stated per exit gate 5's explicit fallback.

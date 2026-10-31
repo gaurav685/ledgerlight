@@ -1,0 +1,10 @@
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> cef1aa08abb1, initial ingestion schema
+INFO  [alembic.runtime.migration] Running upgrade cef1aa08abb1 -> c88219a1fbbb, add content_sha256 to document_versions
+INFO  [alembic.runtime.migration] Running upgrade c88219a1fbbb -> 59ce66e91705, phase 2 knowledge schema
+INFO  [alembic.runtime.migration] Running upgrade 59ce66e91705 -> 61708ede1bba, add review_note to label_items
+INFO  [alembic.runtime.migration] Running upgrade 61708ede1bba -> 52959e2bb0c4, feature_definitions and feature_snapshots tables
+INFO  [alembic.runtime.migration] Running upgrade 52959e2bb0c4 -> 40592218ac8b, identifier_window_corrections audit table
+INFO  [alembic.runtime.migration] Running upgrade 40592218ac8b -> a688b3ceaf8c, make identifier_window_corrections self-describing and FK-safe on delete
+INFO  [alembic.runtime.migration] Running upgrade a688b3ceaf8c -> 6d4589929764, scores and experiments tables

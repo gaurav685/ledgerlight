@@ -1,0 +1,6 @@
+ruff...................................................................................Passed
+ruff-format............................................................................Passed
+Detect hardcoded secrets...............................................................Passed
+check for added large files............................................................Passed
+reject staged files under data/raw, data/interim, data/processed.......................Passed
+mypy (project venv -- avoids a second, heavy isolated env).............................Passed

@@ -1,0 +1,6 @@
+companies_created: 1
+identifiers_created: 2
+skipped (already bootstrapped): 7557
+existing windows widened (real earlier evidence found): 12
+existing windows skipped (symbol-reuse guard): 59
+duplicate companies merged (self-healing dedup): 0

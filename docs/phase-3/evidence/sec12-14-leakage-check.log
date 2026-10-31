@@ -1,0 +1,7 @@
+outcome-date-after-as_of violations: 0
+embargo violations: 0
+real pooled LightGBM PR-AUC: 0.26666666666666666 (prevalence 0.25)
+label-permutation pooled LightGBM PR-AUC: 0.24199627187104908
+feature-shift pooled LightGBM PR-AUC: 0.349025974025974
+univariate PR-AUC flags (>= 0.95): {'days_since_last_downgrade': 1.0}
+LEAKAGE CHECK PASSED: 0 outcome-date violations, 0 embargo violations

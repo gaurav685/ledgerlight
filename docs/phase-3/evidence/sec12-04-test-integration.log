@@ -1,0 +1,32 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.15, pytest-8.4.2, pluggy-1.7.0
+rootdir: C:\ledger light
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.15.1, platformdirs-4.13.5, cov-5.0.0, respx-0.21.1
+collected 435 items / 342 deselected / 93 selected
+
+tests\test_care_ingestion.py .                                           [  1%]
+tests\test_commit_visibility_regression.py .                             [  2%]
+tests\test_company_dedup.py .                                            [  3%]
+tests\test_coverage.py ..                                                [  5%]
+tests\test_document_processor.py .                                       [  6%]
+tests\test_end_to_end_risk_pipeline.py .                                 [  7%]
+tests\test_entity_resolution.py ..................                       [ 26%]
+tests\test_feature_policy.py ...                                         [ 30%]
+tests\test_frozen_split_guard.py ...                                     [ 33%]
+tests\test_ibbi_ingestion.py .                                           [ 34%]
+tests\test_identifier_window_repair.py ...                               [ 37%]
+tests\test_knowledge_pipeline_integration.py ....                        [ 41%]
+tests\test_label_review.py ...........                                   [ 53%]
+tests\test_label_sample.py ......                                        [ 60%]
+tests\test_labeling.py .............                                     [ 74%]
+tests\test_point_in_time_integrity.py .                                  [ 75%]
+tests\test_retry_dead_letter.py ...                                      [ 78%]
+tests\test_review_queue.py .......                                       [ 86%]
+tests\test_scoring.py ......                                             [ 92%]
+tests\test_sebi_ingestion.py ..                                          [ 94%]
+tests\test_sources_unschedulable.py ...                                  [ 97%]
+tests\test_upsert_content_identity.py ..                                 [100%]
+
+=============== 93 passed, 342 deselected in 123.23s (0:02:03) ================
