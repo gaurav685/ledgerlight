@@ -56,6 +56,30 @@ against SILVER labels — gold review is pending human review (see
 `docs/knowledge/` / `docs/evaluation/phase-2-evaluation.md` for the
 schema, taxonomy, extraction, entity-resolution and retrieval design.
 
+**Phase 3 — temporal intelligence and quantitative risk modelling.** In
+progress. §1-§2 (preflight, detector hardening, market-wide data
+expansion) and §3 (outcome definitions, frozen and hashed) are
+complete. §4 (point-in-time features) is complete in full: two real
+data-integrity bugs were found and fixed (a stale `company_identifiers`
+window bug, and a duplicate-company bug the fix itself reintroduced,
+both now self-healing); STRUCTURED price/liquidity, RULE-VERIFIED
+rating/auto-link, and SEED-track governance features are built and
+spot-verified against real company history (228,678 + 3,241 + 1,406
+real `feature_snapshots` rows); financial features were excluded with
+real evidence rather than shipped untested. §5 (guidance extraction)
+was assessed and limits stated: 0 real management-issued guidance
+statements exist anywhere in this project's corpus, so no extraction
+machinery was built. Exit gate 4 (point-in-time integrity) is proven:
+100% of feature rows with a real input satisfy `max_input_known_at <=
+as_of`, 0 violations. **§6-§7 (LightGBM training, walk-forward
+evaluation) are explicitly blocked** until the full-universe IBBI
+discovery crawl finishes or is honestly stopped with its coverage
+recorded. It does **not** yet include a trained model, scores, the
+investigation agent, API endpoints, or frontend. See
+`docs/phase-3/phase-3-report.md` for the full report and
+`docs/modelling/` for outcomes, features, guidance, data-quality, and
+evaluation-protocol design docs.
+
 ## Setup
 
 Requires [uv](https://docs.astral.sh/uv/) (Python 3.12 is fetched
@@ -100,7 +124,7 @@ All commands are exposed as `uv run <script>` entry points (see
 | `uv run python scripts/ingest_report.py` | Per-source health / dead-letter / failure-class report |
 | `uv run dagster dev -m ledgerlight.orchestration.definitions` | Dagster webserver (needs `DAGSTER_HOME`, see `docs/ingestion/runbook.md`) |
 
-A `Makefile` wraps these as `make setup|lint|typecheck|test|verify-env|verify-manifests|acquire-seed|infra-up|infra-check|infra-down|db-upgrade|sources-sync|store-backfill|ingest|backfill|process|reprocess|ingest-report|dagster-dev|test-integration|test-corpus`, plus the Phase 2 targets `taxonomy-load|bootstrap-companies|link-filings|chunk-corpus|embed-chunks|build-bm25-index|labels-propose|label-review|labels-split|train-classifier|evaluate|extract|resolve-entities|retrieval-eval|review-queue|knowledge-pipeline` (see `docs/phase-2/phase-2-report.md`).
+A `Makefile` wraps these as `make setup|lint|typecheck|test|verify-env|verify-manifests|acquire-seed|infra-up|infra-check|infra-down|db-upgrade|sources-sync|store-backfill|ingest|backfill|process|reprocess|ingest-report|dagster-dev|test-integration|test-corpus`, plus the Phase 2 targets `taxonomy-load|bootstrap-companies|link-filings|chunk-corpus|embed-chunks|build-bm25-index|labels-propose|label-review|labels-split|train-classifier|evaluate|extract|resolve-entities|retrieval-eval|review-queue|knowledge-pipeline` (see `docs/phase-2/phase-2-report.md`), plus the Phase 3 targets `outcomes-taxonomy-load|freeze-eval-data|select-classifiers|backfill-universe|outcomes-build|features-build|outcomes-and-features-build|point-in-time-proof` (see `docs/phase-3/phase-3-report.md`).
 
 ## Data policy
 

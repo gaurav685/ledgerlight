@@ -141,3 +141,28 @@ freeze-eval-data:
 
 select-classifiers:
 	uv run python scripts/select_classifiers.py
+
+# --- Phase 3 §9: pipeline and commands (outcomes -> feature_snapshots) ---
+
+backfill-universe:
+	uv run python scripts/bootstrap_companies.py
+	uv run python scripts/link_filings.py
+
+outcomes-build:
+	uv run python scripts/populate_outcomes.py
+
+features-build:
+	uv run python scripts/build_feature_snapshots.py
+	uv run python scripts/build_rule_verified_features.py
+	uv run python scripts/build_seed_governance_features.py
+
+outcomes-and-features-build:
+	$(DAGSTER_ENV) uv run dagster job execute -m ledgerlight.orchestration.definitions -j outcomes_and_features_build_job
+
+# guidance-extract / guidance-match: deliberately NOT wired. Sec5 found 0 real
+# management-issued guidance statements anywhere in this corpus (see
+# docs/modelling/guidance-extraction-assessment.md) -- there is nothing for
+# these commands to run against, so none were built.
+
+point-in-time-proof:
+	uv run pytest tests/test_point_in_time_integrity.py -v -m integration

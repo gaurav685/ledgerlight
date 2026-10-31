@@ -9,9 +9,10 @@ backfill; 2.2 CARE; 2.3 IBBI and SEBI discovery broadening; 2.4 entity-link repo
 §4 in full (4.0 two real data-integrity bugs found and fixed; 4.1 UNIVERSE track
 price/liquidity STRUCTURED features; 4.2 RULE-VERIFIED rating/auto-link features; 4.3
 SEED-track governance features, financial features excluded with real evidence), §5
-(guidance extraction, limits stated), and the exit-gate-4 point-in-time proof complete.
+(guidance extraction, limits stated), the exit-gate-4 point-in-time proof, and §9/§11's
+unblocked parts (real Dagster wiring, Makefile targets, documentation set) complete.
 §6-7 BLOCKED pending the full-universe IBBI crawl (user's explicit condition)** -- see the
-note at the end of §5. §2.1's bhavcopy
+note at the end of §9/§11. §2.1's bhavcopy
 backfill surfaced real findings of its own: the exhaustively-confirmed 2016-01-01
 earliest-available-date boundary, a parsing-pipeline gap for 2016-01 to 2017-01-04, and a
 real environment constraint (a low-memory kill) that took three attempts to work around
@@ -892,19 +893,42 @@ my own first draft of the summary script before this result was trusted: a wrong
 index produced a bogus "1.36%" figure; re-derived correctly, the real result is
 unambiguous.
 
+## §9 and §11 (the parts not blocked by training)
+
+Real Dagster wiring: `outcomes_build_op` + `feature_snapshots_build_op` (chaining all
+three real feature-build scripts), joined into `outcomes_and_features_build_job` -- the
+brief's own "outcomes -> feature_snapshots" asset chain, as ops+job matching this
+codebase's existing convention. Proved it for real: ran
+`outcomes_and_features_build_job.execute_in_process()` end to end -- `success: True`,
+genuinely re-ran all four scripts idempotently (1 new real `SEVERE_DRAWDOWN`, 30 new real
+`BHAVCOPY_DISAPPEARANCE` from bhavcopy data that advanced since the last run). Makefile
+targets added for everything real; `guidance-extract`/`guidance-match` deliberately not
+wired, documented inline.
+
+Documentation set written for everything not blocked: `docs/modelling/features.md`
+(**generated** directly from the real `feature_definitions` table by
+`scripts/generate_features_doc.py` -- can't drift from hand-typed assumptions),
+`docs/modelling/guidance.md`, `docs/modelling/data-quality.md` (every real coverage
+figure and caveat found so far; the IBBI section is an explicit "pending" placeholder, not
+a guess), `docs/modelling/evaluation-protocol.md` (the real §7 methodology, stating in
+advance -- before training -- that the current pooled primary-outcome positive count is
+close to or below the brief's own 30-positive inconclusive floor), `docs/adr/
+0006-risk-modelling.md`, and the README phase-status section. `docs/modelling/
+model-card.md` and `docs/experiments/<id>.md` remain blocked -- they need a trained
+model. Full suite green (337/337 including integration); ruff and mypy clean.
+
 ## Status note: §6-7 BLOCKED pending the full-universe IBBI crawl
 
 Per the user's explicit condition (2026-10-31): no training, tuning, or backtest (§6-7)
 until the full-universe IBBI discovery crawl has finished, or has been honestly stopped
 with its coverage recorded. After it ends: rebuild the outcomes table and affected
 snapshots, report outcome counts by year before vs. after, and record IBBI date coverage
-in `docs/data/data-quality.md`. The outcome definitions stay frozen (same spec hash) --
-only the populated rows refresh. §8-15 of this phase's brief (scoring infrastructure, the
-rest of the Dagster pipeline,
-leakage/survivorship controls, scoring infrastructure, the rest of the Dagster pipeline,
-the full test suite, the documentation set, and this report's remaining sections) have not
-been started. §1, §2 and now §4.0 each involved real, previously-undetected bugs found
-only by actually running the real pipeline against real data and checking results by hand,
+in `docs/modelling/data-quality.md`. The outcome definitions stay frozen (same spec hash)
+-- only the populated rows refresh. The remaining blocked work (train-risk/backtest/
+leakage-check/ablation/score/model-card commands, the model card, experiment reports, run
+and verify, final commit/backup, exit gates, final report) has not been started. §1, §2
+and §4.0 each involved real, previously-undetected bugs found only by actually running
+the real pipeline against real data and checking results by hand,
 not by assumption (detector false positives; CARE's live search reflecting current entity
 names only; IBBI's hard-404 pagination bug; SpiceJet's real insolvency-petition history
 contradicting its Phase 0 control-group selection; the BSE_CODE bootstrap gap hiding

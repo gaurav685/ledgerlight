@@ -413,13 +413,55 @@ exact next step is below, not left to be re-derived.
   own first draft of the summary script (a wrong column index inflated a bogus "1.36%"
   figure before I caught and fixed it; the real result is unambiguous: 100%, 0 violations).
 
+- **§9 pipeline and commands (the unblocked parts) + §11 documentation set (the unblocked
+  parts)**: COMPLETE for everything not dependent on §6/§7's blocked training work.
+  - Real Dagster wiring: `outcomes_build_op` and `feature_snapshots_build_op` (the latter
+    chaining all three real feature-build scripts), joined into
+    `outcomes_and_features_build_job` -- the brief's own "outcomes -> feature_snapshots"
+    asset chain, implemented as ops+job to match this codebase's existing convention for
+    every other Phase 3 build step (care/ibbi/sebi discovery etc. are also ops+jobs, not
+    bare `@dg.asset`s). Each op dynamically loads the real script's own `main()` (same
+    technique this project's tests already use for `scripts/*.py`, which is deliberately
+    not a package) -- no parallel reimplementation of the build logic.
+  - **Proved the wiring for real, not just load-tested it**: ran
+    `outcomes_and_features_build_job.execute_in_process()` end to end --
+    `success: True`, 9m45s, and it genuinely re-ran all four underlying scripts
+    idempotently (picked up 1 new real `SEVERE_DRAWDOWN` and 30 new real
+    `BHAVCOPY_DISAPPEARANCE` rows from bhavcopy data that advanced since the last run,
+    0 new `IBBI_CIRP_ADMISSION`/`RATING_DOWNGRADE_D` since no new CARE/IBBI documents have
+    been extracted yet).
+  - Makefile targets added: `backfill-universe`, `outcomes-build`, `features-build`,
+    `outcomes-and-features-build`, `point-in-time-proof`. `guidance-extract`/
+    `guidance-match` deliberately NOT wired -- §5 found nothing real for them to run
+    against; documented inline in the Makefile rather than left unexplained.
+  - Documentation set: `docs/modelling/features.md` (**generated** by
+    `scripts/generate_features_doc.py` directly from the real `feature_definitions` table
+    -- never hand-typed, can't drift), `docs/modelling/guidance.md` (the brief's own
+    canonical filename, summarizing the real §5 assessment), `docs/modelling/
+    data-quality.md` (consolidates every real coverage figure and disclosed caveat found
+    so far; the IBBI full-universe coverage section is an explicit, named placeholder --
+    "pending," not a guess -- to be filled per the user's condition 1 once the crawl ends),
+    `docs/modelling/evaluation-protocol.md` (the real §7 methodology, designed but not yet
+    executed -- states in advance, before any model is trained, that the current pooled
+    primary-outcome positive count (34, pre-dedup) is close to or below the brief's own
+    30-positive "inconclusive" floor, so a later inconclusive result can't be read as a
+    post-hoc excuse), `docs/adr/0006-risk-modelling.md` (the real design decisions made so
+    far, and the ones still pending), README phase-status section updated.
+  - Still blocked (§6-§8's own remaining pieces: train-risk/backtest/leakage-check/
+    ablation/score/model-card commands, `docs/modelling/model-card.md`,
+    `docs/experiments/<id>.md`) -- these need a trained model, which needs the IBBI crawl
+    to finish first, per the user's explicit condition.
+  - All tests green: full suite including integration, 337/337; ruff + mypy clean.
+
 ## Not yet started
 
 §6 (LightGBM models), §7 (walk-forward eval + leakage controls -- BLOCKED until the
 full-universe IBBI crawl finishes or is honestly stopped, per the user's explicit
-condition), §8 (scoring + storage), §9 (rest of the Dagster pipeline + commands), §10
-(tests), §11 (documentation set), §12 (run and verify), §13 (final commit/backup for
-§2-15, `phase-3:` prefix), §14 (exit gates), §15 (final report).
+condition), §8 (scoring + storage), the blocked parts of §9 (train-risk/backtest/
+leakage-check/ablation/score/model-card commands) and §11 (model-card.md,
+docs/experiments/<id>.md), §10 (the leakage-check/ablation/survivorship tests, which need
+real training data), §12 (run and verify), §13 (final commit/backup for §2-15,
+`phase-3:` prefix), §14 (exit gates), §15 (final report).
 
 ## Exact next step
 

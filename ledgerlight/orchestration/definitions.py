@@ -376,6 +376,59 @@ def knowledge_pipeline_job() -> None:
     resolve_entities_op(after=extracted)
 
 
+def _run_script_main(script_name: str) -> int:
+    """Loads one scripts/*.py module's main() and calls it, the same
+    dynamic-import technique this project's own tests already use
+    (scripts/ is deliberately not a package -- see its CLI-first
+    docstrings) -- so a Dagster op can drive the exact same idempotent
+    build logic a human runs by hand, without a parallel reimplementation."""
+    import importlib.util
+    from pathlib import Path
+
+    repo_root = Path(__file__).resolve().parents[2]
+    spec = importlib.util.spec_from_file_location(
+        script_name.replace("/", "_").removesuffix(".py"), repo_root / script_name
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return int(module.main())
+
+
+@dg.op(name="outcomes_build", retry_policy=_RETRY_POLICY)
+def outcomes_build_op(context: OpExecutionContext) -> None:
+    """Phase 3 §3/§9 asset stage "outcomes": populate real Outcome rows
+    -- see scripts/populate_outcomes.py. Idempotent (skips already-
+    existing (event_type, company, event_time) rows)."""
+    exit_code = _run_script_main("scripts/populate_outcomes.py")
+    context.log.info(f"outcomes_build: exit_code={exit_code}")
+
+
+@dg.op(name="feature_snapshots_build", retry_policy=_RETRY_POLICY, ins={"after": dg.In(dg.Nothing)})
+def feature_snapshots_build_op(context: OpExecutionContext) -> None:
+    """Phase 3 §4/§9 asset stage "feature_snapshots": builds all three
+    real feature tiers in sequence (STRUCTURED, then the two tiers that
+    reuse its (company_id, as_of) grid). Each script upserts on
+    conflict, so re-running is safe and idempotent per feature_set_version."""
+    for script_name in (
+        "scripts/build_feature_snapshots.py",
+        "scripts/build_rule_verified_features.py",
+        "scripts/build_seed_governance_features.py",
+    ):
+        exit_code = _run_script_main(script_name)
+        context.log.info(f"feature_snapshots_build: {script_name} exit_code={exit_code}")
+
+
+@dg.job(name="outcomes_and_features_build_job")
+def outcomes_and_features_build_job() -> None:
+    """The real "outcomes -> feature_snapshots" asset chain the brief's
+    §9 asks for, as an op-based job (matching this file's existing
+    convention for every other Phase 3 build step -- e.g. care/ibbi/sebi
+    discovery -- rather than introducing `@dg.asset` only here)."""
+    built = outcomes_build_op()
+    feature_snapshots_build_op(after=built)
+
+
 defs = dg.Definitions(
     assets=[bhavcopy_daily],
     jobs=[
@@ -385,6 +438,7 @@ defs = dg.Definitions(
         care_discovery_job,
         ibbi_discovery_job,
         sebi_discovery_job,
+        outcomes_and_features_build_job,
         *known_items_jobs.values(),
     ],
     schedules=[bhavcopy_daily_schedule],
