@@ -33,6 +33,16 @@ Isotonic regression only if the inner-validation calibration fold has >= 50 real
 
 **Deployment gap, disclosed**: the per-fold calibration map is not persisted with the final deployed artifact (`scripts/train_risk.py`); `scripts/score.py` reports `calibrated_probability == raw_probability` for that reason.
 
+## Reliability diagram (pooled LightGBM, real bins)
+
+No plotting library is a project dependency, so this is a real markdown table of the same (mean predicted probability, mean real outcome, bin count) triples a reliability diagram plots -- not a rendered image. A human can plot these points directly; re-running `scripts/model_card.py` regenerates this table from the real pooled test predictions.
+
+| mean predicted | mean actual | n |
+|---|---|---|
+| 0.000 | 0.222 | 108 |
+| 0.191 | 0.429 | 21 |
+| 0.240 | 0.200 | 15 |
+
 ## Coverage limits
 
 Only 5 companies in all of this project's universe have both real IBBI and real CARE coverage -- far smaller than the 15-company SEED-track set used elsewhere in this project. Most price-liquidity features are 55-100% missing in 2023-2025 within this universe (see `ledgerlight.modelling.data_quality_report`).

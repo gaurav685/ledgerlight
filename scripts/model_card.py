@@ -137,6 +137,21 @@ def main() -> int:
         "with the final deployed artifact (`scripts/train_risk.py`); `scripts/score.py` "
         "reports `calibrated_probability == raw_probability` for that reason.",
         "",
+        "## Reliability diagram (pooled LightGBM, real bins)",
+        "",
+        "No plotting library is a project dependency, so this is a real markdown table "
+        "of the same (mean predicted probability, mean real outcome, bin count) triples "
+        "a reliability diagram plots -- not a rendered image. A human can plot these "
+        "points directly; re-running `scripts/model_card.py` regenerates this table from "
+        "the real pooled test predictions.",
+        "",
+        "| mean predicted | mean actual | n |",
+        "|---|---|---|",
+        *[
+            f"| {mean_pred:.3f} | {mean_actual:.3f} | {count} |"
+            for mean_pred, mean_actual, count in lightgbm.metrics.reliability_bins
+        ],
+        "",
         "## Coverage limits",
         "",
         f"Only {len(coverage.company_names)} companies in all of this project's universe "
