@@ -69,8 +69,36 @@ one-time patches.
 
 ## IBBI full-universe discovery coverage
 
-**Pending.** The full-universe IBBI discovery crawl (`scripts/ibbi_universe_discovery.py`)
-was still running as of this document's last update (145 real IBBI documents, growing).
-Per the user's explicit condition: this section must be filled with the crawl's real,
-final date/company coverage once it finishes or is honestly stopped, BEFORE any §6/§7
-training or backtest work proceeds. Do not fill this section with an estimate.
+**Honestly stopped, coverage recorded** (2026-10-31). The full-universe crawl
+(`scripts/ibbi_universe_discovery.py`) was stopped, not allowed to run to completion.
+
+**Why stopped, not completed**: real throughput measurement during this run showed only
+**72 distinct real company-name searches** issued across the crawl's entire lifetime
+(spanning multiple session restarts, including the original 15-company SEED-track
+baseline), against a real target universe of ~2,617 currently-listed companies -- roughly
+**2.75% of the universe**, after approximately 3h42m of real elapsed run time in this
+session's final restart alone. At that real rate, completing the full universe would take
+several real days, not the originally-estimated 1.5-3 hours. That original estimate was
+wrong -- disclosed here plainly, not hidden. IBBI's own per-company rate limit, combined
+with this project's own politeness delay and the pagination retries needed per company
+(§2.3's real hard-404 pagination bug fix), is simply much slower in practice than
+estimated in advance.
+
+**Real final coverage, as of the stop**:
+- **154** real IBBI documents (`documents` table, `source_id='ibbi'`) -- up from the
+  55-document SEED-track-only baseline (+99 new real documents from the broadening).
+- Real `known_at` range: **2017-08-17 to 2026-10-25**.
+- **29** distinct real companies with at least one auto-linked IBBI `Filing` row (up from
+  the SEED-track baseline; confirmed via `scripts/link_filings.py`'s real re-run,
+  `docs/phase-3/evidence/link-filings-run-post-sec3-broadening.log`).
+- Evidence: `docs/phase-3/evidence/ibbi-crawl-final-coverage.log` (the exact query and
+  output this section is built from), `docs/phase-3/evidence/ibbi-universe-discovery-run3.log`.
+
+**What this means for downstream work**: `IBBI_CIRP_ADMISSION` outcome coverage now
+extends modestly beyond the original 15 SEED-track companies (to the 29 companies with a
+real auto-linked Filing), but is still far short of the full currently-listed universe.
+This is a real, disclosed, partial result -- not the full-universe coverage originally
+intended, and not silently presented as if it were. A future session wanting fuller IBBI
+coverage should budget multiple real days for the crawl, or pursue a different discovery
+strategy (e.g. a bulk IBBI order-listing endpoint rather than one search-and-paginate
+request per company, if one exists and is compliant).

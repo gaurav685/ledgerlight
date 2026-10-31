@@ -38,15 +38,16 @@ rather than being designed after seeing results.
 - Company-clustered bootstrap, 95% intervals, on every key metric (clustering by company
   so a single company's correlated monthly observations don't understate the real
   variance).
-- **Real, disclosed expectation, stated here in advance so it cannot be read as a
-  post-hoc excuse**: as of this document's writing, the real pooled `PRIMARY_DISTRESS`
-  positive count (`IBBI_CIRP_ADMISSION` 20 + `RATING_DOWNGRADE_D` 14, before company-level
-  dedup and before the full-universe IBBI crawl finishes) is **34**, and likely fewer
-  after dedup -- already close to, and quite possibly under, the brief's own 30-positive
-  floor. Per the brief: if pooled positives are below 30, the result **must** be reported
-  as statistically inconclusive, with no claim of predictive skill. This is a realistic,
-  likely outcome for this specific real dataset, not a hypothetical -- it will be reported
-  plainly if it occurs, not hidden or hedged around with an unjustified threshold change.
+- **Real, final count, after the full-universe IBBI crawl was honestly stopped and
+  outcomes rebuilt (2026-10-31)**: the real pooled `PRIMARY_DISTRESS` positive count
+  (`IBBI_CIRP_ADMISSION` 31 ∪ `RATING_DOWNGRADE_D` 14, by distinct company) is **31** --
+  right at the brief's own 30-positive floor for "statistically inconclusive, no
+  predictive-skill claim." This number is itself the product of catching and fixing two
+  real detection bugs found by direct inspection during the rebuild (a naive heuristic
+  had inflated it to 101 before the fixes -- see `docs/modelling/outcomes.md` §2.1). Stated
+  here plainly, before any model is trained: whichever side of the 30-positive line the
+  real walk-forward split's pooled count lands on, it will be reported as such, not hidden
+  or hedged around with an unjustified threshold change.
 
 ## Leakage checks (automated tests AND a report)
 

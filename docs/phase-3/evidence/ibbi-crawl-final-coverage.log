@@ -1,0 +1,3 @@
+FINAL ibbi documents: 154
+FINAL known_at range: (datetime.datetime(2017, 8, 17, 18, 30, tzinfo=zoneinfo.ZoneInfo(key='Etc/UTC')), datetime.datetime(2026, 10, 25, 15, 2, 13, 397034, tzinfo=zoneinfo.ZoneInfo(key='Etc/UTC')))
+distinct companies with an ibbi Filing: 29

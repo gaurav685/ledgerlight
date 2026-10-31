@@ -486,45 +486,110 @@ exact next step is below, not left to be re-derived.
     GUIDANCE_MISS boundary tests: N/A, §5 concluded limits stated, nothing to test.
   - All tests green: full suite including integration, 346/346; ruff + mypy clean.
 
+- **Full-universe IBBI crawl honestly stopped, outcomes rebuilt, two real detection bugs
+  found and fixed (user's explicit condition 1)**: COMPLETE.
+  - **Crawl stopped, not completed.** After ~3h42m of real elapsed run time (started
+    15:22, stopped ~19:04), real throughput measurement showed only 72 distinct real
+    company-name searches issued across the crawl's entire lifetime, against the real
+    ~2,617-company target universe -- ~2.75%. The original 1.5-3 hour estimate was wrong
+    by roughly two orders of magnitude; disclosed plainly, not hidden. Full coverage
+    recorded in `docs/modelling/data-quality.md`'s dedicated IBBI section: 154 real IBBI
+    documents (up from the 55-document SEED-track baseline), known_at 2017-08-17 to
+    2026-10-25, 29 distinct companies with a real auto-linked Filing.
+  - **Extraction**: `scripts/process.py` (the generic, full-corpus tool) was tried first
+    and killed after ~100 minutes with 0 new pages committed -- found by reading
+    `ledgerlight/processing/batch.py` that `run_process_all` has no intermediate commits,
+    so a run touching the full 2,621-version corpus risks losing all progress if killed.
+    Wrote `scripts/process_ibbi_backlog.py` instead: scoped to just the real 101
+    unprocessed IBBI versions, committing after every single document. Real run: 93/101
+    processed, 1,189 pages, 53 via OCR, 8 real `_process_pdf_worker` 120s timeouts on
+    especially large scanned documents (disclosed, not silently dropped).
+  - **Re-ran `link_filings.py`**: 53 new real `Filing` rows (38→71+ distinct linked
+    companies). **Re-ran `populate_outcomes.py`**: `IBBI_CIRP_ADMISSION` naively jumped
+    20→101 -- investigated by hand before trusting it (this project's standing
+    discipline), and found two real, serious, previously-undetected detection bugs:
+    1. **IBBI's per-company search returns every document mentioning a company** --
+       petition filings, hearing/attendance sheets, and dismissal/withdrawal orders, not
+       only genuine admissions. Caught concretely: "ABB India Limited" (a real, large,
+       listed, never-insolvent company) showed up as an admission purely because its one
+       discovered document is a Section 12A **withdrawal** order. 56% of the newly
+       broadened companies (33/59) had only one real IBBI document on file, with no
+       independent evidence of its real order type.
+    2. A loose, non-directional "admitted...Petition" fix for (1) created a SECOND real
+       false positive: matched "the Corporate Debtor...admitted its liability to make the
+       payment of the three outstanding invoices. 11. The Petitioner..." -- the debtor
+       admitting a DEBT, not the tribunal admitting the case. Fixed by requiring the
+       strict, directional "Petition IS/WAS/STANDS admitted" form only.
+    Real fix: `_ADMISSION_LANGUAGE_PATTERN` now requires genuine admission-confirming
+    text (a declared moratorium, "CIRP was initiated", or the strict admitted-petition
+    form) in at least one discovered document per case; cases with none are skipped
+    entirely (64 real cases correctly excluded this way, printed by the script itself),
+    never defaulted to "admitted". 6 regression tests encode the real checked cases
+    (DHFL's genuine match; ABB's withdrawal correctly rejected; the debt-admission false
+    positive correctly rejected; ABINFRA correctly falls back to its OTHER genuinely
+    qualifying document once the bad one is excluded).
+  - **Real final counts, before vs. after the full rebuild** (full evidence:
+    `docs/phase-3/evidence/outcomes-before-ibbi-rebuild.log`,
+    `outcomes-after-ibbi-rebuild-final.log`):
+
+    | outcome_type | before | after |
+    |---|---|---|
+    | `PRIMARY_IBBI_ADMISSION` | 20 | **31** |
+    | `PRIMARY_RATING_DOWNGRADE_D` | 14 | 14 (CARE discovery not broadened) |
+    | `SECONDARY_SEVERE_DRAWDOWN` | 7,463 | 7,514 |
+    | `SECONDARY_BHAVCOPY_DISAPPEARANCE` | 831 | 835 |
+    | `SECONDARY_SEBI_ORDER` | 69 | 69 |
+
+    `PRIMARY_IBBI_ADMISSION` by year (after): 2017:0, 2019:2, 2020:2, 2021:1, 2022:1,
+    2023:9, 2024:10, 2025:3, 2026:3. Pooled `PRIMARY_DISTRESS` positives (distinct
+    companies, `IBBI_CIRP_ADMISSION` ∪ `RATING_DOWNGRADE_D`): **31** -- right at the
+    brief's own 30-positive inconclusive floor (already flagged in
+    `docs/modelling/evaluation-protocol.md`, now with the real final number).
+  - **Rebuilt affected feature snapshots**: `rule-verified-1.0` rebuilt (38→71 companies,
+    3,241→6,316 rows) to pick up the new real Filing/outcome data. Re-ran the exit-gate-4
+    point-in-time proof after the rebuild: still **100%, 0 violations**
+    (`docs/phase-3/evidence/point-in-time-proof-post-ibbi-rebuild.log`).
+  - Outcome DEFINITIONS stayed frozen throughout (same spec hash,
+    `d879a2874d063b0025820ce52223e443b5b14d7c8746aa8d9e3117e4f3503e1b`) -- only the
+    populated rows refreshed, per the user's explicit condition.
+  - All tests green: full suite including integration, 352/352; ruff + mypy clean.
+
 ## Not yet started
 
-§6 (LightGBM models), §7 (walk-forward eval + leakage controls -- BLOCKED until the
-full-universe IBBI crawl finishes or is honestly stopped, per the user's explicit
-condition), §8 (scoring + storage), the blocked parts of §9 (train-risk/backtest/
-leakage-check/ablation/score/model-card commands) and §11 (model-card.md,
-docs/experiments/<id>.md), the blocked parts of §10 (embargo/fold test, calibration-rule
-test, get_score test, leakage tests, the small-real-slice integration test), §12 (run and
-verify), §13 (final commit/backup for §2-15, `phase-3:` prefix), §14 (exit gates), §15
-(final report).
+§6 (LightGBM models), §7 (walk-forward eval + leakage controls -- **UNBLOCKED** as of
+2026-10-31: the IBBI crawl's stop-and-rebuild condition is satisfied), §8 (scoring +
+storage), the remaining parts of §9 (train-risk/backtest/leakage-check/ablation/score/
+model-card commands) and §11 (model-card.md, docs/experiments/<id>.md), the remaining
+parts of §10 (embargo/fold test, calibration-rule test, get_score test, leakage tests,
+the small-real-slice integration test), §12 (run and verify), §13 (final commit/backup
+for §2-15, `phase-3:` prefix), §14 (exit gates), §15 (final report).
 
 ## Exact next step
 
-1. The full-universe IBBI discovery crawl (`scripts/ibbi_universe_discovery.py`) is running
-   again (relaunched after the Docker crash; PIDs confirmed alive, log growing in
-   `docs/phase-3/evidence/ibbi-universe-discovery-run3.log`). Once it finishes: run
-   `scripts/process.py` (or a scoped extraction job) on whatever new IBBI documents it
-   found, re-run `scripts/link_filings.py` (now kept current, per the Sec4.2 fix above) and
-   `scripts/populate_outcomes.py`, then refresh the counts in `docs/modelling/outcomes.md`,
-   `docs/modelling/outcome-evidence-review.csv`, and this file. Consider broadening CARE
-   discovery to the full universe too (not yet decided/done) -- would also broaden
-   Sec4.2's rating features past the 15 SEED-track companies.
-2. Re-run `scripts/build_feature_snapshots.py`, `scripts/build_rule_verified_features.py`,
-   and `scripts/build_seed_governance_features.py` after any of the above change
-   `price_bars`/`filings`/`events` data, so the feature snapshots stay current -- all three
-   are safely re-runnable (upsert on conflict).
-3. §4 is now fully complete (4.0-4.3: two real bugs fixed; STRUCTURED price/liquidity,
-   RULE-VERIFIED rating/auto-link, and SEED-track governance features all built and
-   verified; financial features explicitly excluded with real evidence). §5 is also now
-   complete -- assessed, limits stated (see the §5 entry below); nothing further to build
-   there unless a new compliant guidance-statement source is acquired in a future phase.
-4. Do NOT run §6 (models)/§7 (walk-forward evaluation) until the full-universe IBBI crawl
-   has finished or is honestly stopped with its coverage recorded (user's explicit
-   condition, 2026-10-31) -- then rebuild the outcomes table and affected feature
-   snapshots, report outcome counts by year before vs. after, and record IBBI date
-   coverage in `docs/data/data-quality.md` (create it if it doesn't exist) before
-   proceeding. The outcome DEFINITIONS stay frozen (same spec hash,
-   `d879a2874d063b0025820ce52223e443b5b14d7c8746aa8d9e3117e4f3503e1b`) -- only the
-   populated rows refresh.
+1. **§6-7 are now unblocked.** The full-universe IBBI crawl was honestly stopped
+   (2026-10-31, after real throughput showed the original estimate was wrong by ~2 orders
+   of magnitude -- see the entry above), its coverage recorded in
+   `docs/modelling/data-quality.md`, and outcomes + affected feature snapshots rebuilt
+   (real counts reported by year, before vs. after, in the entry above). Begin §6: build
+   the real LightGBM PRIMARY model, STRUCTURED + RULE-VERIFIED features only (enforced by
+   `ledgerlight.modelling.feature_policy.assert_primary_model_feature_policy`, already
+   built and tested). Read §6 of the brief closely. Given the real pooled positive count
+   is 31 (right at the brief's own 30-positive inconclusive floor), be prepared for -- and
+   report plainly if it occurs -- a statistically inconclusive result; this was explicitly
+   flagged in advance in `docs/modelling/evaluation-protocol.md`, not discovered after
+   the fact.
+2. Then §7: implement the real walk-forward fold builder per
+   `docs/modelling/evaluation-protocol.md`'s already-designed methodology (expanding
+   yearly outer folds, >=12-month embargo), the remaining leakage tests (outcome-date,
+   embargo enforcement, label-permutation, feature-shift, the deliberately-leaky-feature
+   catch), survivorship reporting, and the ablation arms (a)/(b)/(c).
+3. Consider broadening CARE discovery to the full universe too (not yet decided/done) --
+   would also broaden §4.2's rating features and `RATING_DOWNGRADE_D` past the 15
+   SEED-track companies; currently still SEED-track-only.
+4. Re-run `scripts/build_feature_snapshots.py`, `scripts/build_rule_verified_features.py`,
+   and `scripts/build_seed_governance_features.py` after any further change to
+   `price_bars`/`filings`/`events` data, so the feature snapshots stay current -- all
+   three are safely re-runnable (upsert on conflict).
 5. If a future session hits an apparent background-job hang with near-zero CPU growth on
    a heavy document/OCR batch: check this environment's free memory
    (`Get-CimInstance Win32_OperatingSystem`) and the Docker/Garage container logs for

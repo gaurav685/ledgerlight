@@ -10,10 +10,10 @@ backfill; 2.2 CARE; 2.3 IBBI and SEBI discovery broadening; 2.4 entity-link repo
 price/liquidity STRUCTURED features; 4.2 RULE-VERIFIED rating/auto-link features; 4.3
 SEED-track governance features, financial features excluded with real evidence), §5
 (guidance extraction, limits stated), the exit-gate-4 point-in-time proof, §9/§11's
-unblocked parts (real Dagster wiring, Makefile targets, documentation set), and §10's
-unblocked parts (censoring rules, the feature-policy guard) complete.
-§6-7 BLOCKED pending the full-universe IBBI crawl (user's explicit condition)** -- see the
-note at the end of §9/§11. §2.1's bhavcopy
+unblocked parts (real Dagster wiring, Makefile targets, documentation set), §10's
+unblocked parts (censoring rules, the feature-policy guard), and the full-universe IBBI
+crawl stop + outcomes rebuild (two more real bugs found and fixed) complete.
+**§6-7 now UNBLOCKED** -- see the note after §10. §2.1's bhavcopy
 backfill surfaced real findings of its own: the exhaustively-confirmed 2016-01-01
 earliest-available-date boundary, a parsing-pipeline gap for 2016-01 to 2017-01-04, and a
 real environment constraint (a low-memory kill) that took three attempts to work around
@@ -938,18 +938,49 @@ close to or below the brief's own 30-positive inconclusive floor), `docs/adr/
 model-card.md` and `docs/experiments/<id>.md` remain blocked -- they need a trained
 model. Full suite green (337/337 including integration); ruff and mypy clean.
 
-## Status note: §6-7 BLOCKED pending the full-universe IBBI crawl
+## Full-universe IBBI crawl stopped, outcomes rebuilt, two real detection bugs found and fixed
 
-Per the user's explicit condition (2026-10-31): no training, tuning, or backtest (§6-7)
-until the full-universe IBBI discovery crawl has finished, or has been honestly stopped
-with its coverage recorded. After it ends: rebuild the outcomes table and affected
-snapshots, report outcome counts by year before vs. after, and record IBBI date coverage
-in `docs/modelling/data-quality.md`. The outcome definitions stay frozen (same spec hash)
--- only the populated rows refresh. The remaining blocked work (train-risk/backtest/
-leakage-check/ablation/score/model-card commands, the model card, experiment reports, run
-and verify, final commit/backup, exit gates, final report) has not been started. §1, §2
-and §4.0 each involved real, previously-undetected bugs found only by actually running
-the real pipeline against real data and checking results by hand,
+The crawl was honestly stopped (2026-10-31), not completed: after ~3h42m of real elapsed
+run time, real throughput measurement showed only 72 distinct real company searches
+issued against the ~2,617-company target universe (~2.75%) -- the original 1.5-3 hour
+estimate was wrong by roughly two orders of magnitude, disclosed plainly. Full coverage:
+`docs/modelling/data-quality.md`'s dedicated section (154 real IBBI documents, 29
+distinct companies with a real Filing).
+
+Extraction: the generic `scripts/process.py` was tried first and killed after ~100
+minutes with 0 pages committed -- `ledgerlight/processing/batch.py` has no intermediate
+commits, risking all progress on a kill. Wrote `scripts/process_ibbi_backlog.py` instead,
+scoped and committing per document: 93/101 processed, 8 real OCR timeouts disclosed.
+
+Re-running `populate_outcomes.py` naively grew `IBBI_CIRP_ADMISSION` 20→101 -- investigated
+by hand before trusting it, per this project's standing discipline, and found two real,
+serious bugs: (1) IBBI's per-company search returns every document mentioning a company
+(petition filings, hearing sheets, dismissal/withdrawal orders), not only admissions --
+caught concretely via "ABB India Limited" (real, large, listed, never-insolvent) showing
+up as an admission because its one discovered document is a Section 12A withdrawal order;
+(2) the loose fix for (1) created a second false positive matching "the Corporate Debtor
+admitted its liability to make the payment... 11. The Petitioner..." -- a debt admission,
+not a case admission. Real fix: `_ADMISSION_LANGUAGE_PATTERN` requires genuine
+admission-confirming text (declared moratorium, "CIRP was initiated", or the strict
+"Petition IS/WAS admitted" form) before any case counts; 64 real cases correctly excluded
+for lacking it. 6 regression tests encode the real checked cases.
+
+**Real final counts, before vs. after**: `PRIMARY_IBBI_ADMISSION` 20→**31**;
+`PRIMARY_RATING_DOWNGRADE_D` unchanged at 14 (CARE not broadened); `SEVERE_DRAWDOWN`
+7,463→7,514; `BHAVCOPY_DISAPPEARANCE` 831→835; `SEBI_ORDER` unchanged at 69. Pooled
+`PRIMARY_DISTRESS` positives (distinct companies): **31** -- right at the brief's own
+30-positive inconclusive floor. `rule-verified-1.0` feature snapshots rebuilt (38→71
+companies, 3,241→6,316 rows); the exit-gate-4 point-in-time proof re-run after the
+rebuild: still 100%, 0 violations. Outcome definitions stayed frozen throughout (same
+spec hash) -- only the populated rows refreshed. Full suite green (352/352 including
+integration); ruff and mypy clean.
+
+**§6-7 are now unblocked** -- the crawl's stop-and-rebuild condition is satisfied. The
+remaining work (train-risk/backtest/leakage-check/ablation/score/model-card commands,
+the model card, experiment reports, run and verify, final commit/backup, exit gates,
+final report) has not been started. §1, §2, §4.0 and this IBBI rebuild each involved
+real, previously-undetected bugs found only by actually running the real pipeline
+against real data and checking results by hand,
 not by assumption (detector false positives; CARE's live search reflecting current entity
 names only; IBBI's hard-404 pagination bug; SpiceJet's real insolvency-petition history
 contradicting its Phase 0 control-group selection; the BSE_CODE bootstrap gap hiding

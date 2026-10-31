@@ -51,49 +51,74 @@ classification of every order.** `scripts/populate_outcomes.py`'s
 `populate_ibbi_admissions` groups a company's real IBBI order documents
 by case number (extracted via `_CASE_NUMBER_PATTERN`, normalized via
 `_normalize_case_number` to the leading digit run — see the DHFL bug
-below) and treats the EARLIEST-dated order found for a given case as
-the admission proxy, since the initiating order in a CIRP case is
-typically its earliest.
+below), and -- as of the 2026-10-31 fix below -- only counts a case as
+an admission if at least one of its real discovered documents contains
+genuine, textual admission-confirming language (a declared Section 14
+moratorium, "CIRP was initiated", or "the petition IS/WAS admitted" in
+that direction specifically). The earliest such *qualifying* document
+is used as the admission proxy. A company with real IBBI documents but
+none containing confirmed admission language gets **no outcome row at
+all** — never defaulted to "admitted".
 
-This can be wrong in two disclosed ways:
-- An earlier, real admission order exists but was not discovered. IBBI
-  coverage, while broadened to the full currently-listed universe, is
-  not a guaranteed-complete archive of every order IBBI has ever
-  issued — it is bounded by what IBBI's own full-text search surfaces
-  for a company's legal name.
-- The earliest-found order for a case is itself a pre-admission
-  procedural order (e.g. an interim application), not the admission
-  order itself.
+This can still be wrong in one disclosed way: an earlier, real
+admission order exists but was not discovered at all. IBBI coverage,
+even after the full-universe broadening (§3), is not a guaranteed-
+complete archive of every order IBBI has ever issued — it is bounded by
+what IBBI's own full-text search surfaces for a company's legal name.
 
-**Real bug found and fixed during population (2026-10-30):** grouping
-by the exact case-number STRING instead of a normalized form caused
-DHFL's single real case (docket 4258/2019) to be split into 4 spurious
-admission events, because the case number was extracted with different
-whitespace/truncation across DHFL's 4 real order documents (`"CP (IB)
-No. 4258/"`, `"CP(IB)No. 4258/"`, `"CP (IB) No. 4258/2019"`, and one
-regex miss → `None`). Fixed by `_normalize_case_number()`, which
-extracts the first ≥2-digit run, collapsing all four real variants to
-`"4258"`. Re-run confirmed: `IBBI_CIRP_ADMISSION` dropped from 33 to 20
-rows project-wide; DHFL specifically dropped from 4 to 3 (the remaining
-2 rows are real, distinct documents with a disclosed, separate
-limitation: 2 of DHFL's real order documents simply do not match
-`_CASE_NUMBER_PATTERN` within the first 2000 characters searched — a
-regex-recall gap, not a grouping/correctness bug). Evidence:
-`docs/phase-3/evidence/populate-outcomes-run1.log` (buggy, 33 rows) vs
-`docs/phase-3/evidence/populate-outcomes-run2-fixed.log` (fixed, 20
-rows).
+**Real bug found and fixed during the original population (2026-10-30):**
+grouping by the exact case-number STRING instead of a normalized form
+caused DHFL's single real case (docket 4258/2019) to be split into 4
+spurious admission events, because the case number was extracted with
+different whitespace/truncation across DHFL's 4 real order documents.
+Fixed by `_normalize_case_number()`. `IBBI_CIRP_ADMISSION` dropped from
+33 to 20 rows project-wide; DHFL specifically dropped from 4 to 3.
 
-Current real row count: **20** `IBBI_CIRP_ADMISSION` rows, as of the
-2026-10-30 fixed run. This is explicitly **partial**: the §3
-full-universe IBBI discovery crawl (`scripts/ibbi_universe_discovery.py`)
-was still running as of this writing (2,617 currently-listed companies
-to check at IBBI's own per-company rate limit; IBBI document count had
-grown from the SEED-track baseline of 55 to 64 at the last check before
-this document was written). `populate_outcomes.py` must be re-run once
-(a) that crawl finishes and (b) `scripts/process.py` has extracted text
-for whatever new IBBI documents it found — `populate_ibbi_admissions`
-joins against `DocumentPage`, so an un-extracted document is invisible
-to it even if fetched.
+**Two further real, more serious bugs found and fixed while rebuilding
+after the full-universe IBBI crawl (2026-10-31):** broadening coverage
+grew `IBBI_CIRP_ADMISSION` from 20 to a naive 101 rows -- but direct
+inspection of real new rows found this heuristic was systematically
+wrong for cases where the only discovered document was NOT itself an
+admission order:
+1. **"ABB India Limited"** (a real, large, listed, never-insolvent
+   company) showed up as an admission purely because its one real
+   discovered IBBI document is a Section 12A **withdrawal** order
+   ("...seeking to dispose of C.P(IB) No.210/BB/2018, as withdrawn"),
+   not an admission. Many of the broadened companies' discovered
+   documents turned out to be petition-FILING notices, routine hearing/
+   attendance sheets, or dismissal/withdrawal orders -- none of which
+   confirm a real admission, since a filed petition can still be
+   dismissed or withdrawn before ever being admitted.
+2. A second false positive surfaced once the first fix was applied: a
+   loose, non-directional "admitted ... Petition" match fired on real
+   text like *"the Corporate Debtor ... admitted its liability to make
+   the payment of the three outstanding invoices. 11. The Petitioner,
+   therefore..."* -- the DEBTOR admitting a **debt**, with "Petition"
+   merely appearing nearby in the next sentence, not the tribunal
+   admitting the case. Fixed by requiring the strict, directional
+   "Petition IS/WAS/STANDS admitted" form only.
+
+Real, concrete validation after both fixes: DHFL's genuine admission
+("the petition was admitted") still correctly matches; ABB is correctly
+excluded entirely (no qualifying document); the debt-admission false
+positive (AEPL) is correctly excluded; a case with multiple discovered
+documents (ABINFRA) correctly falls back to its OTHER, genuinely
+qualifying document once the false-positive one is excluded by the
+guard. 6 regression tests encode all of these real, checked cases
+(`tests/test_populate_outcomes.py`).
+
+**Real final row count: 31** `IBBI_CIRP_ADMISSION` rows (down from the
+naive, wrongly-inflated 101; up from the pre-crawl 20), after: the
+full-universe IBBI crawl was honestly stopped with its coverage
+recorded (`docs/modelling/data-quality.md`); `scripts/process.py`-
+equivalent extraction ran on the new real documents; `link_filings.py`
+and `populate_outcomes.py` were both re-run. 64 real IBBI cases were
+found and correctly EXCLUDED for lacking confirmed admission language --
+printed by the script itself, not hidden. Pooled `PRIMARY_DISTRESS`
+positives (`IBBI_CIRP_ADMISSION` ∪ `RATING_DOWNGRADE_D`, by distinct
+company): **31** -- right at the brief's own 30-positive floor for
+"statistically inconclusive, no predictive-skill claim" (see
+`docs/modelling/evaluation-protocol.md`).
 
 Required fields on the `Event`: `case_number`, `order_date`,
 `retrieval_url`. Evidence: exactly one `EventField` citing the real
@@ -171,8 +196,9 @@ introduced it — raw p5 was -55.73pp vs filtered p5 of -48.69pp. The
 filtered value is the one used as X here; the raw value is kept in the
 evidence log for transparency, not discarded.
 
-Current real row count: **7,462** `SEVERE_DRAWDOWN` rows (purely
-structured; no document evidence applicable — see §4).
+Current real row count: **7,514** `SEVERE_DRAWDOWN` rows, as of the
+2026-10-31 post-crawl rebuild (purely structured; no document evidence
+applicable — see §4).
 
 ### 3.2 SEBI_ORDER_AGAINST_COMPANY
 
@@ -200,8 +226,9 @@ therefore a coarse market-observable PROXY, not a distress
 confirmation, and must be read that way in any downstream analysis or
 model that consumes it.
 
-Current real row count: **801** `BHAVCOPY_DISAPPEARANCE` rows (purely
-structured; no document evidence applicable — see §4).
+Current real row count: **835** `BHAVCOPY_DISAPPEARANCE` rows, as of
+the 2026-10-31 post-crawl rebuild (purely structured; no document
+evidence applicable — see §4).
 
 ## 4. Evidence requirements by tier
 
@@ -278,7 +305,15 @@ rather than re-deriving this logic from prose.
   complete universe-wide ground truth. This must be accounted for in
   any walk-forward evaluation split and reported as a limitation, not
   smoothed over.
-- The full-universe IBBI crawl was still running when this document was
-  written; the row counts above will change on re-run and must be
-  refreshed (and this document updated) once it completes and its
-  output is extracted.
+- The full-universe IBBI crawl was **honestly stopped** (2026-10-31),
+  not run to completion -- only ~2.75% of the real ~2,617-company
+  universe was actually searched before the real throughput measured
+  in this session (72 companies in ~3h42m of real elapsed run time)
+  showed the original 1.5-3 hour estimate was wrong by roughly two
+  orders of magnitude. Full, final coverage detail (including why it
+  was stopped rather than completed) is recorded in
+  `docs/modelling/data-quality.md`'s own dedicated section. The row
+  counts above are the real, final counts after this stop and the
+  subsequent rebuild -- not partial pending a future re-run, though a
+  future session completing more of the universe would still find
+  more real companies and should re-run `populate_outcomes.py` again.

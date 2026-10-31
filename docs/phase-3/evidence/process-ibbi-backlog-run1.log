@@ -1,0 +1,25 @@
+ibbi document_versions to process: 101
+  10/101 done (pages_created=135, errors=2)
+  20/101 done (pages_created=238, errors=3)
+  30/101 done (pages_created=286, errors=4)
+  40/101 done (pages_created=420, errors=4)
+  60/101 done (pages_created=640, errors=7)
+  70/101 done (pages_created=811, errors=7)
+  80/101 done (pages_created=1024, errors=8)
+  90/101 done (pages_created=1109, errors=8)
+  100/101 done (pages_created=1188, errors=8)
+  101/101 done (pages_created=1189, errors=8)
+documents_processed: 93
+pages_created: 1189
+pages_already_present: 0
+ocr_pages: 53
+skipped: 0
+errors: 8
+  83addee2-508f-4bf4-aed3-1e85f8d638b2: processing failed: _process_pdf_worker exceeded 120.0s timeout
+  53d1b1eb-9d08-49cf-95ab-955edb38d02e: processing failed: _process_pdf_worker exceeded 120.0s timeout
+  7aee4a49-e800-41a4-b5ab-230a0e81f24e: processing failed: _process_pdf_worker exceeded 120.0s timeout
+  aa79890e-68c7-434b-80b5-d43f9e41724f: processing failed: _process_pdf_worker exceeded 120.0s timeout
+  331cd473-23a5-48b2-8a0d-e888c371a579: processing failed: _process_pdf_worker exceeded 120.0s timeout
+  2ddfc301-c920-4b50-989c-9b992dd8c3e9: processing failed: _process_pdf_worker exceeded 120.0s timeout
+  6d80cab3-bf71-4d22-a244-969573118ad3: processing failed: _process_pdf_worker exceeded 120.0s timeout
+  83d068ff-9e3d-447b-ac2a-7945776e1bdd: processing failed: _process_pdf_worker exceeded 120.0s timeout

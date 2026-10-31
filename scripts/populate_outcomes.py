@@ -73,6 +73,38 @@ _CASE_NUMBER_PATTERN = re.compile(
 )
 _RATING_D_PATTERN = re.compile(r"\bCARE\s*D\b|\brated\s+'?D'?\b|\bdowngraded\s+to\s+'?D'?\b", re.I)
 
+# Real, serious bug found 2026-10-31 while rebuilding outcomes after the
+# full-universe IBBI crawl: IBBI's own per-company order search returns
+# EVERY real document mentioning a company's name -- petition filings,
+# routine hearing/attendance sheets, and orders that DISMISS or WITHDRAW
+# a case -- not only genuine admission orders. Checked by hand: "ABB
+# India Limited" (a real, large, listed, never-insolvent company) showed
+# up as a spurious admission purely because the ONE real IBBI document
+# discovered for it is a Section 12A WITHDRAWAL order, not an admission.
+# 56% of the newly-broadened companies (33 of 59) had only ONE real IBBI
+# document on file, with no independent evidence of its real order type.
+# A real NCLT admission order always declares a Section 14 moratorium or
+# states the CIRP/CP is admitted/initiated -- require that real,
+# positive textual evidence before ANY case counts as an admission;
+# absence of it means "no reliable evidence of admission found", never
+# "admission confirmed by default".
+_ADMISSION_LANGUAGE_PATTERN = re.compile(
+    r"admitted\s+into\s+CIRP"
+    # Real second false positive found 2026-10-31: a loose "admitted ...
+    # Petition" (no directional requirement) matched AEPL's and
+    # ABINFRA's real text "[Corporate Debtor] admitted its liability
+    # to make the payment ... 11. The Petition[er]..." -- the DEBTOR
+    # admitting a debt, not the tribunal admitting the petition. Only
+    # the strict "Petition IS/WAS/STANDS admitted" direction counts.
+    r"|(?:Company\s+)?Petition[\s\S]{0,60}?(?:is|was|stands)\s+admitted"
+    r"|commencement\s+of\s+moratorium"
+    r"|moratorium[\s\S]{0,100}?came\s+into\s+effect"
+    r"|(?:CIRP|Corporate\s+Insolvency\s+Resolution\s+Process)[\s\S]{0,60}?"
+    r"(?:is|was|stands)\s+(?:initiated|commenced)"
+    r"|moratorium[\s\S]{0,100}?(?:is|shall\s+be|stands)\s+declared",
+    re.IGNORECASE,
+)
+
 
 def _normalize_case_number(raw: str) -> str:
     """Real bug found 2026-10-30: the same real case (DHFL's, docket
@@ -353,35 +385,71 @@ def populate_sebi_orders(session: Session) -> int:
 
 
 def populate_ibbi_admissions(session: Session) -> int:
+    """Real, serious bug fixed 2026-10-31 (see `_ADMISSION_LANGUAGE_PATTERN`'s
+    own comment): IBBI's per-company search returns every real document
+    mentioning a company, not only genuine admission orders -- petition
+    filings, hearing sheets, and dismissal/withdrawal orders all match
+    too. A case now only counts as an admission if at least one of its
+    real discovered documents contains real, positive admission
+    language; cases with no such evidence are skipped entirely, never
+    defaulted to "admitted"."""
     event_type = _get_event_type(session, "IBBI_CIRP_ADMISSION")
     rows = session.execute(
         select(DocumentVersion, Document, DocumentPage)
         .join(Document, Document.id == DocumentVersion.document_id)
         .join(DocumentPage, DocumentPage.version_id == DocumentVersion.id)
         .where(Document.source_id == "ibbi")
+        .order_by(DocumentPage.page_number)
     ).all()
 
-    by_case: dict[tuple[object, str], list[tuple[DocumentVersion, Document, DocumentPage]]] = {}
+    # Group all real pages by document version first -- a multi-page
+    # document must be evaluated as one whole document, not split across
+    # pages that might each match a different (or no) case number.
+    pages_by_version: dict[object, list[tuple[DocumentVersion, Document, DocumentPage]]] = {}
     for version, doc, page in rows:
+        pages_by_version.setdefault(version.id, []).append((version, doc, page))
+
+    DocEntry = tuple[DocumentVersion, Document, "re.Match[str] | None", "DocumentPage | None"]
+    by_case: dict[tuple[object, str], list[DocEntry]] = {}
+    for entries in pages_by_version.values():
+        version, doc, _first_page = entries[0]
         company_id = _company_id_for_document_identifiers(session, doc)
         if company_id is None:
             continue
-        match = _CASE_NUMBER_PATTERN.search(page.raw_text[:2000])
-        case_key = _normalize_case_number(match.group(0)) if match else doc.source_key
-        by_case.setdefault((company_id, case_key), []).append((version, doc, page))
+
+        case_match = None
+        for _v, _d, page in entries:
+            case_match = _CASE_NUMBER_PATTERN.search(page.raw_text[:2000])
+            if case_match:
+                break
+        case_key = _normalize_case_number(case_match.group(0)) if case_match else doc.source_key
+
+        admission_page = None
+        for _v, _d, page in entries:
+            if _ADMISSION_LANGUAGE_PATTERN.search(page.raw_text):
+                admission_page = page
+                break
+
+        by_case.setdefault((company_id, case_key), []).append(
+            (version, doc, case_match, admission_page)
+        )
 
     created = 0
-    for (company_id, _case_number), entries in by_case.items():
-        entries_with_dates = [e for e in entries if e[0].published_at is not None]
-        if not entries_with_dates:
+    skipped_no_admission_language = 0
+    for (company_id, _case_number), case_entries in by_case.items():
+        qualifying = [e for e in case_entries if e[3] is not None and e[0].published_at is not None]
+        if not qualifying:
+            skipped_no_admission_language += 1
             continue
-        version, doc, page = min(
-            entries_with_dates, key=lambda e: e[0].published_at or dt.datetime.max
+        version, doc, case_match, admission_page = min(
+            qualifying, key=lambda e: e[0].published_at or dt.datetime.max
         )
         assert version.published_at is not None
+        assert admission_page is not None
         if _event_exists(session, event_type.id, company_id, version.published_at):
             continue
-        match = _CASE_NUMBER_PATTERN.search(page.raw_text[:2000])
+        admission_match = _ADMISSION_LANGUAGE_PATTERN.search(admission_page.raw_text)
+        assert admission_match is not None
         event = Event(
             event_type_id=event_type.id,
             company_id=company_id,
@@ -390,7 +458,7 @@ def populate_ibbi_admissions(session: Session) -> int:
             severity="high",
             status="candidate",  # pending the brief's required human spot-check
             detector_name="populate_outcomes.ibbi_admissions",
-            detector_version="1",
+            detector_version="2",  # v2: requires real admission language, see above
             confidence=0.6,  # disclosed heuristic, not a verified classification
         )
         session.add(event)
@@ -398,17 +466,17 @@ def populate_ibbi_admissions(session: Session) -> int:
         session.add(
             EventField(
                 event_id=event.id,
-                field_name="case_number",
-                value_json=match.group(0).strip() if match else None,
-                normalized_value=match.group(0).strip() if match else None,
+                field_name="admission_language",
+                value_json=admission_match.group(0).strip(),
+                normalized_value=admission_match.group(0).strip(),
                 evidence_version_id=version.id,
-                evidence_page=page.page_number,
-                evidence_char_start=match.start() if match else 0,
-                evidence_char_end=match.end() if match else 0,
+                evidence_page=admission_page.page_number,
+                evidence_char_start=admission_match.start(),
+                evidence_char_end=admission_match.end(),
                 extractor_name="populate_outcomes.ibbi_admissions",
-                extractor_version="1",
+                extractor_version="2",
                 confidence=0.6,
-                validation_status="validated" if match else "unverifiable",
+                validation_status="validated",
             )
         )
         session.add(
@@ -417,14 +485,19 @@ def populate_ibbi_admissions(session: Session) -> int:
                 outcome_type="PRIMARY_IBBI_ADMISSION",
                 outcome_value={
                     "retrieval_url": doc.source_key,
-                    "case_number": match.group(0).strip() if match else None,
+                    "case_number": case_match.group(0).strip() if case_match else None,
+                    "admission_language_matched": admission_match.group(0).strip(),
                     "spec_version": "outcomes-1.0",
-                    "heuristic": "earliest_order_per_case_number",
+                    "heuristic": "earliest_order_with_real_admission_language_per_case_number",
                 },
                 observed_at=version.published_at,
             )
         )
         created += 1
+    print(
+        f"  ibbi_admissions: cases skipped for lacking real admission "
+        f"language: {skipped_no_admission_language}"
+    )
     session.commit()
     return created
 
