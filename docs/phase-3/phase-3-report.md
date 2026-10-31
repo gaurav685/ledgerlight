@@ -6,10 +6,10 @@ Git policy honoured throughout: every commit is local-only, no remote configured
 **Status: §1 (preflight, selection fix, detector hardening), §2 in full (2.1 bhavcopy
 backfill; 2.2 CARE; 2.3 IBBI and SEBI discovery broadening; 2.4 entity-link reporting),
 §3 (outcome definitions, spec complete, data population partial and disclosed as such),
-§4.0 (two real data-integrity bugs found and fixed while starting the price-feature
-engine), §4.1 (UNIVERSE track price/liquidity STRUCTURED features, real snapshots built),
-and §4.2 (RULE-VERIFIED rating and prior auto-linked-history features) complete. §4.3
-onward not yet started** -- see the note at the end of §4.2. §2.1's bhavcopy
+and §4 in full (4.0 two real data-integrity bugs found and fixed; 4.1 UNIVERSE track
+price/liquidity STRUCTURED features; 4.2 RULE-VERIFIED rating/auto-link features; 4.3
+SEED-track governance features, financial features excluded with real evidence) complete.
+§5 onward not yet started** -- see the note at the end of §4.3. §2.1's bhavcopy
 backfill surfaced real findings of its own: the exhaustively-confirmed 2016-01-01
 earliest-available-date boundary, a parsing-pipeline gap for 2016-01 to 2017-01-04, and a
 real environment constraint (a low-memory kill) that took three attempts to work around
@@ -811,10 +811,43 @@ pre-existing seed document, since CARE discovery was never broadened past the 15
 SEED-track universe), and one real 2011 SEBI filing -- checked by hand, no attribution bug
 found. Full suite green (331/331 including integration); ruff and mypy clean.
 
-## Status note: §4.3 onward not yet started
+## §4.3: SEED-track governance features + financial features assessment
 
-Sections 4.3-15 of this phase's brief (SEED-track/financial features,
-guidance extraction,
+`ledgerlight/modelling/seed_governance_features.py`: counts of the 9 real governance event
+codes (GUIDANCE_MISS excluded -- that is §5's own feature), trailing 12 months, tagged by
+real tier. Checked the real project-wide distribution first: every governance event in
+this corpus is still `status='candidate'` (0 verified anywhere), matching Phase 1 §1.5's
+finding that no event type clears the gold-reliability bar -- reported plainly.
+
+Found and disclosed a real, structural limitation while spot-checking Vakrangee's real
+AUD_RESIGN events: investor-relations-sourced documents get `known_at = retrieved_at` per
+`ledgerlight.db.temporal`'s deliberate policy, so a real 2017-12-31 announcement carries
+`known_at` = this project's own 2026-10-25 fetch date. Confirmed in the real built
+snapshots: Vakrangee's trailing-12m count is 0 every month except the one month this
+project's acquisition actually ran -- a one-time step function, not a genuine temporal
+signal. Real run: 15/15 SEED-track companies, 1,406 `FeatureSnapshot` rows. "Pledge level
+from structured numbers" is explicitly not built: no structured pledge-level source exists
+in this corpus, disclosed rather than approximated.
+
+**Financial features excluded with real evidence.** Attempted extraction against the only
+2 real annual-report documents in this corpus (339 real pages, 67 with a relevant label); a
+simple rule-based extractor produced 94 candidates, 7 checked by hand against their real
+page text -- at least 3 of 7 were genuine mismatches (an accounting-policy heading with no
+real number on that line; a "Profit After Tax" match that actually grabbed a "No. of
+Customers" KPI from a nearby infographic). Roughly 40-50% real accuracy, nowhere near the
+brief's own 90% bar, and n=2 documents is too small a sample regardless. Excluded per the
+brief's explicit fallback rather than shipping an untested extractor.
+
+Full suite green (336/336 including integration); ruff and mypy clean. §4 (point-in-time
+features) is now complete in full: two real bugs found and fixed (§4.0), STRUCTURED
+price/liquidity (§4.1), RULE-VERIFIED rating/auto-link (§4.2), and SEED-track governance
+(§4.3) features all built, tested and spot-verified against real company history;
+financial features explicitly excluded with real evidence, not silently skipped.
+
+## Status note: §5 onward not yet started
+
+Sections 5-15 of this phase's brief (guidance
+extraction,
 LightGBM risk modelling with calibration and SHAP, walk-forward evaluation with
 leakage/survivorship controls, scoring infrastructure, the rest of the Dagster pipeline,
 the full test suite, the documentation set, and this report's remaining sections) have not

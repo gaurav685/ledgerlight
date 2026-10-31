@@ -341,10 +341,53 @@ exact next step is below, not left to be re-derived.
     checked the real document dates by hand, found no attribution bug).
   - All tests green: full suite including integration, 331/331; ruff + mypy clean.
 
+- **§4.3 SEED-track governance features + financial features assessment**: COMPLETE for
+  governance features; financial features EXCLUDED with real evidence, per the brief's own
+  explicit fallback.
+  - `ledgerlight/modelling/seed_governance_features.py`: counts of the 9 real governance
+    event codes (AUD_RESIGN, PLEDGE_UP, KMP_EXIT, ID_EXIT, RATING_ACT, RESULT_DELAY,
+    AUDIT_QUAL, FORENSIC, RPT_GROWTH -- GUIDANCE_MISS excluded, that is Sec5's own feature),
+    trailing 12 months, tagged by real tier (CANDIDATE/VERIFIED). Checked the real
+    project-wide distribution first: every governance event in this corpus is still
+    `status='candidate'` (0 verified anywhere) -- matches Phase 1 Sec1.5's finding that no
+    event type clears the gold-reliability bar. Reported plainly, not hidden.
+  - **Found and disclosed a real, structural limitation** while spot-checking Vakrangee's
+    real AUD_RESIGN events: `known_at_basis='retrieved_at'` for investor-relations-sourced
+    documents (not SEBI/IBBI/CARE/NSE), per `ledgerlight.db.temporal`'s own deliberate
+    policy -- so a real 2017-12-31 auditor-resignation announcement carries
+    `known_at`=2026-10-25 (this project's own fetch date), not its real publish date.
+    Confirmed in the real built snapshots: Vakrangee's `aud_resign_candidate_count_12m`
+    is 0 for every month except 2026-10-31 (6), exactly the predicted one-time step
+    function pinned to this project's own acquisition date, not a genuine temporal signal.
+    5 unit tests including an explicit leakage check. Real run: 15/15 SEED-track companies
+    matched, 1,406 `FeatureSnapshot` rows (`seed-governance-1.0`).
+  - "Pledge level and change from structured numbers" (the brief's own wording) is
+    explicitly NOT built: no structured pledge-level data source exists in this project's
+    real corpus (confirmed, `docs/data/source-inventory.md` has no pledge-data entry) --
+    disclosed as a real gap, not approximated from the text-derived `PLEDGE_UP` candidates.
+  - **Financial features (revenue/receivables/CFO/PAT span-cited extraction)**: attempted
+    real extraction against the only 2 real annual-report documents in this corpus
+    (Brightcom, Thermax; 339 real extracted pages, 67 containing a relevant label). A
+    simple rule-based "label + nearby number" extractor produced 94 real candidates;
+    manually checked 7 by direct inspection against their real page text. Real result: at
+    least 3 of 7 were genuine mismatches found by hand (e.g. "Trade Receivables - At
+    Amortised Cost" is an accounting-policy heading with no number on that line, so the
+    nearby-number heuristic grabbed an unrelated figure further down the page; one
+    "Profit After Tax" match actually grabbed a "No. of Customers" KPI from a nearby
+    infographic) -- roughly 40-50% real accuracy, nowhere near the brief's own required
+    90% span-verification pass rate. **Excluded per the brief's explicit fallback**
+    ("otherwise exclude them and say why"): n=2 real documents is also too small a sample
+    to support ANY extraction claim regardless of accuracy, and real financial-statement
+    tables need layout-aware parsing this project's raw-text extraction doesn't do --
+    disclosed plainly rather than shipping an untested, unreliable extractor. Evidence:
+    `docs/phase-3/evidence/` (the real candidate list and manual-check findings are in
+    this progress entry, not a separate committed script, since the attempt was correctly
+    abandoned rather than productionized).
+  - All tests green: full suite including integration, 336/336; ruff + mypy clean.
+
 ## Not yet started
 
-§4.3 onward (SEED-track governance features; financial features), §5 (guidance
-extraction), §6 (LightGBM models), §7 (walk-forward eval + leakage controls), §8 (scoring +
+§5 (guidance extraction), §6 (LightGBM models), §7 (walk-forward eval + leakage controls), §8 (scoring +
 storage), §9 (rest of the Dagster pipeline + commands), §10 (tests), §11 (documentation
 set), §12 (run and verify), §13 (final commit/backup for §2-15, `phase-3:` prefix), §14
 (exit gates), §15 (final report).
@@ -360,15 +403,19 @@ set), §12 (run and verify), §13 (final commit/backup for §2-15, `phase-3:` pr
    `docs/modelling/outcome-evidence-review.csv`, and this file. Consider broadening CARE
    discovery to the full universe too (not yet decided/done) -- would also broaden
    Sec4.2's rating features past the 15 SEED-track companies.
-2. Re-run `scripts/build_feature_snapshots.py` and `scripts/build_rule_verified_features.py`
-   after any of the above change `price_bars`/`filings` data, so the feature snapshots stay
-   current -- both are safely re-runnable (upsert on conflict).
-3. Begin §4.3: SEED-track governance features (full event set with tier shown, from
-   existing Phase 2 Event/EventField data) and financial features (span-cited extraction of
-   revenue/receivables/CFO/PAT from seed annual reports, ONLY if a checked sample clears the
-   brief's own 90% span-verification pass-rate gate; otherwise exclude and say why). Note: no
-   structured pledge-level data source exists in this project's real corpus (see
-   `docs/data/source-inventory.md`) -- disclose that gap rather than fabricate one.
+2. Re-run `scripts/build_feature_snapshots.py`, `scripts/build_rule_verified_features.py`,
+   and `scripts/build_seed_governance_features.py` after any of the above change
+   `price_bars`/`filings`/`events` data, so the feature snapshots stay current -- all three
+   are safely re-runnable (upsert on conflict).
+3. §4 is now fully complete (4.0-4.3: two real bugs fixed; STRUCTURED price/liquidity,
+   RULE-VERIFIED rating/auto-link, and SEED-track governance features all built and
+   verified; financial features explicitly excluded with real evidence). Begin §5:
+   guidance extraction and `GUIDANCE_MISS` (guidance credibility) -- not yet started, not
+   yet even designed. Read §5 of the brief closely; this needs a source of real forward
+   guidance statements (management commentary on future results) to compare against later
+   actual results, which this project has not yet confirmed it has in the real corpus --
+   check `docs/data/source-inventory.md` and the real document corpus before assuming a
+   source exists, same discipline as the pledge-data and financial-features checks above.
 4. If a future session hits an apparent background-job hang with near-zero CPU growth on
    a heavy document/OCR batch: check this environment's free memory
    (`Get-CimInstance Win32_OperatingSystem`) and the Docker/Garage container logs for
