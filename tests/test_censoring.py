@@ -85,3 +85,52 @@ def test_no_trade_history_at_all_falls_through_to_end_of_window_check() -> None:
     assert result.censored is True
     assert result.reason is not None
     assert result.reason.startswith("end_of_window_observation")
+
+
+def test_as_of_before_verified_coverage_window_is_censored() -> None:
+    """User's explicit condition (2026-10-31): a period before the real
+    verified IBBI+CARE coverage window starts must be censored, not
+    treated as a confirmed negative."""
+    result = check_censoring(
+        dt.date(2016, 1, 31),
+        last_real_trade_date=dt.date(2026, 10, 30),
+        data_coverage_end=dt.date(2026, 10, 30),
+        verified_coverage_window=(dt.date(2017, 8, 17), dt.date(2026, 7, 21)),
+    )
+    assert result.censored is True
+    assert result.reason is not None
+    assert result.reason.startswith("unverified_source_coverage")
+
+
+def test_forward_window_past_verified_coverage_end_is_censored() -> None:
+    result = check_censoring(
+        dt.date(2026, 6, 30),
+        last_real_trade_date=dt.date(2026, 10, 30),
+        data_coverage_end=dt.date(2026, 10, 30),
+        verified_coverage_window=(dt.date(2017, 8, 17), dt.date(2026, 7, 21)),
+    )
+    assert result.censored is True
+    assert result.reason is not None
+    assert result.reason.startswith("unverified_source_coverage")
+
+
+def test_within_verified_coverage_window_not_censored_by_that_rule() -> None:
+    result = check_censoring(
+        dt.date(2019, 1, 31),
+        last_real_trade_date=dt.date(2026, 10, 30),
+        data_coverage_end=dt.date(2026, 10, 30),
+        verified_coverage_window=(dt.date(2017, 8, 17), dt.date(2026, 7, 21)),
+    )
+    assert result.censored is False
+
+
+def test_verified_coverage_window_none_skips_that_check() -> None:
+    """Callers evaluating a secondary outcome that doesn't need both
+    sources can omit the parameter entirely -- must not be censored by
+    a rule they never asked for."""
+    result = check_censoring(
+        dt.date(2016, 1, 31),
+        last_real_trade_date=dt.date(2026, 10, 30),
+        data_coverage_end=dt.date(2026, 10, 30),
+    )
+    assert result.censored is False

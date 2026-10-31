@@ -41,6 +41,7 @@ def check_censoring(
     *,
     last_real_trade_date: dt.date | None,
     data_coverage_end: dt.date,
+    verified_coverage_window: tuple[dt.date, dt.date] | None = None,
 ) -> CensoringResult:
     """Real censoring check for one (company, as_of) primary-outcome
     label window [as_of, as_of + 12 months).
@@ -56,23 +57,46 @@ def check_censoring(
     - `data_coverage_end`: this project's own real data coverage end
       (e.g. `price_bars`'s own max trade_date) -- the actual, observed
       limit, never today's wall-clock date.
+    - `verified_coverage_window`: the real `(window_start, window_end)`
+      from `ledgerlight.modelling.coverage.compute_verified_coverage`
+      -- the period during which BOTH IBBI and CARE (rating) sources
+      were actually checked for this company, per the user's explicit
+      condition (2026-10-31). `None` skips this check (e.g. for
+      callers evaluating a secondary outcome that doesn't need both
+      sources).
 
-    Two independent reasons, checked in order so the more specific one
-    wins when both apply:
+    Three independent reasons, checked in order so the most fundamental
+    one wins when more than one applies:
 
-    1. `unknown_trading_stop` -- this company has a REAL, confirmed
+    1. `unverified_source_coverage` -- `as_of` itself precedes the
+       verified coverage window, or the forward horizon extends past
+       its end. Neither IBBI nor CARE discovery was confirmed to have
+       been checked for this period, so a "no trigger observed" result
+       here is not evidence of a real negative -- it may simply be
+       unchecked.
+    2. `unknown_trading_stop` -- this company has a REAL, confirmed
        gap (>= 90 days) between its last trade and the end of this
        project's data coverage (i.e. `BHAVCOPY_DISAPPEARANCE` really
        fired for it), and this window's forward horizon extends past
        the point the gap began. A company still trading at the end of
        coverage never triggers this -- its own "last trade" IS the
        coverage end, so no real gap exists to confirm a disappearance.
-    2. `end_of_window_observation` -- the forward window simply runs
+    3. `end_of_window_observation` -- the forward window simply runs
        past the end of real data coverage, independent of whether this
        company disappeared early. Applies to every company near the
        end of the dataset.
     """
     window_end = _add_months(as_of, HORIZON_MONTHS)
+
+    if verified_coverage_window is not None:
+        coverage_start, coverage_end = verified_coverage_window
+        if as_of < coverage_start or window_end > coverage_end:
+            return CensoringResult(
+                True,
+                f"unverified_source_coverage: as_of {as_of} / forward window end "
+                f"{window_end} falls outside the real verified IBBI+CARE coverage "
+                f"window [{coverage_start}, {coverage_end}]",
+            )
 
     if last_real_trade_date is not None:
         real_gap_days = (data_coverage_end - last_real_trade_date).days
