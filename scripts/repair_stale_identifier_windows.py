@@ -184,6 +184,8 @@ def main() -> int:
                 record_correction(
                     session,
                     identifier_id=uuid.UUID(row["identifier_id"]),
+                    identifier_type=identifier_type,
+                    value=row["value"],
                     old_valid_from=old_valid_from,
                     new_valid_from=new_valid_from,
                     reason="stale_window_repair_bootstrap_predates_backfill",

@@ -169,6 +169,8 @@ def record_correction(
     session: Session,
     *,
     identifier_id: uuid.UUID,
+    identifier_type: str,
+    value: str,
     old_valid_from: dt.date,
     new_valid_from: dt.date,
     reason: str,
@@ -177,14 +179,16 @@ def record_correction(
     session.execute(
         text(
             "INSERT INTO identifier_window_corrections "
-            "(id, identifier_id, old_valid_from, new_valid_from, reason, "
-            " script_name, script_version, applied_at) "
-            "VALUES (:id, :identifier_id, :old_valid_from, :new_valid_from, :reason, "
-            " :script_name, :script_version, now())"
+            "(id, identifier_id, identifier_type, value, old_valid_from, new_valid_from, "
+            " reason, script_name, script_version, applied_at) "
+            "VALUES (:id, :identifier_id, :identifier_type, :value, :old_valid_from, "
+            " :new_valid_from, :reason, :script_name, :script_version, now())"
         ),
         {
             "id": uuid.uuid4(),
             "identifier_id": identifier_id,
+            "identifier_type": identifier_type,
+            "value": value,
             "old_valid_from": old_valid_from,
             "new_valid_from": new_valid_from,
             "reason": reason,

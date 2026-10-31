@@ -102,14 +102,25 @@ class IdentifierWindowCorrection(Base):
     `ledgerlight.ingestion.identifier_window_repair`. Append-only: a row
     here is never updated or deleted, so the full correction history for
     any identifier is always reconstructable from this table alone, not
-    only from a point-in-time pg_dump backup."""
+    only from a point-in-time pg_dump backup.
+
+    `identifier_id` is nullable with `ON DELETE SET NULL`, not a hard
+    reference: `scripts/migrate_company_dedup.py` legitimately deletes
+    and regenerates `company_identifiers` rows (fresh ids) when merging
+    duplicate companies, and that must never be blocked by -- or silently
+    destroy -- this audit trail. `identifier_type`/`value` are
+    denormalized onto this row for exactly that reason, so a correction
+    stays self-describing even after its original identifier row is
+    gone."""
 
     __tablename__ = "identifier_window_corrections"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    identifier_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("company_identifiers.id"), nullable=False
+    identifier_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("company_identifiers.id", ondelete="SET NULL"), nullable=True
     )
+    identifier_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    value: Mapped[str] = mapped_column(String(64), nullable=False)
     old_valid_from: Mapped[dt.date] = mapped_column(Date, nullable=False)
     new_valid_from: Mapped[dt.date] = mapped_column(Date, nullable=False)
     reason: Mapped[str] = mapped_column(Text, nullable=False)

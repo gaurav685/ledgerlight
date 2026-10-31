@@ -1,0 +1,1412 @@
+[
+  {
+    "group_isins": [
+      "INE00YB01017",
+      "INE00YB01025"
+    ],
+    "latest_symbol": "ABINFRA",
+    "canonical_id": "08629960-1cd9-4949-b795-f1f1984a6dfc",
+    "duplicate_ids": [
+      "a3a426f6-67d6-4da5-bed9-4ec1a716660b"
+    ],
+    "companies": {
+      "a3a426f6-67d6-4da5-bed9-4ec1a716660b": "ABINFRA",
+      "08629960-1cd9-4949-b795-f1f1984a6dfc": "ABINFRA"
+    }
+  },
+  {
+    "group_isins": [
+      "INE012Q01021",
+      "INE012Q01039"
+    ],
+    "latest_symbol": "RNBDENIMS",
+    "canonical_id": "ab382efa-4109-4bad-8e9d-aef312bc6a76",
+    "duplicate_ids": [
+      "7688faa0-ccc3-4770-9522-f1729ef2500e"
+    ],
+    "companies": {
+      "7688faa0-ccc3-4770-9522-f1729ef2500e": "RNBDENIMS",
+      "ab382efa-4109-4bad-8e9d-aef312bc6a76": "RNBDENIMS"
+    }
+  },
+  {
+    "group_isins": [
+      "INE036D01010",
+      "INE036D01028"
+    ],
+    "latest_symbol": "KARURVYSYA",
+    "canonical_id": "a47beef9-ed77-4798-bda4-3eec7bc569bb",
+    "duplicate_ids": [
+      "08ca854a-aed9-4b8c-b249-1ae548bef0ef"
+    ],
+    "companies": {
+      "a47beef9-ed77-4798-bda4-3eec7bc569bb": "KARURVYSYA",
+      "08ca854a-aed9-4b8c-b249-1ae548bef0ef": "KARURVYSYA"
+    }
+  },
+  {
+    "group_isins": [
+      "INE045J01026",
+      "INE045J01034"
+    ],
+    "latest_symbol": "FCL",
+    "canonical_id": "2b9ca702-998f-42ce-885e-32c0962427f3",
+    "duplicate_ids": [
+      "3b566fef-877e-435a-b2a2-2e525207a8d6"
+    ],
+    "companies": {
+      "3b566fef-877e-435a-b2a2-2e525207a8d6": "FCL",
+      "2b9ca702-998f-42ce-885e-32c0962427f3": "FCL"
+    }
+  },
+  {
+    "group_isins": [
+      "INE047A01013",
+      "INE047A01021"
+    ],
+    "latest_symbol": "GRASIM",
+    "canonical_id": "b73661a3-9e36-46ed-84d1-b93e51d9af7b",
+    "duplicate_ids": [
+      "f47fc05b-1b77-459a-9991-2645192f7311"
+    ],
+    "companies": {
+      "f47fc05b-1b77-459a-9991-2645192f7311": "GRASIM",
+      "b73661a3-9e36-46ed-84d1-b93e51d9af7b": "GRASIM"
+    }
+  },
+  {
+    "group_isins": [
+      "INE052T01013",
+      "INE052T01021"
+    ],
+    "latest_symbol": "BESTAGRO",
+    "canonical_id": "cf18b673-291b-4f8b-810b-8a582eb92ad7",
+    "duplicate_ids": [
+      "6963bd25-8d39-4ea9-b2e7-d47a5d377a41"
+    ],
+    "companies": {
+      "6963bd25-8d39-4ea9-b2e7-d47a5d377a41": "BESTAGRO",
+      "cf18b673-291b-4f8b-810b-8a582eb92ad7": "BESTAGRO"
+    }
+  },
+  {
+    "group_isins": [
+      "INE053A01029",
+      "INE053A08081"
+    ],
+    "latest_symbol": "INDHOTEL",
+    "canonical_id": "bc9afad4-7362-4f28-8271-694cf21c937c",
+    "duplicate_ids": [
+      "2749779c-abc5-4fc7-acf5-3e08e2366039"
+    ],
+    "companies": {
+      "2749779c-abc5-4fc7-acf5-3e08e2366039": "INDHOTEL",
+      "bc9afad4-7362-4f28-8271-694cf21c937c": "INDHOTEL"
+    }
+  },
+  {
+    "group_isins": [
+      "INE096L01017",
+      "INE096L01025"
+    ],
+    "latest_symbol": "KTIL",
+    "canonical_id": "74bc7e28-d967-4bb9-bdb8-9cd68df220f1",
+    "duplicate_ids": [
+      "c17fab76-fb3a-4251-bacc-341ecef9c2bb"
+    ],
+    "companies": {
+      "c17fab76-fb3a-4251-bacc-341ecef9c2bb": "KTIL",
+      "74bc7e28-d967-4bb9-bdb8-9cd68df220f1": "KTIL"
+    }
+  },
+  {
+    "group_isins": [
+      "INE0A0S01010",
+      "INE0A0S01028"
+    ],
+    "latest_symbol": "SIGMA",
+    "canonical_id": "312d08f0-2563-4c06-9622-356d387ce0ad",
+    "duplicate_ids": [
+      "d4f6b7f9-cd3f-4c16-b8fe-515a85daa4d7"
+    ],
+    "companies": {
+      "d4f6b7f9-cd3f-4c16-b8fe-515a85daa4d7": "SIGMA",
+      "312d08f0-2563-4c06-9622-356d387ce0ad": "SIGMA"
+    }
+  },
+  {
+    "group_isins": [
+      "INE0B9K01025",
+      "INE0B9K01033"
+    ],
+    "latest_symbol": "BANSALWIRE",
+    "canonical_id": "bfc15a83-b5d2-484f-b568-e3e18441a867",
+    "duplicate_ids": [
+      "2cb4518d-4731-42da-a38b-456c8e9fa0b8"
+    ],
+    "companies": {
+      "2cb4518d-4731-42da-a38b-456c8e9fa0b8": "BANSALWIRE",
+      "bfc15a83-b5d2-484f-b568-e3e18441a867": "BANSALWIRE"
+    }
+  },
+  {
+    "group_isins": [
+      "INE0CJD01011",
+      "INE0CJD01029"
+    ],
+    "latest_symbol": "KMEW",
+    "canonical_id": "be11d87e-955c-4b1c-84ed-d76b737907e0",
+    "duplicate_ids": [
+      "88172936-71a7-4034-8c8e-46f7d87176bc"
+    ],
+    "companies": {
+      "88172936-71a7-4034-8c8e-46f7d87176bc": "KMEW",
+      "be11d87e-955c-4b1c-84ed-d76b737907e0": "KMEW"
+    }
+  },
+  {
+    "group_isins": [
+      "INE0G1L01017",
+      "INE0G1L01025"
+    ],
+    "latest_symbol": "LEMERITE",
+    "canonical_id": "873c4857-60b6-4981-9722-4e2105472f74",
+    "duplicate_ids": [
+      "dd6b6cf9-c9ca-4d7b-ae07-7e0966899866"
+    ],
+    "companies": {
+      "873c4857-60b6-4981-9722-4e2105472f74": "LEMERITE",
+      "dd6b6cf9-c9ca-4d7b-ae07-7e0966899866": "LEMERITE"
+    }
+  },
+  {
+    "group_isins": [
+      "INE0JYY01011",
+      "INE0JYY01029"
+    ],
+    "latest_symbol": "MWL",
+    "canonical_id": "8076ec0d-7636-49ca-bd6e-b7e5d8667252",
+    "duplicate_ids": [
+      "3e3794df-e05d-457e-84fc-0c696c42a353"
+    ],
+    "companies": {
+      "8076ec0d-7636-49ca-bd6e-b7e5d8667252": "MWL",
+      "3e3794df-e05d-457e-84fc-0c696c42a353": "MWL"
+    }
+  },
+  {
+    "group_isins": [
+      "INE0NLT01010",
+      "INE0NLT01028"
+    ],
+    "latest_symbol": "BLSE",
+    "canonical_id": "d83c7a87-d504-4f01-99b0-e5cc7ae3027d",
+    "duplicate_ids": [
+      "f1b50c14-2800-448c-a31b-0387145d1380"
+    ],
+    "companies": {
+      "f1b50c14-2800-448c-a31b-0387145d1380": "BLSE",
+      "d83c7a87-d504-4f01-99b0-e5cc7ae3027d": "BLSE"
+    }
+  },
+  {
+    "group_isins": [
+      "INE0OPA01019",
+      "INE0OPA01027"
+    ],
+    "latest_symbol": "DBEIL",
+    "canonical_id": "7231b4a9-7086-42ff-b2ca-b91b58e9cb10",
+    "duplicate_ids": [
+      "4a7201f2-fec3-4a03-9297-957678323aef"
+    ],
+    "companies": {
+      "7231b4a9-7086-42ff-b2ca-b91b58e9cb10": "DBEIL",
+      "4a7201f2-fec3-4a03-9297-957678323aef": "DBEIL"
+    }
+  },
+  {
+    "group_isins": [
+      "INE0OUT01019",
+      "INE0OUT01027"
+    ],
+    "latest_symbol": "ORIANA",
+    "canonical_id": "757f6ae5-58f0-4792-bd74-be1e948524af",
+    "duplicate_ids": [
+      "8e5a4afa-0e97-45e3-a67c-acd501c1f94a"
+    ],
+    "companies": {
+      "757f6ae5-58f0-4792-bd74-be1e948524af": "ORIANA",
+      "8e5a4afa-0e97-45e3-a67c-acd501c1f94a": "ORIANA"
+    }
+  },
+  {
+    "group_isins": [
+      "INE0XUS01012",
+      "INE0XUS01020"
+    ],
+    "latest_symbol": "PSRAJ",
+    "canonical_id": "f850e479-65fc-4a18-837e-9e7fdf9432ef",
+    "duplicate_ids": [
+      "a187efa1-fff8-45aa-b75e-dee5bd00e970"
+    ],
+    "companies": {
+      "f850e479-65fc-4a18-837e-9e7fdf9432ef": "PSRAJ",
+      "a187efa1-fff8-45aa-b75e-dee5bd00e970": "PSRAJ"
+    }
+  },
+  {
+    "group_isins": [
+      "INE0Y8W01017",
+      "INE0Y8W01025"
+    ],
+    "latest_symbol": "AHCL",
+    "canonical_id": "da51e57a-ecd5-45d5-9d59-047dc7978913",
+    "duplicate_ids": [
+      "c7cb98fc-3ad6-4bca-b4ec-d665b25510ca"
+    ],
+    "companies": {
+      "c7cb98fc-3ad6-4bca-b4ec-d665b25510ca": "AHCL",
+      "da51e57a-ecd5-45d5-9d59-047dc7978913": "AHCL"
+    }
+  },
+  {
+    "group_isins": [
+      "INE0YRN01017",
+      "INE0YRN01025"
+    ],
+    "latest_symbol": "DHARIWAL",
+    "canonical_id": "168e8685-8eaa-4460-9ad8-540e1aed55fc",
+    "duplicate_ids": [
+      "796f82b8-8830-479a-b535-a04af1c383e8"
+    ],
+    "companies": {
+      "796f82b8-8830-479a-b535-a04af1c383e8": "DHARIWAL",
+      "168e8685-8eaa-4460-9ad8-540e1aed55fc": "DHARIWAL"
+    }
+  },
+  {
+    "group_isins": [
+      "INE112X01017",
+      "INE112X01025"
+    ],
+    "latest_symbol": "SIKKO",
+    "canonical_id": "4894e7e6-735a-461b-9539-0298e86d8b5f",
+    "duplicate_ids": [
+      "ce82eac3-65c6-40cb-95dc-65dacc416289"
+    ],
+    "companies": {
+      "ce82eac3-65c6-40cb-95dc-65dacc416289": "SIKKO",
+      "4894e7e6-735a-461b-9539-0298e86d8b5f": "SIKKO"
+    }
+  },
+  {
+    "group_isins": [
+      "INE117Z01011",
+      "INE117Z01029"
+    ],
+    "latest_symbol": "NARMADA",
+    "canonical_id": "e1679db6-6f3d-46bb-a9fc-768ec10665c1",
+    "duplicate_ids": [
+      "89ce9884-c852-47e9-98f1-643d056de947"
+    ],
+    "companies": {
+      "89ce9884-c852-47e9-98f1-643d056de947": "NARMADA",
+      "e1679db6-6f3d-46bb-a9fc-768ec10665c1": "NARMADA"
+    }
+  },
+  {
+    "group_isins": [
+      "INE124Y01010",
+      "INE124Y01028"
+    ],
+    "latest_symbol": "PASHUPATI",
+    "canonical_id": "8aa755b4-9ecc-4a58-93e6-cf0e5e93ca40",
+    "duplicate_ids": [
+      "534d2eed-b72e-4035-ab38-9b6229405233"
+    ],
+    "companies": {
+      "534d2eed-b72e-4035-ab38-9b6229405233": "PASHUPATI",
+      "8aa755b4-9ecc-4a58-93e6-cf0e5e93ca40": "PASHUPATI"
+    }
+  },
+  {
+    "group_isins": [
+      "INE133A01011",
+      "INE133A01029"
+    ],
+    "latest_symbol": "JSWDULUX",
+    "canonical_id": "14310909-9fe0-4da6-9bb4-fb7ded620844",
+    "duplicate_ids": [
+      "e4d528e2-f102-40a1-bdac-1db89fca1a71"
+    ],
+    "companies": {
+      "e4d528e2-f102-40a1-bdac-1db89fca1a71": "AKZOINDIA",
+      "14310909-9fe0-4da6-9bb4-fb7ded620844": "JSWDULUX"
+    }
+  },
+  {
+    "group_isins": [
+      "INE150G01012",
+      "INE150G01020"
+    ],
+    "latest_symbol": "LUXIND",
+    "canonical_id": "39c7b411-6903-4bd6-a5e6-e08ea57e0c8e",
+    "duplicate_ids": [
+      "cac2694b-a774-47aa-9033-b21f65837aa6"
+    ],
+    "companies": {
+      "39c7b411-6903-4bd6-a5e6-e08ea57e0c8e": "LUXIND",
+      "cac2694b-a774-47aa-9033-b21f65837aa6": "LUXIND"
+    }
+  },
+  {
+    "group_isins": [
+      "INE159N01019",
+      "INE159N01027"
+    ],
+    "latest_symbol": "VIJIFIN",
+    "canonical_id": "b0b4f5b6-ce1a-423c-955c-178c1d2e07f1",
+    "duplicate_ids": [
+      "8459e535-024b-407e-bd16-cbeff71227b2"
+    ],
+    "companies": {
+      "8459e535-024b-407e-bd16-cbeff71227b2": "VIJIFIN",
+      "b0b4f5b6-ce1a-423c-955c-178c1d2e07f1": "VIJIFIN"
+    }
+  },
+  {
+    "group_isins": [
+      "INE192B01023",
+      "INE192B01031"
+    ],
+    "latest_symbol": "WELSPUNLIV",
+    "canonical_id": "48f9b238-4414-4cba-81d4-dd64be7f8555",
+    "duplicate_ids": [
+      "6aa52bfc-f366-417f-81d7-9fd76f1f19a6"
+    ],
+    "companies": {
+      "48f9b238-4414-4cba-81d4-dd64be7f8555": "WELSPUNLIV",
+      "6aa52bfc-f366-417f-81d7-9fd76f1f19a6": "WELSPUNIND"
+    }
+  },
+  {
+    "group_isins": [
+      "INE195J01011",
+      "INE195J01029"
+    ],
+    "latest_symbol": "PNCINFRA",
+    "canonical_id": "4cfb39af-d6a7-499c-a796-f05cd6d74c45",
+    "duplicate_ids": [
+      "70fc2b76-11c6-414c-9cf3-31cbb391b250"
+    ],
+    "companies": {
+      "70fc2b76-11c6-414c-9cf3-31cbb391b250": "PNCINFRA",
+      "4cfb39af-d6a7-499c-a796-f05cd6d74c45": "PNCINFRA"
+    }
+  },
+  {
+    "group_isins": [
+      "INE217B01028",
+      "INE217B01036"
+    ],
+    "latest_symbol": "KAJARIACER",
+    "canonical_id": "a8c75cd7-ced7-42e8-bdc7-6ad057509416",
+    "duplicate_ids": [
+      "96cf6068-0335-4395-b9f4-bcab63378609"
+    ],
+    "companies": {
+      "96cf6068-0335-4395-b9f4-bcab63378609": "KAJARIACER",
+      "a8c75cd7-ced7-42e8-bdc7-6ad057509416": "KAJARIACER"
+    }
+  },
+  {
+    "group_isins": [
+      "INE219Y01018",
+      "INE219Y01026"
+    ],
+    "latest_symbol": "RMDRIP",
+    "canonical_id": "d3513dad-449a-4d8c-9d62-dc3aa386a546",
+    "duplicate_ids": [
+      "7d96e333-3e3d-464e-a1f1-a3a6f8dd0644"
+    ],
+    "companies": {
+      "7d96e333-3e3d-464e-a1f1-a3a6f8dd0644": "RMDRIP",
+      "d3513dad-449a-4d8c-9d62-dc3aa386a546": "RMDRIP"
+    }
+  },
+  {
+    "group_isins": [
+      "INE237A01028",
+      "INE237A01036"
+    ],
+    "latest_symbol": "KOTAKBANK",
+    "canonical_id": "dabddb18-f5c3-4f6e-8b49-472ed5c1c7a1",
+    "duplicate_ids": [
+      "7d515119-1a95-46c3-9d1c-d5355c0f1cc7"
+    ],
+    "companies": {
+      "7d515119-1a95-46c3-9d1c-d5355c0f1cc7": "KOTAKBANK",
+      "dabddb18-f5c3-4f6e-8b49-472ed5c1c7a1": "KOTAKBANK"
+    }
+  },
+  {
+    "group_isins": [
+      "INE255D01016",
+      "INE255D01024"
+    ],
+    "latest_symbol": "GULPOLY",
+    "canonical_id": "51298d88-584d-4981-82ac-04ae6d0b6505",
+    "duplicate_ids": [
+      "9e859574-6baf-4490-94bd-034d1c7980ff"
+    ],
+    "companies": {
+      "9e859574-6baf-4490-94bd-034d1c7980ff": "GULPOLY",
+      "51298d88-584d-4981-82ac-04ae6d0b6505": "GULPOLY"
+    }
+  },
+  {
+    "group_isins": [
+      "INE255Z01019",
+      "INE255Z01027"
+    ],
+    "latest_symbol": "E2E",
+    "canonical_id": "6494692d-6efa-4078-bf0b-dfc101f1e907",
+    "duplicate_ids": [
+      "57946278-4b8b-420e-953a-18aaefbd6dfb"
+    ],
+    "companies": {
+      "57946278-4b8b-420e-953a-18aaefbd6dfb": "E2E",
+      "6494692d-6efa-4078-bf0b-dfc101f1e907": "E2E"
+    }
+  },
+  {
+    "group_isins": [
+      "INE258A01016",
+      "INE258A01024"
+    ],
+    "latest_symbol": "BEML",
+    "canonical_id": "106521b9-0edc-4058-bbf9-f7442d361917",
+    "duplicate_ids": [
+      "32451489-3b89-4d35-bfdf-5e61dea47e37"
+    ],
+    "companies": {
+      "106521b9-0edc-4058-bbf9-f7442d361917": "BEML",
+      "32451489-3b89-4d35-bfdf-5e61dea47e37": "BEML"
+    }
+  },
+  {
+    "group_isins": [
+      "INE273D01019",
+      "INE273D01027"
+    ],
+    "latest_symbol": "VGL",
+    "canonical_id": "48754be7-5a84-4c77-8b62-e8cfd4f95867",
+    "duplicate_ids": [
+      "c2cced71-1347-49cc-a1c9-f485f2c8a7dd"
+    ],
+    "companies": {
+      "c2cced71-1347-49cc-a1c9-f485f2c8a7dd": "AARVEEDEN",
+      "48754be7-5a84-4c77-8b62-e8cfd4f95867": "VGL"
+    }
+  },
+  {
+    "group_isins": [
+      "INE298G01027",
+      "INE298G01035"
+    ],
+    "latest_symbol": "AJMERA",
+    "canonical_id": "9ccf0b25-b124-4b20-8b72-575e4beb2082",
+    "duplicate_ids": [
+      "293269b5-1deb-42a2-a1ac-4d6edd149215"
+    ],
+    "companies": {
+      "293269b5-1deb-42a2-a1ac-4d6edd149215": "AJMERA",
+      "9ccf0b25-b124-4b20-8b72-575e4beb2082": "AJMERA"
+    }
+  },
+  {
+    "group_isins": [
+      "INE305H01010",
+      "INE305H01028"
+    ],
+    "latest_symbol": "SUNILHITEC",
+    "canonical_id": "1ee48046-3db4-468d-b4dd-bcb4dcf80afb",
+    "duplicate_ids": [
+      "35dd53ec-f204-491a-8508-09fe3b6de6c1"
+    ],
+    "companies": {
+      "1ee48046-3db4-468d-b4dd-bcb4dcf80afb": "SUNILHITEC",
+      "35dd53ec-f204-491a-8508-09fe3b6de6c1": "SUNILHITEC"
+    }
+  },
+  {
+    "group_isins": [
+      "INE314T01025",
+      "INE314T01033"
+    ],
+    "latest_symbol": "GOKULAGRO",
+    "canonical_id": "3dd17309-427f-42ec-8c0d-0abcd975ec0e",
+    "duplicate_ids": [
+      "b90d050d-3272-4e2a-b719-cb7546f89622"
+    ],
+    "companies": {
+      "3dd17309-427f-42ec-8c0d-0abcd975ec0e": "GOKULAGRO",
+      "b90d050d-3272-4e2a-b719-cb7546f89622": "GOKULAGRO"
+    }
+  },
+  {
+    "group_isins": [
+      "INE343H01011",
+      "INE343H01029"
+    ],
+    "latest_symbol": "SOLARINDS",
+    "canonical_id": "55b533e1-fc5f-484c-accf-10e24fa746ba",
+    "duplicate_ids": [
+      "c139ce37-105b-4087-a5c3-3a276cdd6b27"
+    ],
+    "companies": {
+      "c139ce37-105b-4087-a5c3-3a276cdd6b27": "SOLARINDS",
+      "55b533e1-fc5f-484c-accf-10e24fa746ba": "SOLARINDS"
+    }
+  },
+  {
+    "group_isins": [
+      "INE354C01019",
+      "INE354C01027"
+    ],
+    "latest_symbol": "BHAGERIA",
+    "canonical_id": "3e678b60-1fca-403d-a2f4-c2b582842d5e",
+    "duplicate_ids": [
+      "0526c188-7395-4772-9409-8fdb352a9d16"
+    ],
+    "companies": {
+      "3e678b60-1fca-403d-a2f4-c2b582842d5e": "BHAGERIA",
+      "0526c188-7395-4772-9409-8fdb352a9d16": "BHAGERIA"
+    }
+  },
+  {
+    "group_isins": [
+      "INE405E01015",
+      "INE405E01023"
+    ],
+    "latest_symbol": "UNOMINDA",
+    "canonical_id": "8684d04a-dc82-47a6-8e39-d0553d7fc3bf",
+    "duplicate_ids": [
+      "ccf11113-4a01-40ac-933e-3f3848ea531a"
+    ],
+    "companies": {
+      "ccf11113-4a01-40ac-933e-3f3848ea531a": "MINDAIND",
+      "8684d04a-dc82-47a6-8e39-d0553d7fc3bf": "UNOMINDA"
+    }
+  },
+  {
+    "group_isins": [
+      "INE411D01015",
+      "INE411D01023"
+    ],
+    "latest_symbol": "SKMEGGPROD",
+    "canonical_id": "dfdca4c0-7380-43b5-9d65-20bb3626b382",
+    "duplicate_ids": [
+      "0eaa3b98-0058-4f81-90a7-a24df597eb38"
+    ],
+    "companies": {
+      "0eaa3b98-0058-4f81-90a7-a24df597eb38": "SKMEGGPROD",
+      "dfdca4c0-7380-43b5-9d65-20bb3626b382": "SKMEGGPROD"
+    }
+  },
+  {
+    "group_isins": [
+      "INE416A01044",
+      "INE416A01051"
+    ],
+    "latest_symbol": "AQYLON",
+    "canonical_id": "5476d39d-e473-4aca-94b9-a3dc5a314d73",
+    "duplicate_ids": [
+      "bdb26e86-d023-4701-9b4a-6859d5c4eb06"
+    ],
+    "companies": {
+      "bdb26e86-d023-4701-9b4a-6859d5c4eb06": "SABTNL",
+      "5476d39d-e473-4aca-94b9-a3dc5a314d73": "AQYLON"
+    }
+  },
+  {
+    "group_isins": [
+      "INE418L01021",
+      "INE418L01047"
+    ],
+    "latest_symbol": "NAZARA",
+    "canonical_id": "3d45d747-f662-44e4-925d-abfb6e9cb6b9",
+    "duplicate_ids": [
+      "654ba7c3-ebc3-4c52-ad82-409af6be9a69"
+    ],
+    "companies": {
+      "3d45d747-f662-44e4-925d-abfb6e9cb6b9": "NAZARA",
+      "654ba7c3-ebc3-4c52-ad82-409af6be9a69": "NAZARA"
+    }
+  },
+  {
+    "group_isins": [
+      "INE461C01020",
+      "INE461C01038"
+    ],
+    "latest_symbol": "GREENPLY",
+    "canonical_id": "b5e2d71b-46f3-4764-94c1-d0eb5128341a",
+    "duplicate_ids": [
+      "1c48b346-b317-4b17-93ba-03edb2e2be5a"
+    ],
+    "companies": {
+      "b5e2d71b-46f3-4764-94c1-d0eb5128341a": "GREENPLY",
+      "1c48b346-b317-4b17-93ba-03edb2e2be5a": "GREENPLY"
+    }
+  },
+  {
+    "group_isins": [
+      "INE475E01018",
+      "INE475E01026"
+    ],
+    "latest_symbol": "CAPLIPOINT",
+    "canonical_id": "b78b119c-9820-48c1-bffa-348f9518acce",
+    "duplicate_ids": [
+      "afc90c22-71b9-4e28-9967-e59a2a16f7f0"
+    ],
+    "companies": {
+      "afc90c22-71b9-4e28-9967-e59a2a16f7f0": "CAPLIPOINT",
+      "b78b119c-9820-48c1-bffa-348f9518acce": "CAPLIPOINT"
+    }
+  },
+  {
+    "group_isins": [
+      "INE482J01013",
+      "INE482J01021"
+    ],
+    "latest_symbol": "SHAH",
+    "canonical_id": "f527fbfc-001b-44b1-ac03-c5c3dc334be5",
+    "duplicate_ids": [
+      "b2375c78-1db0-4fd4-b574-4135128da7a3"
+    ],
+    "companies": {
+      "b2375c78-1db0-4fd4-b574-4135128da7a3": "GAL",
+      "f527fbfc-001b-44b1-ac03-c5c3dc334be5": "SHAH"
+    }
+  },
+  {
+    "group_isins": [
+      "INE483B01018",
+      "INE483B01026"
+    ],
+    "latest_symbol": "ICIL",
+    "canonical_id": "12b9cad5-96ef-4ddb-a686-bc9462848635",
+    "duplicate_ids": [
+      "d9fade98-2755-4b50-925d-5b9ba6b2ff8c"
+    ],
+    "companies": {
+      "12b9cad5-96ef-4ddb-a686-bc9462848635": "ICIL",
+      "d9fade98-2755-4b50-925d-5b9ba6b2ff8c": "ICIL"
+    }
+  },
+  {
+    "group_isins": [
+      "INE495P01012",
+      "INE495P01020"
+    ],
+    "latest_symbol": "BECTORFOOD",
+    "canonical_id": "9cbb91b2-9045-4f2e-b0c1-44dcccd54905",
+    "duplicate_ids": [
+      "587cc911-087c-4f97-95be-f414ab38c3b2"
+    ],
+    "companies": {
+      "9cbb91b2-9045-4f2e-b0c1-44dcccd54905": "BECTORFOOD",
+      "587cc911-087c-4f97-95be-f414ab38c3b2": "BECTORFOOD"
+    }
+  },
+  {
+    "group_isins": [
+      "INE506W01012",
+      "INE506W01020"
+    ],
+    "latest_symbol": "KRISHANA",
+    "canonical_id": "a2bfdba1-8c9c-469e-952d-cf8ba4052c40",
+    "duplicate_ids": [
+      "7d415548-9d16-465d-96c3-2a70fe8fe951"
+    ],
+    "companies": {
+      "7d415548-9d16-465d-96c3-2a70fe8fe951": "KRISHANA",
+      "a2bfdba1-8c9c-469e-952d-cf8ba4052c40": "KRISHANA"
+    }
+  },
+  {
+    "group_isins": [
+      "INE526G01013",
+      "INE526G01021"
+    ],
+    "latest_symbol": "VIVIMEDLAB",
+    "canonical_id": "ff845e3c-06a6-4736-9d0b-03f8d8caee2b",
+    "duplicate_ids": [
+      "dbaef981-5a28-4e90-9838-9883a40a97f0"
+    ],
+    "companies": {
+      "dbaef981-5a28-4e90-9838-9883a40a97f0": "VIVIMEDLAB",
+      "ff845e3c-06a6-4736-9d0b-03f8d8caee2b": "VIVIMEDLAB"
+    }
+  },
+  {
+    "group_isins": [
+      "INE531F01015",
+      "INE531F01023"
+    ],
+    "latest_symbol": "NUVAMA",
+    "canonical_id": "94c7b41d-e462-4277-9a4f-8c67fafd74d6",
+    "duplicate_ids": [
+      "424b6d72-6f5b-430d-b379-b92ee722aaa6"
+    ],
+    "companies": {
+      "94c7b41d-e462-4277-9a4f-8c67fafd74d6": "NUVAMA",
+      "424b6d72-6f5b-430d-b379-b92ee722aaa6": "NUVAMA"
+    }
+  },
+  {
+    "group_isins": [
+      "INE596I01012",
+      "INE596I01020"
+    ],
+    "latest_symbol": "CAMS",
+    "canonical_id": "116b7090-03c6-4dcd-8c0d-e79c423a4698",
+    "duplicate_ids": [
+      "b521f5bd-a68a-4264-aa8f-035f31c143c5"
+    ],
+    "companies": {
+      "116b7090-03c6-4dcd-8c0d-e79c423a4698": "CAMS",
+      "b521f5bd-a68a-4264-aa8f-035f31c143c5": "CAMS"
+    }
+  },
+  {
+    "group_isins": [
+      "INE600A01027",
+      "INE600A01035"
+    ],
+    "latest_symbol": "PILITA",
+    "canonical_id": "d58dad59-180d-4488-887a-3ba2aab3e47b",
+    "duplicate_ids": [
+      "bf0284eb-2157-474a-8dd6-03a9967d57af"
+    ],
+    "companies": {
+      "bf0284eb-2157-474a-8dd6-03a9967d57af": "PILITA",
+      "d58dad59-180d-4488-887a-3ba2aab3e47b": "PILITA"
+    }
+  },
+  {
+    "group_isins": [
+      "INE625X01018",
+      "INE625X01026"
+    ],
+    "latest_symbol": "SILVERTUC",
+    "canonical_id": "cb17b25f-8c1f-46d7-b530-4e8e8ee9b70c",
+    "duplicate_ids": [
+      "0a80e955-4210-4725-a6e6-a6117c631f2e"
+    ],
+    "companies": {
+      "cb17b25f-8c1f-46d7-b530-4e8e8ee9b70c": "SILVERTUC",
+      "0a80e955-4210-4725-a6e6-a6117c631f2e": "SILVERTUC"
+    }
+  },
+  {
+    "group_isins": [
+      "INE634I01011",
+      "INE634I01029"
+    ],
+    "latest_symbol": "KNRCON",
+    "canonical_id": "44699600-7316-4e36-af90-3ecb3049578e",
+    "duplicate_ids": [
+      "941ac359-a047-41a4-b2e7-27797a993b44"
+    ],
+    "companies": {
+      "44699600-7316-4e36-af90-3ecb3049578e": "KNRCON",
+      "941ac359-a047-41a4-b2e7-27797a993b44": "KNRCON"
+    }
+  },
+  {
+    "group_isins": [
+      "INE645S01016",
+      "INE645S01024"
+    ],
+    "latest_symbol": "ROLEXRINGS",
+    "canonical_id": "b17ff2e4-829c-4911-aa83-66c54f9f3c15",
+    "duplicate_ids": [
+      "76e2babb-72a1-460c-b588-f10f57e3a5a7"
+    ],
+    "companies": {
+      "76e2babb-72a1-460c-b588-f10f57e3a5a7": "ROLEXRINGS",
+      "b17ff2e4-829c-4911-aa83-66c54f9f3c15": "ROLEXRINGS"
+    }
+  },
+  {
+    "group_isins": [
+      "INE650K01013",
+      "INE650K01021"
+    ],
+    "latest_symbol": "SECURKLOUD",
+    "canonical_id": "cabc5ed3-04ee-48e0-969d-f2dbe7e7ebb3",
+    "duplicate_ids": [
+      "e3733b82-0f01-4b08-a1a0-46bab0ba1a16"
+    ],
+    "companies": {
+      "cabc5ed3-04ee-48e0-969d-f2dbe7e7ebb3": "SECURKLOUD",
+      "e3733b82-0f01-4b08-a1a0-46bab0ba1a16": "8KMILES"
+    }
+  },
+  {
+    "group_isins": [
+      "INE652Z01017",
+      "INE652Z01025"
+    ],
+    "latest_symbol": "AVROIND",
+    "canonical_id": "8ca08877-1ec7-4187-bd83-10bb123fcead",
+    "duplicate_ids": [
+      "e98c8dfd-b47a-425f-adc4-f7084fe1d032"
+    ],
+    "companies": {
+      "e98c8dfd-b47a-425f-adc4-f7084fe1d032": "AVROIND",
+      "8ca08877-1ec7-4187-bd83-10bb123fcead": "AVROIND"
+    }
+  },
+  {
+    "group_isins": [
+      "INE672A01018",
+      "INE672A01026"
+    ],
+    "latest_symbol": "TATAINVEST",
+    "canonical_id": "aae909ff-c9d0-4ccf-864f-7c0db23720e5",
+    "duplicate_ids": [
+      "1e002013-9936-41d9-832f-014291064c0d"
+    ],
+    "companies": {
+      "1e002013-9936-41d9-832f-014291064c0d": "TATAINVEST",
+      "aae909ff-c9d0-4ccf-864f-7c0db23720e5": "TATAINVEST"
+    }
+  },
+  {
+    "group_isins": [
+      "INE682M01012",
+      "INE682M01020"
+    ],
+    "latest_symbol": "JLHL",
+    "canonical_id": "01095a13-50b8-417c-94d9-f130524b53b0",
+    "duplicate_ids": [
+      "80178bf9-d7e0-4500-9c80-4124827f51e5"
+    ],
+    "companies": {
+      "80178bf9-d7e0-4500-9c80-4124827f51e5": "JLHL",
+      "01095a13-50b8-417c-94d9-f130524b53b0": "JLHL"
+    }
+  },
+  {
+    "group_isins": [
+      "INE696K01016",
+      "INE696K01024"
+    ],
+    "latest_symbol": "PRAKASHSTL",
+    "canonical_id": "7133fdb0-89c5-4f47-98b3-90759797bb27",
+    "duplicate_ids": [
+      "71633f17-684c-414e-a48e-f3698235e144"
+    ],
+    "companies": {
+      "7133fdb0-89c5-4f47-98b3-90759797bb27": "PRAKASHSTL",
+      "71633f17-684c-414e-a48e-f3698235e144": "PRAKASHSTL"
+    }
+  },
+  {
+    "group_isins": [
+      "INE726L01019",
+      "INE726L01027"
+    ],
+    "latest_symbol": "DELPHIFX",
+    "canonical_id": "4e58297a-59f7-4f4a-9238-dccea78ca3b6",
+    "duplicate_ids": [
+      "f605c7f2-3674-4026-a433-3d780cd0c971"
+    ],
+    "companies": {
+      "f605c7f2-3674-4026-a433-3d780cd0c971": "DELPHIFX",
+      "4e58297a-59f7-4f4a-9238-dccea78ca3b6": "DELPHIFX"
+    }
+  },
+  {
+    "group_isins": [
+      "INE732I01013",
+      "INE732I01021"
+    ],
+    "latest_symbol": "ANGELONE",
+    "canonical_id": "4df30b61-a065-4614-9673-5ad026025111",
+    "duplicate_ids": [
+      "4bce231a-c12e-455f-a088-5e9f9d886f1f"
+    ],
+    "companies": {
+      "4df30b61-a065-4614-9673-5ad026025111": "ANGELONE",
+      "4bce231a-c12e-455f-a088-5e9f9d886f1f": "ANGELONE"
+    }
+  },
+  {
+    "group_isins": [
+      "INE745G01035",
+      "INE745G01043"
+    ],
+    "latest_symbol": "MCX",
+    "canonical_id": "1c1885a3-d075-4268-ba24-6180e329e414",
+    "duplicate_ids": [
+      "1b2197f9-3900-4283-9dc6-9f852aabbc57"
+    ],
+    "companies": {
+      "1c1885a3-d075-4268-ba24-6180e329e414": "MCX",
+      "1b2197f9-3900-4283-9dc6-9f852aabbc57": "MCX"
+    }
+  },
+  {
+    "group_isins": [
+      "INE748A01016",
+      "INE748A01024"
+    ],
+    "latest_symbol": "MBECL",
+    "canonical_id": "9c2561d7-fa56-41b7-9ad2-58af55f69679",
+    "duplicate_ids": [
+      "a7f11c11-b743-4276-a9c4-f61718a71b6c"
+    ],
+    "companies": {
+      "a7f11c11-b743-4276-a9c4-f61718a71b6c": "MBECL",
+      "9c2561d7-fa56-41b7-9ad2-58af55f69679": "MBECL"
+    }
+  },
+  {
+    "group_isins": [
+      "INE811A01020",
+      "INE811A01038"
+    ],
+    "latest_symbol": "KIRLPNU",
+    "canonical_id": "fb5b4481-cad7-4b3d-89d1-3951692fcf0f",
+    "duplicate_ids": [
+      "5cdb7e08-3d45-4455-9092-a20918ba9741"
+    ],
+    "companies": {
+      "fb5b4481-cad7-4b3d-89d1-3951692fcf0f": "KIRLPNU",
+      "5cdb7e08-3d45-4455-9092-a20918ba9741": "KIRLPNU"
+    }
+  },
+  {
+    "group_isins": [
+      "INE817H01014",
+      "INE817H01022"
+    ],
+    "latest_symbol": "BURNPUR",
+    "canonical_id": "af3adccc-50d6-4026-80df-c62ca99d39e8",
+    "duplicate_ids": [
+      "92f6867b-30bb-46c2-bb6c-d6d39f642a0a"
+    ],
+    "companies": {
+      "92f6867b-30bb-46c2-bb6c-d6d39f642a0a": "BURNPUR",
+      "af3adccc-50d6-4026-80df-c62ca99d39e8": "BURNPUR"
+    }
+  },
+  {
+    "group_isins": [
+      "INE838B01013",
+      "INE838B01021"
+    ],
+    "latest_symbol": "BHARATRAS",
+    "canonical_id": "9f7f579e-68f8-4093-a83c-14f2431409aa",
+    "duplicate_ids": [
+      "8653a08e-9f64-489f-bc9b-094751e4019a"
+    ],
+    "companies": {
+      "8653a08e-9f64-489f-bc9b-094751e4019a": "BHARATRAS",
+      "9f7f579e-68f8-4093-a83c-14f2431409aa": "BHARATRAS"
+    }
+  },
+  {
+    "group_isins": [
+      "INE849A01012",
+      "INE849A01020"
+    ],
+    "latest_symbol": "TRENT",
+    "canonical_id": "e54b17d0-3d1c-4aad-910b-dc25b74889a6",
+    "duplicate_ids": [
+      "bf3e5f74-25a7-4495-9874-50067ea86370"
+    ],
+    "companies": {
+      "e54b17d0-3d1c-4aad-910b-dc25b74889a6": "TRENT",
+      "bf3e5f74-25a7-4495-9874-50067ea86370": "TRENT"
+    }
+  },
+  {
+    "group_isins": [
+      "INE855C01015",
+      "INE855C01023"
+    ],
+    "latest_symbol": "WEBELSOLAR",
+    "canonical_id": "0d36be06-429f-4e61-86f5-c2f79e0bdc0f",
+    "duplicate_ids": [
+      "05b3d6c9-a837-4fc6-9bc5-ea63cf66145a"
+    ],
+    "companies": {
+      "05b3d6c9-a837-4fc6-9bc5-ea63cf66145a": "WEBELSOLAR",
+      "0d36be06-429f-4e61-86f5-c2f79e0bdc0f": "WEBELSOLAR"
+    }
+  },
+  {
+    "group_isins": [
+      "INE869Y01010",
+      "INE869Y01028"
+    ],
+    "latest_symbol": "TEMBO",
+    "canonical_id": "ed82fafe-2a13-4a07-a1dd-78f99e874aa2",
+    "duplicate_ids": [
+      "e0a5cae9-6373-4d16-9584-901bb02df6e8"
+    ],
+    "companies": {
+      "ed82fafe-2a13-4a07-a1dd-78f99e874aa2": "TEMBO",
+      "e0a5cae9-6373-4d16-9584-901bb02df6e8": "TEMBO"
+    }
+  },
+  {
+    "group_isins": [
+      "INE891A01014",
+      "INE891A01022"
+    ],
+    "latest_symbol": "DSKULKARNI",
+    "canonical_id": "5172ad26-735a-40ba-a8b2-e90c07e9e28e",
+    "duplicate_ids": [
+      "e79745c2-bad9-4c9b-9f81-d6b0d80a8f26"
+    ],
+    "companies": {
+      "e79745c2-bad9-4c9b-9f81-d6b0d80a8f26": "DSKULKARNI",
+      "5172ad26-735a-40ba-a8b2-e90c07e9e28e": "DSKULKARNI"
+    }
+  },
+  {
+    "group_isins": [
+      "INE900L01010",
+      "INE900L01028"
+    ],
+    "latest_symbol": "MBAPL",
+    "canonical_id": "ab9916e1-4ccb-4677-a64a-402afc5d1f5c",
+    "duplicate_ids": [
+      "b627ad2a-3a45-4e98-b823-e75843253f9d"
+    ],
+    "companies": {
+      "b627ad2a-3a45-4e98-b823-e75843253f9d": "MBAPL",
+      "ab9916e1-4ccb-4677-a64a-402afc5d1f5c": "MBAPL"
+    }
+  },
+  {
+    "group_isins": [
+      "INE914E01032",
+      "INE914E01040"
+    ],
+    "latest_symbol": "ALANKIT",
+    "canonical_id": "2c8edc26-9d00-4e58-9327-409c3a2c491e",
+    "duplicate_ids": [
+      "45eeeabf-2b1d-4db9-bbbf-af83b330473b"
+    ],
+    "companies": {
+      "45eeeabf-2b1d-4db9-bbbf-af83b330473b": "ALANKIT",
+      "2c8edc26-9d00-4e58-9327-409c3a2c491e": "ALANKIT"
+    }
+  },
+  {
+    "group_isins": [
+      "INE945H01013",
+      "INE945H01021"
+    ],
+    "latest_symbol": "V2RETAIL",
+    "canonical_id": "2c9d276f-d336-46ac-a8c0-ec5bb1cc8ad4",
+    "duplicate_ids": [
+      "919e7db3-0fe5-4ccc-8be1-00f30326d58a"
+    ],
+    "companies": {
+      "919e7db3-0fe5-4ccc-8be1-00f30326d58a": "V2RETAIL",
+      "2c9d276f-d336-46ac-a8c0-ec5bb1cc8ad4": "V2RETAIL"
+    }
+  },
+  {
+    "group_isins": [
+      "INE947T01014",
+      "INE947T01022"
+    ],
+    "latest_symbol": "GICL",
+    "canonical_id": "d14e44cc-43d7-4532-bc4d-546b8fd6d175",
+    "duplicate_ids": [
+      "7a1518da-00c6-4005-82b3-e3c70d7602cb"
+    ],
+    "companies": {
+      "7a1518da-00c6-4005-82b3-e3c70d7602cb": "GICL",
+      "d14e44cc-43d7-4532-bc4d-546b8fd6d175": "GICL"
+    }
+  },
+  {
+    "group_isins": [
+      "INE951I01019",
+      "INE951I01027"
+    ],
+    "latest_symbol": "VGUARD",
+    "canonical_id": "e7b2b578-97e5-40a7-9f44-bfadf8a07b9c",
+    "duplicate_ids": [
+      "d13ef52d-79ac-42a0-aa1d-8a7aaa467bed"
+    ],
+    "companies": {
+      "e7b2b578-97e5-40a7-9f44-bfadf8a07b9c": "VGUARD",
+      "d13ef52d-79ac-42a0-aa1d-8a7aaa467bed": "VGUARD"
+    }
+  },
+  {
+    "group_isins": [
+      "INE988E01028",
+      "INE988E01036"
+    ],
+    "latest_symbol": "JMTAUTOLTD",
+    "canonical_id": "28a8cef2-51bd-4aae-a740-562d5d7a00e6",
+    "duplicate_ids": [
+      "aff911b9-142a-4f76-bfaa-cb740b12df0b"
+    ],
+    "companies": {
+      "aff911b9-142a-4f76-bfaa-cb740b12df0b": "JMTAUTOLTD",
+      "28a8cef2-51bd-4aae-a740-562d5d7a00e6": "JMTAUTOLTD"
+    }
+  },
+  {
+    "group_isins": [
+      "INF082J01028",
+      "INF082J01499"
+    ],
+    "latest_symbol": "QNIFTY",
+    "canonical_id": "ab35fffb-6a15-457b-910a-ad553e70f27a",
+    "duplicate_ids": [
+      "1579c302-eeec-493b-9743-a74cfa7f8ec1"
+    ],
+    "companies": {
+      "ab35fffb-6a15-457b-910a-ad553e70f27a": "QNIFTY",
+      "1579c302-eeec-493b-9743-a74cfa7f8ec1": "QNIFTY"
+    }
+  },
+  {
+    "group_isins": [
+      "INF174K01F59",
+      "INF174KA1ZB7"
+    ],
+    "latest_symbol": "BANKNIFTY1",
+    "canonical_id": "bb5c7b93-1d75-4df3-bf12-1274f1be409c",
+    "duplicate_ids": [
+      "0149b444-724b-4274-92c1-b24b4445d31e"
+    ],
+    "companies": {
+      "bb5c7b93-1d75-4df3-bf12-1274f1be409c": "BANKNIFTY1",
+      "0149b444-724b-4274-92c1-b24b4445d31e": "BANKNIFTY1"
+    }
+  },
+  {
+    "group_isins": [
+      "INF174K01Z71",
+      "INF174KA1ZE1"
+    ],
+    "latest_symbol": "NV20",
+    "canonical_id": "91427ef3-d851-4301-b688-fbf32db4d37d",
+    "duplicate_ids": [
+      "4bf4b0d6-e668-4a4d-add6-b53d8e21fed8"
+    ],
+    "companies": {
+      "4bf4b0d6-e668-4a4d-add6-b53d8e21fed8": "NV20",
+      "91427ef3-d851-4301-b688-fbf32db4d37d": "NV20"
+    }
+  },
+  {
+    "group_isins": [
+      "INF174KA1A86",
+      "INF373I01023"
+    ],
+    "latest_symbol": "PSUBANK",
+    "canonical_id": "24eddeca-5e47-4c1f-8cdd-e2d3370f3600",
+    "duplicate_ids": [
+      "86cb33b6-9c85-444e-8b3c-7f7c3da82dff"
+    ],
+    "companies": {
+      "24eddeca-5e47-4c1f-8cdd-e2d3370f3600": "PSUBANK",
+      "86cb33b6-9c85-444e-8b3c-7f7c3da82dff": "PSUBANK"
+    }
+  },
+  {
+    "group_isins": [
+      "INF174KA1IB3",
+      "INF174KA1ZC5"
+    ],
+    "latest_symbol": "MIDCAP",
+    "canonical_id": "c656c031-2288-43a8-ae34-c81242d03e1a",
+    "duplicate_ids": [
+      "966198e7-0d4c-43e5-b6bb-8e94ecd3c840"
+    ],
+    "companies": {
+      "c656c031-2288-43a8-ae34-c81242d03e1a": "MIDCAP",
+      "966198e7-0d4c-43e5-b6bb-8e94ecd3c840": "MIDCAP"
+    }
+  },
+  {
+    "group_isins": [
+      "INF174KA1JE5",
+      "INF174KA1ZF8"
+    ],
+    "latest_symbol": "CONS",
+    "canonical_id": "9dd438d9-2a09-414a-9cdd-b1e56ec3b916",
+    "duplicate_ids": [
+      "8bb88009-84cc-4bf2-8ac1-af7d64747c8d"
+    ],
+    "companies": {
+      "9dd438d9-2a09-414a-9cdd-b1e56ec3b916": "CONS",
+      "8bb88009-84cc-4bf2-8ac1-af7d64747c8d": "CONS"
+    }
+  },
+  {
+    "group_isins": [
+      "INF174KA1KU9",
+      "INF174KA1ZD3"
+    ],
+    "latest_symbol": "SILVER1",
+    "canonical_id": "19235f63-3ac4-4b76-b170-7ee666f3d522",
+    "duplicate_ids": [
+      "da63a1ed-40b1-4ce3-9be6-25a2d82ec279"
+    ],
+    "companies": {
+      "da63a1ed-40b1-4ce3-9be6-25a2d82ec279": "SILVER1",
+      "19235f63-3ac4-4b76-b170-7ee666f3d522": "SILVER1"
+    }
+  },
+  {
+    "group_isins": [
+      "INF205K01361",
+      "INF205KA1BP1"
+    ],
+    "latest_symbol": "IVZINGOLD",
+    "canonical_id": "2a0e2e13-984b-4183-9f2e-b5a51cfbaebc",
+    "duplicate_ids": [
+      "33b1d891-e4d9-43e3-9349-d51671979ab4"
+    ],
+    "companies": {
+      "2a0e2e13-984b-4183-9f2e-b5a51cfbaebc": "IVZINGOLD",
+      "33b1d891-e4d9-43e3-9349-d51671979ab4": "IVZINGOLD"
+    }
+  },
+  {
+    "group_isins": [
+      "INF205K01DA9",
+      "INF205KA1CC7"
+    ],
+    "latest_symbol": "IVZINNIFTY",
+    "canonical_id": "347d383d-bf7d-438c-89ce-1a6076de72e6",
+    "duplicate_ids": [
+      "7853800c-2da2-4e17-8c42-fb3fa52ddf7f"
+    ],
+    "companies": {
+      "7853800c-2da2-4e17-8c42-fb3fa52ddf7f": "IVZINNIFTY",
+      "347d383d-bf7d-438c-89ce-1a6076de72e6": "IVZINNIFTY"
+    }
+  },
+  {
+    "group_isins": [
+      "INF397L01554",
+      "INF767K01SM1"
+    ],
+    "latest_symbol": "LICMFGOLD",
+    "canonical_id": "9d7bea93-8b3c-4466-99d5-e763fd317d1d",
+    "duplicate_ids": [
+      "3bda9096-06bf-4362-a310-d6a683c3c2de"
+    ],
+    "companies": {
+      "9d7bea93-8b3c-4466-99d5-e763fd317d1d": "LICMFGOLD",
+      "3bda9096-06bf-4362-a310-d6a683c3c2de": "LICMFGOLD"
+    }
+  },
+  {
+    "group_isins": [
+      "INF666M01IW1",
+      "INF666M01OE7"
+    ],
+    "latest_symbol": "GROWWGOLD",
+    "canonical_id": "7e1d1165-8568-4565-bca0-5650a9fc0328",
+    "duplicate_ids": [
+      "1e3ca006-52d9-40a7-ad95-8dde5ebbbccc"
+    ],
+    "companies": {
+      "1e3ca006-52d9-40a7-ad95-8dde5ebbbccc": "GROWWGOLD",
+      "7e1d1165-8568-4565-bca0-5650a9fc0328": "GROWWGOLD"
+    }
+  },
+  {
+    "group_isins": [
+      "INF666M01LA1",
+      "INF666M01OF4"
+    ],
+    "latest_symbol": "GROWWSLVR",
+    "canonical_id": "8e1092c2-3cc4-4123-b9f8-15861952f49d",
+    "duplicate_ids": [
+      "cab97cdc-cab1-4b8d-bae1-2089670e75ff"
+    ],
+    "companies": {
+      "8e1092c2-3cc4-4123-b9f8-15861952f49d": "GROWWSLVR",
+      "cab97cdc-cab1-4b8d-bae1-2089670e75ff": "GROWWSLVR"
+    }
+  },
+  {
+    "group_isins": [
+      "INF740KA1QL0",
+      "INF740KA1ZF3"
+    ],
+    "latest_symbol": "MIDQ50ADD",
+    "canonical_id": "c94f040e-9c7d-4978-879c-f1263ced485b",
+    "duplicate_ids": [
+      "38d35e7c-2299-41c5-b3cd-637429b170d7"
+    ],
+    "companies": {
+      "c94f040e-9c7d-4978-879c-f1263ced485b": "MIDQ50ADD",
+      "38d35e7c-2299-41c5-b3cd-637429b170d7": "MIDQ50ADD"
+    }
+  },
+  {
+    "group_isins": [
+      "INF740KA1RE3",
+      "INF740KA1ZQ0"
+    ],
+    "latest_symbol": "SILVERADD",
+    "canonical_id": "642b7af9-ade2-4c65-a701-38498b7fa8d8",
+    "duplicate_ids": [
+      "6c241459-f545-4c6f-92f4-c1f4d19d35d9"
+    ],
+    "companies": {
+      "6c241459-f545-4c6f-92f4-c1f4d19d35d9": "SILVERADD",
+      "642b7af9-ade2-4c65-a701-38498b7fa8d8": "SILVERADD"
+    }
+  },
+  {
+    "group_isins": [
+      "INF740KA1SW3",
+      "INF740KA1ZP2"
+    ],
+    "latest_symbol": "GOLDADD",
+    "canonical_id": "7619dfbb-7b98-4d38-955a-31e3f2c2b458",
+    "duplicate_ids": [
+      "fac3390b-0f6e-464b-bf9e-040470d82704"
+    ],
+    "companies": {
+      "fac3390b-0f6e-464b-bf9e-040470d82704": "GOLDETFADD",
+      "7619dfbb-7b98-4d38-955a-31e3f2c2b458": "GOLDADD"
+    }
+  },
+  {
+    "group_isins": [
+      "INF740KA1UF4",
+      "INF740KA1ZG1"
+    ],
+    "latest_symbol": "HEALTHADD",
+    "canonical_id": "f6f8b856-279a-4ee6-8bdf-cdbc78a8f4cf",
+    "duplicate_ids": [
+      "4f87465d-aa34-4530-8fd4-e0726ea6ca86"
+    ],
+    "companies": {
+      "f6f8b856-279a-4ee6-8bdf-cdbc78a8f4cf": "HEALTHADD",
+      "4f87465d-aa34-4530-8fd4-e0726ea6ca86": "HEALTHADD"
+    }
+  }
+]

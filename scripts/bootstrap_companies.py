@@ -27,6 +27,19 @@ recorded the first time this script ran -- see
 `ledgerlight.ingestion.identifier_window_repair` and
 `scripts/repair_stale_identifier_windows.py` (the one-time repair for
 the backlog this same bug had already created, 2,849 corrections).
+
+SELF-HEALING for the fragmentation bug, also as of 2026-10-31: creating
+new companies for genuinely new ISINs (above) can itself recreate the
+Sec2.4 fragmentation bug -- a new ISIN sharing an NSE symbol with an
+ALREADY-bootstrapped company produces a second, duplicate Company row,
+since the new-ISIN grouping pass has no visibility into existing
+companies' claims (real case: re-running this script to pick up 1,819
+never-bootstrapped companies created 94 such duplicates, e.g.
+8KMILES/SECURKLOUD). `merge_fragmented_groups` (below, from
+`ledgerlight.ingestion.company_dedup`, shared with
+`scripts/migrate_company_dedup.py`) now runs at the end of every
+bootstrap, so this is fixed automatically rather than requiring a
+manual follow-up migration each time.
 """
 
 from __future__ import annotations
@@ -44,6 +57,7 @@ from sqlalchemy import text  # noqa: E402
 
 from ledgerlight.config.settings import load_settings  # noqa: E402
 from ledgerlight.db.session import make_session_factory  # noqa: E402
+from ledgerlight.ingestion import company_dedup  # noqa: E402
 from ledgerlight.ingestion.company_grouping import (  # noqa: E402
     IsinSegment,
     group_segments_into_companies,
@@ -97,6 +111,8 @@ def widen_existing_windows(session: Any) -> tuple[int, int]:
             record_correction(
                 session,
                 identifier_id=row.identifier_id,
+                identifier_type=row.identifier_type,
+                value=row.value,
                 old_valid_from=row.recorded_valid_from,
                 new_valid_from=row.real_earliest_trade,
                 reason="bootstrap_rerun_widen_existing_window",
@@ -199,11 +215,17 @@ def main() -> int:
         windows_widened, windows_guard_skipped = widen_existing_windows(session)
         session.commit()
 
+        dedup_groups = company_dedup.load_groups(session)
+        fragmented = company_dedup.find_fragmented_groups(session, dedup_groups)
+        dedup_stats = company_dedup.merge_fragmented_groups(session, fragmented)
+        session.commit()
+
     print(f"companies_created: {companies_created}")
     print(f"identifiers_created: {identifiers_created}")
     print(f"skipped (already bootstrapped): {skipped_already_bootstrapped}")
     print(f"existing windows widened (real earlier evidence found): {windows_widened}")
     print(f"existing windows skipped (symbol-reuse guard): {windows_guard_skipped}")
+    print(f"duplicate companies merged (self-healing dedup): {dedup_stats.companies_deleted}")
     return 0
 
 

@@ -5,8 +5,9 @@ Git policy honoured throughout: every commit is local-only, no remote configured
 
 **Status: §1 (preflight, selection fix, detector hardening), §2 in full (2.1 bhavcopy
 backfill; 2.2 CARE; 2.3 IBBI and SEBI discovery broadening; 2.4 entity-link reporting),
-and §3 (outcome definitions, spec complete, data population partial and disclosed as
-such) complete. §4 onward not yet started** -- see the note at the end of §3. §2.1's bhavcopy
+§3 (outcome definitions, spec complete, data population partial and disclosed as such),
+and §4.0 (two real data-integrity bugs found and fixed while starting the price-feature
+engine) complete. §4.1 onward not yet started** -- see the note at the end of §4.0. §2.1's bhavcopy
 backfill surfaced real findings of its own: the exhaustively-confirmed 2016-01-01
 earliest-available-date boundary, a parsing-pipeline gap for 2016-01 to 2017-01-04, and a
 real environment constraint (a low-memory kill) that took three attempts to work around
@@ -707,20 +708,64 @@ claim otherwise.
    `RATING_DOWNGRADE_D` coverage is SEED-track-only for now; broadening it is unstarted
    work, tracked in `docs/phase-3/progress.md`.
 
-## Status note: §4 onward not yet started
+## §4.0: Two real data-integrity bugs found while starting the price-feature engine
 
-Sections 4-15 of this phase's brief (point-in-time features, guidance extraction,
+Full detail and evidence in `docs/phase-3/progress.md`; summarized here since both are
+real, consequential findings in their own right, not just setup noise.
+
+**Bug 1 -- stale `company_identifiers.valid_from`.** Joining `price_bars` to `company_id`
+for the real feature engine showed 1,484 of 3,764 EQ symbols (39%) and 1,452 ISINs with a
+`valid_from` later than their own real earliest trade date, by up to 613 days, silently
+dropping 393,553 real EQ rows (16.6%) from any company-keyed analysis. Root cause:
+`bootstrap_companies.py` is idempotent and never refreshes an existing identifier's window
+after a later bhavcopy backfill (the real 2016-01-01..2017-01-04 gap fix, Sec2.1) adds
+earlier real history. Fixed with four mandatory conditions: a symbol-reuse guard
+(`ledgerlight/ingestion/identifier_window_repair.py`) that widens a window only when the
+newly-covered period shares the same paired (symbol, isin) as the already-trusted period
+(correctly rejected 87 genuinely ambiguous real cases, e.g. temporary dual-ISIN periods,
+mid-gap renames); a real audit trail (`identifier_window_corrections`); one-transaction
+apply with before/after verification (2,849 corrections, 311,833 rows recovered); and a
+root-cause fix in `bootstrap_companies.py` itself (`widen_existing_windows`, every re-run)
+plus regression tests. Evidence-based downstream check: 0 Filing rows and 0 Outcome rows
+were ever affected (Filing's only date-windowed resolver never saw a date inside any
+affected gap; Outcome resolution uses no date window at all).
+
+**Bug 2 -- duplicate companies from the fix's own side effect.** Re-verifying the fix
+above showed the join returning MORE rows than real EQ rows exist -- a join blowup.
+Root cause: re-running bootstrap to also pick up a real backlog of 1,819 never-bootstrapped
+companies recreated the Sec2.4 fragmentation bug at small scale (94 ISIN-groups, e.g. a
+new ISIN for 8KMILES colliding with the already-correctly-renamed SECURKLOUD company),
+because the new-ISIN grouping pass has no visibility into existing companies' symbol
+claims. Flagged to the user before further DB mutation; user chose to fix properly rather
+than patch narrowly. Fix: refactored the original Sec2.4 migration's grouping/merge logic
+into a shared module (`ledgerlight/ingestion/company_dedup.py`) and wired it into
+`bootstrap_companies.py`'s own `main()`, so this class of bug is now self-healing on every
+bootstrap run rather than needing a manual follow-up migration each time. Applying it
+fixed all 94 groups (94 companies deleted, 307 identifiers regenerated, 9 real Events
+correctly repointed to the canonical company) with 0 Filing collisions. A real integration
+issue surfaced along the way -- the new audit table's hard FK blocked the merge's
+delete-and-regenerate step -- fixed by making the audit table genuinely self-describing
+(denormalized `identifier_type`/`value`, `ON DELETE SET NULL`) rather than hard-dependent
+on an identifier row surviving forever.
+
+Both fixes converged: a third `bootstrap_companies.py` run found 0 new work needed. Full
+test suite (312 tests, including integration) green; ruff and mypy clean throughout.
+
+## Status note: §4.1 onward not yet started
+
+Sections 4.1-15 of this phase's brief (point-in-time features proper, guidance extraction,
 LightGBM risk modelling with calibration and SHAP, walk-forward evaluation with
 leakage/survivorship controls, scoring infrastructure, the rest of the Dagster pipeline,
 the full test suite, the documentation set, and this report's remaining sections) have not
-been started. §1 and §2 each involved real, previously-undetected bugs found only by
-actually running the real pipeline against real data and checking results by hand, not by
-assumption (detector false positives; CARE's live search reflecting current entity names
-only; IBBI's hard-404 pagination bug; SpiceJet's real insolvency-petition history
+been started. §1, §2 and now §4.0 each involved real, previously-undetected bugs found
+only by actually running the real pipeline against real data and checking results by hand,
+not by assumption (detector false positives; CARE's live search reflecting current entity
+names only; IBBI's hard-404 pagination bug; SpiceJet's real insolvency-petition history
 contradicting its Phase 0 control-group selection; the BSE_CODE bootstrap gap hiding
 exactly the three most central event companies from identifier resolution; the 422-company
-fragmentation bug; §3's own DHFL case-number-grouping bug) -- none of which would have
-surfaced from accepting an aggregate stats object at face value instead of checking
-individual cases by hand. The remaining sections need the same real-execution,
-real-verification treatment and are substantial, multi-session work, consistent with how
-Phase 2 itself was built incrementally across many sessions rather than in one pass.
+fragmentation bug; §3's own DHFL case-number-grouping bug; §4.0's stale-window and
+duplicate-company bugs) -- none of which would have surfaced from accepting an aggregate
+stats object at face value instead of checking individual cases by hand. The remaining
+sections need the same real-execution, real-verification treatment and are substantial,
+multi-session work, consistent with how Phase 2 itself was built incrementally across
+many sessions rather than in one pass.
