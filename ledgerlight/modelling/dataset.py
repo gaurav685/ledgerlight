@@ -45,8 +45,14 @@ class DatasetRow:
 
 
 def load_primary_outcome_events(
-    session: Session, company_ids: list[uuid.UUID]
+    session: Session,
+    company_ids: list[uuid.UUID],
+    outcome_types: list[str] = PRIMARY_OUTCOME_TYPES,
 ) -> dict[uuid.UUID, list[tuple[dt.datetime, str]]]:
+    """`outcome_types` defaults to both real primary outcome types
+    (IBBI admission OR rating default); the user's sensitivity
+    condition (2026-10-31) calls this with just one of the two, to
+    show each source's real individual contribution."""
     rows = session.execute(
         text(
             """
@@ -56,7 +62,7 @@ def load_primary_outcome_events(
             ORDER BY e.company_id, e.event_time
             """
         ),
-        {"types": PRIMARY_OUTCOME_TYPES, "ids": company_ids},
+        {"types": outcome_types, "ids": company_ids},
     ).all()
     events: dict[uuid.UUID, list[tuple[dt.datetime, str]]] = {}
     for row in rows:
@@ -125,11 +131,16 @@ def _label_for_window(
 
 
 def build_primary_outcome_dataset(
-    session: Session, coverage: VerifiedCoverage | None = None
+    session: Session,
+    coverage: VerifiedCoverage | None = None,
+    outcome_types: list[str] = PRIMARY_OUTCOME_TYPES,
 ) -> list[DatasetRow]:
     """The real, restricted dataset. `coverage` can be passed in (e.g.
     already computed once by a caller that also wants to print it);
-    computed fresh here if omitted."""
+    computed fresh here if omitted. `outcome_types` defaults to both
+    real primary outcome types; the user's sensitivity condition
+    (2026-10-31) passes just one of the two so each source's real
+    individual contribution is visible."""
     if coverage is None:
         coverage = compute_verified_coverage(session)
 
@@ -138,7 +149,7 @@ def build_primary_outcome_dataset(
     ).scalar()
     assert data_coverage_end is not None
 
-    events_by_company = load_primary_outcome_events(session, coverage.company_ids)
+    events_by_company = load_primary_outcome_events(session, coverage.company_ids, outcome_types)
     last_trade_by_company = load_last_real_trade_dates(session, coverage.company_ids)
     features_by_key = load_feature_rows(session, coverage.company_ids)
 
