@@ -25,6 +25,7 @@ from ledgerlight.modelling.models import (
     fit_predict_logistic,
     select_lightgbm_config,
     split_inner_validation,
+    train_final_lightgbm,
 )
 
 COMPANY_A = uuid.uuid4()
@@ -320,3 +321,26 @@ def test_shap_contributions_shape_matches_real_test_rows_and_top_k() -> None:
     for row in test_rows:
         key = (row.company_id, row.as_of)
         assert len(per_row[key]) == 1
+
+
+def test_train_final_lightgbm_returns_none_with_a_single_class() -> None:
+    rows = [_row(COMPANY_A, dt.date(2019, 1, 31), 0, {"ret_1m": 0.1})]
+    booster, selection = train_final_lightgbm(rows, ["ret_1m"])
+    assert booster is None
+    assert selection is None
+
+
+def test_train_final_lightgbm_fits_a_real_booster_with_enough_two_class_data() -> None:
+    rng = np.random.default_rng(2)
+    rows = [
+        _row(
+            COMPANY_A,
+            dt.date(2010, 1, 1) + dt.timedelta(days=60 * i),
+            i % 2,
+            {"ret_1m": float(rng.normal())},
+        )
+        for i in range(60)
+    ]
+    booster, selection = train_final_lightgbm(rows, ["ret_1m"])
+    assert booster is not None
+    assert selection is not None

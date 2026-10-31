@@ -166,3 +166,21 @@ outcomes-and-features-build:
 
 point-in-time-proof:
 	uv run pytest tests/test_point_in_time_integrity.py -v -m integration
+
+train-risk:
+	uv run python scripts/train_risk.py
+
+backtest:
+	uv run python scripts/backtest.py
+
+leakage-check:
+	uv run python scripts/leakage_check.py
+
+ablation:
+	uv run python scripts/ablation.py
+
+score:
+	uv run python scripts/score.py
+
+model-card:
+	uv run python scripts/model_card.py

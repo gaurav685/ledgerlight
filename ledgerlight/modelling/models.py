@@ -329,6 +329,43 @@ def fit_predict_lightgbm(
     )
 
 
+def train_final_lightgbm(
+    rows: list[DatasetRow], feature_names: list[str], seed: int = LIGHTGBM_SEED
+) -> tuple[lgb.Booster | None, LightGBMSelection | None]:
+    """Trains one final LightGBM model on ALL of `rows` (already real,
+    non-censored labeled rows) for deployment/scoring -- not a
+    walk-forward fold, so there is no test set to score here.
+    Hyperparameters are still chosen only on an inner validation split
+    of `rows`, never on data this model will later be used to score.
+    Returns `(None, None)` if there is not enough real two-class data
+    to select or fit anything honestly."""
+    if len(set(_real_labels(rows))) < 2:
+        return None, None
+
+    inner_train, inner_validation = split_inner_validation(rows)
+    selection = select_lightgbm_config(inner_train, inner_validation, feature_names, seed=seed)
+    if selection is None:
+        return None, None
+
+    train_x, train_y = feature_matrix(rows, feature_names)
+    train_x = train_x.fillna(train_x.median(numeric_only=True).fillna(0.0))
+
+    positive_count = int(train_y.sum())
+    params: dict[str, float | int | str | bool] = {
+        **selection.config,
+        "objective": "binary",
+        "seed": seed,
+        "deterministic": True,
+        "verbosity": -1,
+    }
+    if selection.use_scale_pos_weight:
+        params["scale_pos_weight"] = (len(train_y) - positive_count) / positive_count
+
+    train_set = lgb.Dataset(train_x, label=train_y)
+    booster = lgb.train(params, train_set, num_boost_round=100)
+    return booster, selection
+
+
 @dataclass
 class CalibrationResult:
     method: str  # "isotonic" | "platt" | "uncalibrated"
