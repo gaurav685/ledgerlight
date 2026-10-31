@@ -664,13 +664,23 @@ exact next step is below, not left to be re-derived.
     `docs/release/release-gates.md` and `README.md` updated with the real, inconclusive
     Sec6-10 result.
 
-## Not yet started
+## PHASE 3 COMPLETE (2026-10-31)
 
-§12 (run and verify -- the full raw-output command sequence), §13 (final commit/backup for
-§2-15, `phase-3:` prefix already used throughout), §14 (re-mark all exit gates with
-evidence), §15 (final report, `docs/phase-3/phase-3-report.md`).
+§12 (run and verify), §13 (final commit/backup), §14 (exit gates re-marked), §15 (final
+report) are all done. See `docs/phase-3/phase-3-report.md` for the full report. Headline
+real result: the verified-coverage universe is 5 companies / 5 distinct positive events
+-- statistically inconclusive, no model beats the base rate, stated plainly throughout.
+**Per the user's explicit instruction, Phase 4 is NOT begun.**
 
-## Exact next step
+## Not yet started (deferred beyond Phase 3, see the final report §17)
+
+Human review of `docs/modelling/outcome-evidence-review.csv`; SpiceJet's control-group
+status decision; whether to broaden CARE discovery to the full universe; whether to
+persist training-time feature medians and the per-fold calibration map with the deployed
+artifact; further investigation of the small backtest Brier-score reproducibility
+anomaly (§16/§11 of the final report).
+
+## Exact next step (for a future phase only -- NOT to be started in this session)
 
 1. **§6-§11 are now complete** (coverage restriction, censoring, dataset, folds,
    B0-B3+LightGBM+calibration+SHAP, metrics, backtest, sensitivity split, leakage checks,
