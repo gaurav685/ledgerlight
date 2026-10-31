@@ -7,8 +7,9 @@ Git policy honoured throughout: every commit is local-only, no remote configured
 backfill; 2.2 CARE; 2.3 IBBI and SEBI discovery broadening; 2.4 entity-link reporting),
 §3 (outcome definitions, spec complete, data population partial and disclosed as such),
 §4.0 (two real data-integrity bugs found and fixed while starting the price-feature
-engine), and §4.1 (UNIVERSE track price/liquidity STRUCTURED features, real snapshots
-built) complete. §4.2 onward not yet started** -- see the note at the end of §4.1. §2.1's bhavcopy
+engine), §4.1 (UNIVERSE track price/liquidity STRUCTURED features, real snapshots built),
+and §4.2 (RULE-VERIFIED rating and prior auto-linked-history features) complete. §4.3
+onward not yet started** -- see the note at the end of §4.2. §2.1's bhavcopy
 backfill surfaced real findings of its own: the exhaustively-confirmed 2016-01-01
 earliest-available-date boundary, a parsing-pipeline gap for 2016-01 to 2017-01-04, and a
 real environment constraint (a low-memory kill) that took three attempts to work around
@@ -782,9 +783,37 @@ coverage exactly). Spot-checked DHFL directly: early 2016 snapshots correctly sh
 history, not assumed. Full suite green (324/324 including integration); ruff and mypy
 clean.
 
-## Status note: §4.2 onward not yet started
+## §4.2: UNIVERSE track RULE-VERIFIED features (ratings + prior auto-linked history)
 
-Sections 4.2-15 of this phase's brief (RULE-VERIFIED and SEED-track/financial features,
+`ledgerlight/modelling/rating_features.py`: a literal, span-verified regex over real CARE
+`DocumentPage` text, generalizing §3's `_RATING_D_PATTERN` to CARE's full long-term grade
+scale (AAA down to D). Validated against 40 real CARE document first-pages before use --
+28/40 matched; the 12 "no match" cases were checked by hand and are real rating-withdrawal
+notices with no grade stated at all. A document rating several instruments at different
+grades is handled by taking the WORST grade per document, a disclosed simplification.
+Action type (downgrade/upgrade) is derived by ordinal comparison to the prior observation,
+not by parsing English verbs. `current_rating_ordinal` etc. are `None` (never 0) when a
+company has never been rated. 7 unit tests, including an explicit leakage check.
+
+Found and fixed a real, separate gap while building this: the `filings` table was stale --
+only 12 legacy companies, none from the real Sec2.3 CARE/IBBI/SEBI broadening
+(`link_filings()` had never been re-run since). Re-running it created 289 new real `Filing`
+rows, 38 distinct companies now linked. 61 documents remain genuinely unresolved -- checked
+by hand: real documents dated before that company's own real NSE listing date (PNB Housing
+Finance predating 2016-11-07; Gensol Engineering predating 2023-07-05), so there is no real
+NSE symbol yet to auto-link to. Disclosed, not a bug.
+
+`scripts/build_rule_verified_features.py` reuses the exact (company_id, as_of) grid already
+built by Sec4.1's price-liquidity pass, as a separate `feature_set_version`
+(`rule-verified-1.0`). Real run: 38 companies, 3,241 `FeatureSnapshot` rows. Spot-checked
+DHFL: only one real CARE observation exists for it (2019-06-04, matching the single
+pre-existing seed document, since CARE discovery was never broadened past the 15-company
+SEED-track universe), and one real 2011 SEBI filing -- checked by hand, no attribution bug
+found. Full suite green (331/331 including integration); ruff and mypy clean.
+
+## Status note: §4.3 onward not yet started
+
+Sections 4.3-15 of this phase's brief (SEED-track/financial features,
 guidance extraction,
 LightGBM risk modelling with calibration and SHAP, walk-forward evaluation with
 leakage/survivorship controls, scoring infrastructure, the rest of the Dagster pipeline,

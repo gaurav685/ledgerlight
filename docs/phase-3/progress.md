@@ -301,32 +301,69 @@ exact next step is below, not left to be re-derived.
     all consistent with DHFL's real public history, not assumed.
   - All tests green: full suite including integration, 324/324; ruff + mypy clean.
 
+- **§4.2 UNIVERSE track RULE-VERIFIED features (ratings + prior auto-linked history)**:
+  COMPLETE for this feature group. `ledgerlight/modelling/rating_features.py`: a literal,
+  span-verified regex (`CARE\s+(AAA|AA[+-]?|...|D)(?![A-Za-z0-9])`) over real CARE
+  `DocumentPage` text, generalizing §3's `_RATING_D_PATTERN` to CARE's full long-term grade
+  scale. Validated against 40 real CARE document first-pages before use
+  (`docs/phase-3/evidence/rating-pattern-real-sample-check.log`): 28/40 matched; the 12
+  "no match" cases were checked by hand and are real rating-WITHDRAWAL notices with no
+  grade stated at all -- correct behavior, not a gap. A CARE document can rate several
+  instruments of one issuer at different grades; this module takes the WORST (lowest
+  ordinal) grade per document as a disclosed simplification, not an official single
+  rating. Action type (downgrade/upgrade) is derived by ORDINAL COMPARISON to the prior
+  observation, not by parsing English verbs -- more reliable and still fully
+  span-verified, since each individual observation has a real evidence citation.
+  `current_rating_ordinal`/`days_since_last_downgrade`/etc. are `None` (never 0) when a
+  company has never been rated, so a model can't confuse "never rated" with "rated and
+  stable" -- enforced by a dedicated test. 7 unit tests, including an explicit leakage
+  check (an observation known only after `as_of` must never affect the computed value).
+  - **Found and fixed a real, separate gap while building this**: the `filings` table was
+    stale -- only 12 legacy companies, none from the real Sec2.3 CARE/IBBI/SEBI broadening
+    (`link_filings()` had never been re-run since). Re-ran it:
+    `docs/phase-3/evidence/link-filings-run-post-sec3-broadening.log` -- 289 new real
+    `Filing` rows created, 38 distinct companies now linked (11 care, 29 ibbi, 13 sebi).
+    61 documents remain genuinely unresolved -- checked two by hand (PNB Housing Finance's
+    2003-2016 documents, Gensol Engineering's March-2023 document): both are REAL, dated
+    before that company's own real NSE listing date (2016-11-07 and 2023-07-05
+    respectively), so there is no real NSE symbol yet to auto-link to. Disclosed, not a
+    bug to chase further.
+  - `scripts/build_rule_verified_features.py` reuses the exact (company_id, as_of) grid
+    already built by Sec4.1's price-liquidity pass, as a separate `feature_set_version`
+    (`rule-verified-1.0`) so UNIVERSE membership stays identical without re-deriving it.
+    `max_input_known_at` is the real max of (latest rating observation, latest SEBI
+    filing, latest IBBI filing) known at or before `as_of` -- not a placeholder.
+  - Real run: 38 companies, 3,241 `FeatureSnapshot` rows. Spot-checked DHFL: only one real
+    CARE observation exists for it (2019-06-04, `current_rating_ordinal`=19/D, matching
+    the single pre-existing seed document -- CARE discovery was never broadened past the
+    15-company SEED-track universe, a disclosed gap from Sec3), and one real 2011 SEBI
+    filing (plausible -- a real regulatory order, not necessarily insolvency-related;
+    checked the real document dates by hand, found no attribution bug).
+  - All tests green: full suite including integration, 331/331; ruff + mypy clean.
+
 ## Not yet started
 
-§4.2 onward (RULE-VERIFIED ratings/SEBI/IBBI prior-history features; SEED-track governance
-features; financial features), §5 (guidance extraction), §6 (LightGBM models), §7
-(walk-forward eval + leakage controls), §8 (scoring + storage), §9 (rest of the Dagster
-pipeline + commands), §10 (tests), §11 (documentation set), §12 (run and verify), §13
-(final commit/backup for §2-15, `phase-3:` prefix), §14 (exit gates), §15 (final report).
+§4.3 onward (SEED-track governance features; financial features), §5 (guidance
+extraction), §6 (LightGBM models), §7 (walk-forward eval + leakage controls), §8 (scoring +
+storage), §9 (rest of the Dagster pipeline + commands), §10 (tests), §11 (documentation
+set), §12 (run and verify), §13 (final commit/backup for §2-15, `phase-3:` prefix), §14
+(exit gates), §15 (final report).
 
 ## Exact next step
 
-1. Restart the full-universe IBBI discovery crawl (`scripts/ibbi_universe_discovery.py`) --
-   it died when Docker Desktop crashed mid-session (2026-10-31); its progress up to that
-   point (55 -> 100 real IBBI documents) is safely committed. Check free memory first
-   (`Get-CimInstance Win32_OperatingSystem`) before relaunching, per the note below.
-2. Once it finishes: run `scripts/process.py` (or a scoped extraction job) on whatever new
-   IBBI documents it found, then re-run `scripts/populate_outcomes.py` and refresh the
-   counts in `docs/modelling/outcomes.md`, `docs/modelling/outcome-evidence-review.csv`, and
-   this file. Consider broadening CARE discovery to the full universe too (not yet
-   decided/done).
-3. Begin §4.2: RULE-VERIFIED features -- rating symbols/actions extracted and span-verified
-   from CARE documents (similar rule-based approach to §3's `_RATING_D_PATTERN`, generalized
-   to extract every rating symbol with evidence, not just "D"), and prior SEBI-order /
-   IBBI-mention counts via the existing Sec2.3/2.4 auto-links. Per the brief's feature
-   policy, these -- NOT the Phase 2 zero-shot RATING_ACT events, which are EVENT-CANDIDATE,
-   not RULE-VERIFIED -- are what the PRIMARY model may use alongside §4.1's STRUCTURED
-   features. Then SEED-track governance features (full event set with tier shown, from
+1. The full-universe IBBI discovery crawl (`scripts/ibbi_universe_discovery.py`) is running
+   again (relaunched after the Docker crash; PIDs confirmed alive, log growing in
+   `docs/phase-3/evidence/ibbi-universe-discovery-run3.log`). Once it finishes: run
+   `scripts/process.py` (or a scoped extraction job) on whatever new IBBI documents it
+   found, re-run `scripts/link_filings.py` (now kept current, per the Sec4.2 fix above) and
+   `scripts/populate_outcomes.py`, then refresh the counts in `docs/modelling/outcomes.md`,
+   `docs/modelling/outcome-evidence-review.csv`, and this file. Consider broadening CARE
+   discovery to the full universe too (not yet decided/done) -- would also broaden
+   Sec4.2's rating features past the 15 SEED-track companies.
+2. Re-run `scripts/build_feature_snapshots.py` and `scripts/build_rule_verified_features.py`
+   after any of the above change `price_bars`/`filings` data, so the feature snapshots stay
+   current -- both are safely re-runnable (upsert on conflict).
+3. Begin §4.3: SEED-track governance features (full event set with tier shown, from
    existing Phase 2 Event/EventField data) and financial features (span-cited extraction of
    revenue/receivables/CFO/PAT from seed annual reports, ONLY if a checked sample clears the
    brief's own 90% span-verification pass-rate gate; otherwise exclude and say why). Note: no

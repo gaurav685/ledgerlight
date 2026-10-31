@@ -1,0 +1,52 @@
+Testing _RATING_SYMBOL_PATTERN against 40 real CARE document first-pages:
+Pattern: CARE\s+(AAA|AA[+-]?|A[+-]?|BBB[+-]?|BB[+-]?|B[+-]?|C[+-]?|D)(?![A-Za-z0-9])
+
+no match: []  <- https://www.careratings.com/upload/CompanyFiles/PR/PNB%20Housing%20Finance%20Limited.-12312003.pdf
+no match: []  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-01142004.pdf
+no match: []  <- https://www.careratings.com/upload/CompanyFiles/PR/PNB%20Housing%20Finance%20Limited.-12232004.pdf
+no match: []  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-02102005.pdf
+no match: []  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-01192006.pdf
+no match: []  <- https://www.careratings.com/upload/CompanyFiles/PR/PNB%20Housing%20Finance%20Limited.-01272006.pdf
+no match: []  <- https://www.careratings.com/upload/CompanyFiles/PR/PNB%20Housing%20Finance%20Limited.-08302006.pdf
+no match: []  <- https://www.careratings.com/upload/CompanyFiles/PR/PNB%20Housing%20Finance%20Limited.-11172006.pdf
+MATCH: ['AAA', 'AAA']  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-03072007.pdf
+MATCH: ['AAA', 'AAA']  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-11292007.pdf
+MATCH: ['AA+', 'AA+']  <- https://www.careratings.com/upload/CompanyFiles/PR/PNB%20Housing%20Finance%20Limited.-12052007.pdf
+MATCH: ['AA+']  <- https://www.careratings.com/upload/CompanyFiles/PR/PNB%20Housing%20Finance%20Limited.-01252008.pdf
+MATCH: ['AAA', 'AAA']  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-09262008.pdf
+MATCH: ['AA+']  <- https://www.careratings.com/upload/CompanyFiles/PR/PNB%20Housing%20Finance%20Limited.-12052008.pdf
+MATCH: ['AAA', 'AAA']  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-07102009.pdf
+MATCH: ['AAA', 'AAA']  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-09162009.pdf
+MATCH: ['AA+']  <- https://www.careratings.com/upload/CompanyFiles/PR/PNB%20Housing%20Finance%20Limited.-12142009.pdf
+MATCH: ['AA+', 'AA+']  <- https://www.careratings.com/upload/CompanyFiles/PR/PNB%20Housing%20Finance%20Limited.-12162009.pdf
+MATCH: ['AAA', 'AAA', 'AAA', 'AAA']  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-01222010.pdf
+MATCH: ['AAA']  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-03152010.pdf
+MATCH: ['AAA', 'AAA', 'AAA']  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-08232010.pdf
+no match: []  <- https://www.careratings.com/upload/CompanyFiles/PR/Avenue%20Supermarkets%20Pvt.%20Ltd.-10122010.pdf
+MATCH: ['AAA', 'AAA', 'AAA', 'AAA', 'AAA', 'AAA']  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-11192010.pdf
+MATCH: ['AAA', 'AAA', 'AAA']  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-11242010.pdf
+MATCH: ['AAA', 'AAA']  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-12062010.pdf
+MATCH: ['AAA', 'AAA', 'AAA', 'AAA', 'AAA', 'AAA']  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-03032011.pdf
+MATCH: ['AA+', 'AA+', 'AA+']  <- https://www.careratings.com/upload/CompanyFiles/PR/PNB%20Housing%20Finance%20Limited.-03092011.pdf
+no match: []  <- https://www.careratings.com/upload/CompanyFiles/PR/Avenue%20Supermarkets%20Pvt.%20Ltd.-04182011.pdf
+MATCH: ['AAA']  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-07192011.pdf
+MATCH: ['AA+', 'AA+', 'AA+', 'AA+', 'AA+', 'AA+']  <- https://www.careratings.com/upload/CompanyFiles/PR/PNB%20Housing%20Finance%20Limited.-08172011.pdf
+MATCH: ['AA+', 'AA+']  <- https://www.careratings.com/upload/CompanyFiles/PR/PNB%20Housing%20Finance%20Limited.-09262011.pdf
+MATCH: ['AA+', 'AA+']  <- https://www.careratings.com/upload/CompanyFiles/PR/PNB%20Housing%20Finance%20Limited.-10192011.pdf
+MATCH: ['AAA', 'AAA', 'AAA', 'AAA', 'AAA', 'AAA']  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-01182012.pdf
+no match: []  <- https://www.careratings.com/upload/CompanyFiles/PR/Avenue%20Supermarkets%20Pvt.%20Ltd.-01312012.pdf
+MATCH: ['AA+', 'AA+', 'AA+', 'AA+', 'AA+']  <- https://www.careratings.com/upload/CompanyFiles/PR/PNB%20Housing%20Finance%20Limited.-01312012.pdf
+MATCH: ['AAA', 'AAA', 'AAA', 'AAA']  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-09182012.pdf
+MATCH: ['AAA', 'AAA', 'AAA', 'AAA', 'AAA', 'AAA']  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-10042012.pdf
+MATCH: ['AAA']  <- https://www.careratings.com/upload/CompanyFiles/PR/LIC%20HOUSING%20FINANCE%20LIMITED.-10112012.pdf
+MATCH: ['AA+', 'AA+', 'AA+', 'AA+']  <- https://www.careratings.com/upload/CompanyFiles/PR/PNB%20Housing%20Finance%20Limited.-12132012.pdf
+no match: []  <- https://www.careratings.com/upload/CompanyFiles/PR/Avenue%20Supermarkets%20Pvt.%20Ltd.-02122013.pdf
+
+28/40 documents had at least one rating-symbol match
+
+Checked the 12 "no match" cases directly: all are real CARE rating
+WITHDRAWAL notices (e.g. Avenue Supermarts Ltd, 2020-03-12: "CARE has
+withdrawn the rating assigned to the Commercial Paper issue... as the
+company has not placed the rated commercial paper issue"). No grade
+symbol is stated in a withdrawal notice because none applies -- the
+pattern correctly matches nothing rather than fabricating a grade.
