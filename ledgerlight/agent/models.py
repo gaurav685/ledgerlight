@@ -52,6 +52,18 @@ class Investigation(Base):
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
     as_of: Mapped[dt.date] = mapped_column(Date, nullable=False)
     requested_by: Mapped[str] = mapped_column(String(64), nullable=False)
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(
+        nullable=True,
+        doc="Phase 5 §2: set only for an investigation the API itself created on "
+        "behalf of a real tenant. NULL for a CLI-created investigation -- never "
+        "visible to any tenant's own RLS-scoped connection as a result. No "
+        "Python-side ForeignKey object here deliberately -- `ledgerlight.api.models`"
+        " (which owns the real `tenants` table) is not imported by every Phase "
+        "1-4 entry point, and SQLAlchemy resolves a Python FK's target table "
+        "eagerly at first persistence, which would break them. The real "
+        "database-level foreign key (migration `4dad2cd00443`) still enforces "
+        "this regardless of what the ORM model declares.",
+    )
 
     state: Mapped[str] = mapped_column(
         String(16),

@@ -66,6 +66,31 @@ class Settings(BaseSettings):
     # application schema.
     postgres_dagster_db: str = Field(default="ledgerlight_dagster")
 
+    # Phase 5 §2: the API's own runtime DB role — a real, separate,
+    # non-superuser role with no BYPASSRLS, distinct from `postgres_user`
+    # above (the owner role migrations run under). RLS policies apply to
+    # this role automatically because it neither owns the tables nor is a
+    # superuser — never because FORCE ROW LEVEL SECURITY was set.
+    app_db_user: str = Field(default="ledgerlight_app")
+    app_db_password: str = Field(default="changeme-local-only-app")
+
+    # Phase 5 §2: session cookie/CSRF token signing and webhook-secret
+    # encryption-at-rest keys. Dev defaults are deliberately obviously-fake
+    # (never a real secret) so §5's fail-fast weak-secret check has
+    # something real to catch outside dev mode.
+    session_secret_key: str = Field(default="dev-only-session-secret-change-me")
+    webhook_secret_encryption_key: str | None = Field(default=None)
+
+    def app_database_url(self, db_name: str | None = None) -> str:
+        """The same database as `database_url()`, but authenticating as
+        the restricted `app_db_user` role -- what the real API process
+        connects as, never the owner role migrations use."""
+        name = db_name or self.postgres_db
+        return (
+            f"postgresql+psycopg://{self.app_db_user}:{self.app_db_password}"
+            f"@{self.postgres_host}:{self.postgres_port}/{name}"
+        )
+
     def database_url(self, db_name: str | None = None) -> str:
         name = db_name or self.postgres_db
         return (
