@@ -20,6 +20,7 @@ LOW_CONFIDENCE_EXTRACTION = "low_confidence_extraction"
 VERIFICATION_FAILED = "verification_failed"
 CANDIDATE_TIER_MAJORITY = "candidate_tier_majority"
 BUDGET_EXCEEDED = "budget_exceeded"
+SEEDED_QC = "seeded_qc"
 
 REASON_CODES: dict[str, str] = {
     HIGH_SEVERITY_FINDING: "A real event with severity='high' appears in the dossier.",
@@ -39,6 +40,11 @@ REASON_CODES: dict[str, str] = {
         "not VERIFIED."
     ),
     BUDGET_EXCEEDED: "A real budget limit (steps/wall time/tool calls/tokens/cost) was exceeded.",
+    SEEDED_QC: (
+        "A deliberately flawed dossier injected by qc-seed (ledgerlight.agent.qc_seed) to "
+        "measure real reviewer catch rate -- never a real finding; excluded from every "
+        "other real statistic."
+    ),
 }
 
 LOW_CONFIDENCE_THRESHOLD = 0.7
