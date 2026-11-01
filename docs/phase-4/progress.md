@@ -126,9 +126,29 @@ completion commit `195a714`.
   claim exists), batch fraction edge cases, and catch/miss/undecided scenarios.
   **§7 is now fully complete.**
 
+- **§8 (2026-11-01)**: `ledgerlight/agent/eval.py` -- `seed_track_company_ids` resolves
+  the real 15 SEED-track companies via real NSE_SYMBOL identifiers (same resolution as
+  `scripts/build_seed_governance_features.py`). `universe_track_company_ids` is a real,
+  query-derived ~15-company UNIVERSE-track selection: the brief's own suggested rule
+  ("mix of high/low score percentiles") turned out not to be usable -- real scores
+  (`scores` table) exist for only the 5-company verified-coverage universe, itself a
+  subset of SEED -- so this uses real event-count instead (most-events companies
+  outside SEED + enough zero-event companies to reach 15, tiebroken by `company_id`),
+  disclosed in the module's own docstring rather than silently substituted. `run_one`
+  runs one real investigation and reports `final_status`, claims actually referenced by
+  the final dossier (via `claim_id_map`, not just "not failed"), claims removed in
+  REPAIR, usage, and a real unsupported-claim-leakage check (target 0) scoped to claims
+  the final dossier actually references. `compute_check_type_stats` aggregates real
+  per-check-type pass rates; `run_evaluation` ties these together with a real p50/p95
+  percentile helper and an explicit-override parameter (used by tests and later a CLI,
+  since a full real 15+15x2 run is too slow for a test suite). Real smoke test against
+  GENSOL and a real UNIVERSE-track company: both FINALISED, no leakage. 11 integration
+  tests (`tests/test_agent_eval.py`). **§8's evaluation library is done** -- the actual
+  full real evaluation run across all 30 companies happens at §11 ("run and verify"),
+  not here, so its real output can be pasted into the final report once, not twice.
+
 ## Not yet started
 
-- §8: `agent-eval` across the 15 SEED-track + ~15 UNIVERSE-track companies.
 - §9: the full adversarial/failure test suite (prompt injection, crash/resume,
   determinism, REPAIR-never-substitutes, etc.) -- no placeholder tests.
 - §10: the 7 CLI commands and the 9 required docs.
@@ -141,13 +161,13 @@ completion commit `195a714`.
 
 ## Exact next step
 
-§4/§5/§6/§7 are all done. LLM plan validation / LLM renderer were NOT built -- no
-`LLM_PROVIDER`/key is in `.env` in this environment, so per the brief's own instruction
-this records "LLM renderer not run" rather than being built against nothing real to
-test it with; revisit only if a real key is ever added. Next: §8 (`agent-eval` across
-15 SEED-track + ~15 UNIVERSE-track companies), §9 (adversarial/failure tests), §10 (the
-7 CLI commands + docs), §11 (run and verify), §12 (commit/backup), §13 (exit gates), §14
-(final report).
+§4/§5/§6/§7/§8 (the library) are all done. LLM plan validation / LLM renderer were NOT
+built -- no `LLM_PROVIDER`/key is in `.env` in this environment, so per the brief's own
+instruction this records "LLM renderer not run" rather than being built against nothing
+real to test it with; revisit only if a real key is ever added. Next: §9 (adversarial/
+failure tests), §10 (the 7 CLI commands + docs), §11 (run and verify -- including the
+one, full, real `agent-eval` run across all 30 companies), §12 (commit/backup), §13
+(exit gates), §14 (final report).
 
 ## Open defects / known limitations (not yet resolved)
 
