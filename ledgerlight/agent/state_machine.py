@@ -54,7 +54,11 @@ from ledgerlight.agent.tools import (
     get_risk_score,
     get_timeline,
 )
-from ledgerlight.agent.verifier import DossierVerificationResult, verify_dossier
+from ledgerlight.agent.verifier import (
+    DossierVerificationResult,
+    find_contradictions,
+    verify_dossier,
+)
 from ledgerlight.knowledge.models import Company
 
 STATE_ORDER = ["PLAN", "GATHER", "TIMELINE", "DRAFT", "VERIFY", "REPAIR", "FINALISE"]
@@ -120,6 +124,22 @@ def _persist_claims(
         persisted.append(claim)
     session.flush()
     return persisted
+
+
+def _render(
+    session: Session, claims: list[Claim], company_name: str, as_of_iso: str
+) -> RenderedDossier:
+    """`render_offline` with real, freshly-computed contradictions
+    always passed in -- `find_contradictions` is a pure function of
+    the active claim set, so every render (DRAFT, REPAIR, and VERIFY's
+    own resume fallback) must recompute and include it. Without this,
+    a real contradiction `verify_dossier` detects would be returned in
+    its own result and then silently dropped, never reaching the
+    persisted dossier's "Conflicting evidence" section -- a real gap
+    found while writing Sec9's contradictory-sources adversarial test."""
+    return render_offline(
+        session, claims, company_name, as_of_iso, contradictions=find_contradictions(claims)
+    )
 
 
 def run_investigation(
@@ -243,7 +263,7 @@ def run_investigation(
             company = session.get(Company, company_id)
             company_name = company.display_name if company is not None else str(company_id)
             active_claims = _active_claims(session, investigation.id)
-            rendered = render_offline(session, active_claims, company_name, as_of.isoformat())
+            rendered = _render(session, active_claims, company_name, as_of.isoformat())
 
             _checkpoint(
                 session,
@@ -265,9 +285,7 @@ def run_investigation(
                 if rendered is None:
                     company = session.get(Company, company_id)
                     company_name = company.display_name if company is not None else str(company_id)
-                    rendered = render_offline(
-                        session, active_claims, company_name, as_of.isoformat()
-                    )
+                    rendered = _render(session, active_claims, company_name, as_of.isoformat())
                 try:
                     result = verify_dossier(session, active_claims, rendered, as_of)
                 except Exception as verify_exc:
@@ -327,7 +345,7 @@ def run_investigation(
                 active_claims = _active_claims(session, investigation.id)
                 company = session.get(Company, company_id)
                 company_name = company.display_name if company is not None else str(company_id)
-                rendered = render_offline(session, active_claims, company_name, as_of.isoformat())
+                rendered = _render(session, active_claims, company_name, as_of.isoformat())
                 _checkpoint(
                     session, investigation, "REPAIR", [], {"repair_round": repair_round + 1}
                 )
