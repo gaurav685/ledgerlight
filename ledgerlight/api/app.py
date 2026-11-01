@@ -12,6 +12,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from ledgerlight.api.rate_limit import RateLimitExceeded
+from ledgerlight.api.routers import admin as admin_router
 from ledgerlight.api.routers import alerts as alerts_router
 from ledgerlight.api.routers import api_keys as api_keys_router
 from ledgerlight.api.routers import auth as auth_router
@@ -115,6 +116,7 @@ def create_app() -> FastAPI:
     app.include_router(alerts_router.router)
     app.include_router(api_keys_router.router)
     app.include_router(webhooks_router.router)
+    app.include_router(admin_router.router)
 
     return app
 

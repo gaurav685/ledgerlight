@@ -247,6 +247,38 @@ class ReviewDecisionRequest(BaseModel):
     notes: str | None = None
 
 
+# --- admin: users / roles / audit log --------------------------------------------
+
+
+class UserCreateRequest(BaseModel):
+    email: str
+    password: str
+    role: str
+
+
+class UserOut(BaseModel):
+    user_id: uuid.UUID
+    email: str
+    role: str
+    membership_status: str
+    is_active: bool
+    created_at: dt.datetime
+
+
+class RoleUpdateRequest(BaseModel):
+    role: str
+
+
+class AuditLogOut(BaseModel):
+    id: uuid.UUID
+    actor_user_id: uuid.UUID | None
+    actor_api_key_id: uuid.UUID | None
+    action: str
+    target_type: str | None
+    target_id: str | None
+    created_at: dt.datetime
+
+
 # --- documents ------------------------------------------------------------------
 
 
