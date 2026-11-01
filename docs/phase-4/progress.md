@@ -58,13 +58,23 @@ completion commit `195a714`.
   precision over recall, consistent with this project's "inconclusive is acceptable"
   culture). Real output: `docs/agent/nli-calibration.json`.
 
+- **§4 orchestration (2026-11-01)**: `ledgerlight/agent/state_machine.py` --
+  `run_investigation` ties budgets/tools/claims/render/verifier together. Each state
+  COMMITS (not just flushes) immediately after its checkpoint -- real crash-resume
+  needs durable per-step commits, same lesson as Phase 3's `scripts/process.py`. Real
+  smoke tests against DHFL/GENSOL found and fixed two real bugs: (1) the disclaimer's
+  own fixed text legitimately uses "fraud" in a negating sense ("not proof of ...
+  fraud"), which the banned-language scan wrongly flagged -- fixed by exempting the
+  disclaimer section specifically (disclosed, documented in `verifier.py`); (2)
+  `render_offline`'s claim ordering depended on DB retrieval order (created_at ties
+  broken by random UUID), not real content -- a genuine determinism bug, fixed by
+  sorting every section's claims by real content (known_at/text + full payload JSON
+  tiebreaker). 5 new integration tests, including a real simulated-crash resume giving
+  a byte-identical final dossier to an uninterrupted run. **§4 and §5 are both now
+  functionally complete.**
+
 ## Not yet started
 
-- §4 orchestration: the state machine itself
-  (`ledgerlight/agent/state_machine.py`) tying budgets/tools/claims/render/verifier
-  together -- PLAN -> GATHER -> TIMELINE -> DRAFT -> VERIFY -> REPAIR -> FINALISE,
-  checkpointed via `InvestigationStep`, with the VERIFY<->REPAIR loop (remove failed
-  claims, re-render, never substitute a new unsupported claim, <= max_repair_rounds).
 - §6: Markdown + JSON dossier export (the content model itself -- sections/claim_id_map
   -- already exists via `ledgerlight.agent.render.RenderedDossier`).
 - §7: the human review CLI (`dossier-review`), reason codes, append-only audit, the
@@ -82,18 +92,15 @@ completion commit `195a714`.
 
 ## Exact next step
 
-Build `ledgerlight/agent/state_machine.py`: the real orchestration loop. Design already
-settled (see this session's own reasoning): claims are persisted progressively during
-TIMELINE/DRAFT (real `Claim` rows, so render_offline always has real claim IDs); a
-`Dossier` row is persisted exactly once, at the end (FINALISE or the terminal
-NEEDS_REVIEW), carrying the LAST real render (even on failure, for human review) --
-never one per repair round. REPAIR removes failed claims from the active set (never
-adds a replacement) and re-renders with the reduced set; the VERIFY<->REPAIR loop runs
-at most `budget.max_repair_rounds` times. Resume-from-crash reads `Investigation.state`
-(the next state to execute) and continues from there, re-deriving nothing already
-persisted. PLAN's deterministic default plan and DRAFT's offline-template renderer
-come first; the optional LLM paths (plan validation, LLM renderer) are gated on
-`LLM_PROVIDER`/a key in `.env`, recording "not run" otherwise.
+§4/§5 are done (LLM plan validation / LLM renderer were NOT built -- no `LLM_PROVIDER`/
+key is in `.env` in this environment, so per the brief's own instruction this records
+"LLM renderer not run" rather than being built against nothing real to test it with;
+revisit only if a real key is ever added). Next: §6 (Markdown + JSON export functions
+for a `RenderedDossier` + `Investigation`/`Dossier` row -- the content model itself is
+already real), then §7 (human review CLI, reason codes, append-only audit, the
+`EventVersion` feedback loop, `qc-seed`), §8 (`agent-eval` across 15 SEED-track +
+~15 UNIVERSE-track companies), §9 (adversarial/failure tests), §10 (the 7 CLI commands
++ docs), §11 (run and verify), §12 (commit/backup), §13 (exit gates), §14 (final report).
 
 ## Open defects / known limitations (not yet resolved)
 
