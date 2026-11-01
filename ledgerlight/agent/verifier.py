@@ -39,7 +39,20 @@ from ledgerlight.agent.nli import entailment_score
 from ledgerlight.agent.render import ContradictionGroup, RenderedDossier
 from ledgerlight.agent.tools import get_evidence
 
-DEFAULT_NLI_ENTAILMENT_THRESHOLD = 0.5
+DEFAULT_NLI_ENTAILMENT_THRESHOLD = 0.95
+"""Calibrated via scripts/calibrate_nli_threshold.py against the SYNTHETIC
+labelled set in ledgerlight.agent.nli_calibration -- real result
+(docs/agent/nli-calibration.json): every threshold from 0.35 to 0.95
+gives perfect precision/recall (1.000/1.000, 10 TP, 0 FP, 10 TN, 0 FN)
+on that small, clearly-separated set. 0.95 (the top of that plateau)
+is chosen deliberately, not merely because it is the argmax: this
+project's own standing rule is that a false "verified" claim slipping
+into a finalised dossier is worse than a real, correctly-supported
+claim being sent to REPAIR or NEEDS_REVIEW unnecessarily, so the
+threshold favours precision over recall. Real, disclosed limitation:
+the synthetic set is small (20 examples) and each pair is clearly
+entailed or clearly not -- the real precision/recall on genuinely
+borderline real claims, which the set does not probe, is unverified."""
 
 BANNED_TERMS = (
     "fraud",
