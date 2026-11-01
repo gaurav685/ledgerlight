@@ -144,9 +144,67 @@ Commits: `0cbbc04` (app+auth), `47bb316` (companies), `2ca7df4` (dossiers,
 `1ffd598` (api-keys/webhooks), `6412f24` (admin), `6f9ff75` (documents), `41cf28c`
 (alerts job), `b5d378d` (OpenAPI export + docs). **§3 is now fully complete.**
 
+## §4 core pages complete (2026-11-01)
+
+`frontend/`: Next.js 16 + React 19 + TypeScript strict + ESLint, pnpm with a committed
+lockfile (corepack installed to a user-writable directory -- no admin rights needed
+on this Windows host). `next.config.ts` proxies `/api/*` straight through to the real
+FastAPI backend (same origin from the browser's own point of view, so the real
+session cookie just works, no CORS configuration anywhere) and sets the same real
+security headers (CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy,
+HSTS) the backend already sets. `lib/api.ts`/`lib/auth.tsx`: the one real HTTP
+client (CSRF header from sessionStorage on every mutation, typed `ApiError`) and
+real identity state.
+
+Every page in the brief's own list is built, each a Client Component fetching the
+real `/v1` API on mount -- never hardcoded demo data: `/login`; `/companies`
+(search); `/companies/[id]` (overview, point-in-time `as_of` control, real score +
+SHAP table, the permanent model-limitations banner); `/companies/[id]/timeline`
+(real event/filing timeline, VERIFIED/CANDIDATE tier badges); `/documents/[id]`
+(the real, immutable extracted page text with the cited span highlighted against
+it -- a new `GET /v1/documents/{id}/pages/{n}` endpoint built for this, since no
+real per-page PDF rendering exists); `/dossiers` + `/dossiers/[id]` (create-
+investigation form, list, status polling, 8-section dossier, markdown/JSON export);
+`/review` + `/review/[id]` (queue, decision form); `/watchlists` (CRUD, alert
+rules, alerts); `/admin` (users/roles, API keys, webhooks, audit log).
+
+**Found and fixed a real, significant security gap** while manually exercising the
+real backend through the real frontend proxy (commit `0d5f4bf`): `require_csrf` had
+only ever been wired into `/v1/auth/logout`'s own route -- every other
+cookie-authenticated mutating endpoint across dossiers/review/watchlists/alerts/
+api-keys/webhooks/admin had NO CSRF dependency at all, despite the controls/usage
+docs already describing it as universal. Fixed across all 7 routers; 18 existing
+tests needed the real csrf_token added to their requests, and 6 new regression
+tests (one per router) now prove the missing-header case is rejected, permanently.
+
+Two other real backend gaps found and fixed while building these pages: `ScoreOut`
+discarded the real `top_shap_contributors` (`b01d562`); `GET /v1/dossiers/investigations`
+(list) was never built despite the brief's own §3 line asking for it (`2ccdb2d`).
+
+Manually verified end to end against the real backend (curl through the real
+Next.js dev-server proxy, with a real cookie jar) -- not just unit tests: real
+login, real company search/overview/timeline/score against real GENSOL data, a
+real investigation run start-to-FINALISE (including real NLI model loading) with a
+correctly-cited markdown export, real user/API-key/webhook create-test-revoke
+flows, and the CSRF fix proven both ways (403 without the header, success with it).
+**The Chrome browser extension was not connected this session, so the actual
+rendered DOM/interactivity was never visually verified in a real browser** -- only
+the real HTTP contract every page depends on. A follow-up session with the browser
+extension connected should do a real visual/interaction pass before this is called
+fully done.
+
+Not yet done from §4: a real accessibility audit (labels/semantic HTML used
+throughout, but never checked against a real tool); no Playwright e2e yet (§9).
+
+Commits: `6f9ff75`..`16a0fd5` (page-text endpoint), `b01d562` (shap_contributors
+fix), `8cc95ab` (scaffold + first 4 pages), `2ccdb2d` (list_investigations),
+`b24f1c0` (dossiers pages), `0d5f4bf` (the CSRF fix), `123713e` (review/watchlists/
+admin pages).
+
 ## Not yet started
 
-- §4: the frontend (Next.js App Router, all pages, security headers, accessibility).
+- §4 polish: real accessibility audit, a real browser visual/interaction pass
+  (blocked this session on the Chrome extension not being connected).
 - §5: Docker Compose, config, secrets, seed command.
 - §6: production deployment config (AWS architecture doc, Terraform -- not applied).
 - §7: CI/CD workflows (validated locally only -- no GitHub remote).
@@ -164,13 +222,12 @@ Commits: `0cbbc04` (app+auth), `47bb316` (companies), `2ca7df4` (dossiers,
 
 ## Exact next step
 
-§3 is fully complete and committed. Begin §4: the Next.js App Router frontend --
-check Node version, pnpm with a committed lockfile, TS strict mode, ESLint, then the
-pages in the brief's own order (login, company search, company overview with the
-point-in-time `as_of` control and the permanent model-limitations banner, event
-timeline, document viewer, dossiers, review queue, watchlists/alerts, tenant admin),
-every page calling the real `/v1` API this session just built -- never hardcoded
-demo data.
+§4's core page set is complete and committed. Move to §5: Docker Compose additions
+(api/worker/web services, healthchecks, localhost-only ports, non-root containers,
+pinned images, a single PowerShell bring-up command), Pydantic settings fail-fast
+weak-secret check outside dev mode, `.env.example` update, the seed command for TEST
+tenants/users. Revisit the §4 accessibility/browser-verification gap above if the
+Chrome extension becomes available.
 
 ## Pending items carried over from the end of Phase 4 (not part of this brief, flagged
 so they are not lost)
