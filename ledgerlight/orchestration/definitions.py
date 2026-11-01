@@ -486,6 +486,31 @@ def risk_score_monthly_schedule(context: ScheduleEvaluationContext) -> dg.RunReq
     return dg.RunRequest(run_key=run_key)
 
 
+@dg.op(name="alerts_generate", retry_policy=_RETRY_POLICY)
+def alerts_generate_op(context: OpExecutionContext) -> None:
+    """Phase 5 §3's own "alerts generation" job: evaluates every real,
+    active `alert_rules` row against new real events/scores for its
+    own watchlist's companies, creates real `alerts` rows, and
+    triggers real webhook deliveries -- see scripts/generate_alerts.py.
+    Idempotent per (alert_rule, fact), so re-running is always safe."""
+    exit_code = _run_script_main("scripts/generate_alerts.py")
+    context.log.info(f"alerts_generate: exit_code={exit_code}")
+
+
+@dg.job(name="alerts_generate_job")
+def alerts_generate_job() -> None:
+    alerts_generate_op()
+
+
+@dg.schedule(cron_schedule="*/15 * * * *", job=alerts_generate_job)
+def alerts_generate_schedule(context: ScheduleEvaluationContext) -> dg.RunRequest:
+    """Every 15 minutes -- real watchlist alerts should reach a tenant
+    soon after a new event/score lands, not just once a month like the
+    risk-scoring job."""
+    run_key = context.scheduled_execution_time.isoformat()
+    return dg.RunRequest(run_key=run_key)
+
+
 defs = dg.Definitions(
     assets=[bhavcopy_daily],
     jobs=[
@@ -498,8 +523,9 @@ defs = dg.Definitions(
         outcomes_and_features_build_job,
         risk_train_job,
         risk_score_and_report_job,
+        alerts_generate_job,
         *known_items_jobs.values(),
     ],
-    schedules=[bhavcopy_daily_schedule, risk_score_monthly_schedule],
+    schedules=[bhavcopy_daily_schedule, risk_score_monthly_schedule, alerts_generate_schedule],
     sensors=[inbox_sensor],
 )
