@@ -16,6 +16,7 @@ from ledgerlight.api.routers import auth as auth_router
 from ledgerlight.api.routers import companies as companies_router
 from ledgerlight.api.routers import dossiers as dossiers_router
 from ledgerlight.api.routers import health as health_router
+from ledgerlight.api.routers import review as review_router
 
 logger = structlog.get_logger(__name__)
 
@@ -105,6 +106,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router.router)
     app.include_router(companies_router.router)
     app.include_router(dossiers_router.router)
+    app.include_router(review_router.router)
 
     return app
 
