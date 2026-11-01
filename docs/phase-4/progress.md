@@ -184,9 +184,27 @@ completion commit `195a714`.
   Full default+integration suite re-run clean after every fix (380 + 169 passed).
   **§9 is now fully complete.**
 
+- **§10 CLI commands (2026-11-01)**: `scripts/investigate.py`, `investigate_batch.py`,
+  `dossier_show.py`, `dossier_export.py`, `dossier_review.py`, `qc_seed.py`,
+  `agent_eval.py` -- thin argparse CLIs over the already-built Sec3-Sec8 library
+  modules. Added two small library helpers `review.list_open_tasks`/
+  `review.get_task_dossier` the review CLI needed. Smoke-tested every command for
+  real against real companies (GENSOL, CCAVENUE) end to end, including a full
+  seed-QC-then-decide-then-catch-rate round trip. Found and fixed a real robustness
+  gap: `seed_qc_batch` raised and aborted the WHOLE batch if one target had no real
+  donor claim for its assigned flaw type -- added an `on_skip` callback so a batch
+  degrades gracefully instead (the library itself still does no I/O; the CLI reports
+  the skip). Also cleaned up real test-fixture pollution this session's own earlier
+  work (and manual CLI smoke-testing) had left in the local dev DB -- one batch was
+  actively corrupting `compute_catch_rate_report`'s global query and failing a real
+  test; real companies and their real investigation rows were never touched.
+  **The commands are done; the 9 required docs are not yet started.**
+
 ## Not yet started
 
-- §10: the 7 CLI commands and the 9 required docs.
+- §10 docs: `docs/agent/architecture.md`, `verifier.md`, `tools.md`,
+  `review-workflow.md`, `security.md`, `docs/evaluation/phase-4-agent-evaluation.md`,
+  `docs/adr/0007-investigation-agent.md`, release-gates.md update, README update.
 - §11: run and verify (lint, typecheck, tests, migrations from empty, agent-eval,
   qc-seed + review-queue dry listing, dossier-export x2, pre-commit, full-history
   gitleaks).
@@ -196,13 +214,13 @@ completion commit `195a714`.
 
 ## Exact next step
 
-§4/§5/§6/§7/§8 (the library)/§9 are all done. LLM plan validation / LLM renderer were
-NOT built -- no `LLM_PROVIDER`/key is in `.env` in this environment, so per the brief's
-own instruction this records "LLM renderer not run" rather than being built against
-nothing real to test it with; revisit only if a real key is ever added. Next: §10 (the
-7 CLI commands + docs), §11 (run and verify -- including the one, full, real
-`agent-eval` run across all 30 companies), §12 (commit/backup), §13 (exit gates), §14
-(final report).
+§4/§5/§6/§7/§8 (the library)/§9 are all done. §10's 7 CLI commands are done. LLM plan
+validation / LLM renderer were NOT built -- no `LLM_PROVIDER`/key is in `.env` in this
+environment, so per the brief's own instruction this records "LLM renderer not run"
+rather than being built against nothing real to test it with; revisit only if a real
+key is ever added. Next: §10's remaining 9 docs, §11 (run and verify -- including the
+one, full, real `agent-eval` run across all 30 companies), §12 (commit/backup), §13
+(exit gates), §14 (final report).
 
 ## Open defects / known limitations (not yet resolved)
 
