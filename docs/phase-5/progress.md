@@ -60,7 +60,7 @@ Phase 4's completion commit `d1daf12`.
 - §13: exit gates.
 - §14: final report, `docs/phase-5/phase-5-report.md`.
 
-## §3 in progress (2026-11-01)
+## §3 complete (2026-11-01)
 
 Foundations built and tested: `ledgerlight/api/audit.py` (generic append-only audit
 writer), `webhooks.py` (Fernet secret encryption, HMAC-SHA256 signing, real SSRF
@@ -130,16 +130,22 @@ local dev value, so `load_settings()` silently kept working through the wipe for
 those -- but S3 correctly has no such default, so the documents test needed the real
 S3 env vars restored via `monkeypatch.setenv` for its own duration.
 
+`scripts/generate_alerts.py` (the real alerts-generation job -- evaluates every
+active `alert_rules` row against new events/scores for its watchlist's companies,
+creates `Alert` rows, triggers real signed webhook deliveries; idempotent per
+(rule, fact)) wired into `ledgerlight.orchestration.definitions` on a 15-minute
+Dagster schedule. `scripts/export_openapi.py` exports the live app's real OpenAPI
+schema to `docs/api/openapi.json` (37 real paths) -- generated, never hand-written.
+`docs/api/usage-guide.md`, `docs/security/threat-model.md`,
+`docs/security/controls.md` written, each grounded in real code/test pointers.
+
 Commits: `0cbbc04` (app+auth), `47bb316` (companies), `2ca7df4` (dossiers,
 `run_investigation` tenant_id), `203e108` (review), `b5b22b0` (watchlists/alerts),
-`1ffd598` (api-keys/webhooks), `6412f24` (admin), `6f9ff75` (documents).
+`1ffd598` (api-keys/webhooks), `6412f24` (admin), `6f9ff75` (documents), `41cf28c`
+(alerts job), `b5d378d` (OpenAPI export + docs). **§3 is now fully complete.**
 
 ## Not yet started
 
-- §3 remainder: the real Dagster alerts-generation job (evaluate `alert_rules`
-  against new events/scores for watchlisted companies, create `Alert` rows, trigger
-  webhooks), OpenAPI export, §3's own docs (`docs/security/threat-model.md`,
-  `docs/security/controls.md`).
 - §4: the frontend (Next.js App Router, all pages, security headers, accessibility).
 - §5: Docker Compose, config, secrets, seed command.
 - §6: production deployment config (AWS architecture doc, Terraform -- not applied).
@@ -148,9 +154,9 @@ Commits: `0cbbc04` (app+auth), `47bb316` (companies), `2ca7df4` (dossiers,
 - §9: security tests (authz matrix, cross-tenant isolation, auth, signed URLs,
   webhooks, rate limiting, input validation, prompt-injection separation, security
   headers, Playwright e2e, optional ZAP baseline).
-- §10: remaining documentation (API docs, frontend/deploy/ops docs, ADR 0009, Sec3's
-  own threat-model/controls docs, release-gates.md update, README update,
-  phase-5-report.md).
+- §10: remaining documentation (frontend/deploy/ops docs, ADR 0009, release-gates.md
+  update, README update, phase-5-report.md). API/security docs are already done
+  (above).
 - §11: run and verify.
 - §12: final commit/backup.
 - §13: exit gates.
@@ -158,9 +164,13 @@ Commits: `0cbbc04` (app+auth), `47bb316` (companies), `2ca7df4` (dossiers,
 
 ## Exact next step
 
-Build the real Dagster alerts-generation job in `ledgerlight.orchestration`, then
-OpenAPI export + §3's own remaining docs, closing out §3 fully before moving to §4
-(frontend).
+§3 is fully complete and committed. Begin §4: the Next.js App Router frontend --
+check Node version, pnpm with a committed lockfile, TS strict mode, ESLint, then the
+pages in the brief's own order (login, company search, company overview with the
+point-in-time `as_of` control and the permanent model-limitations banner, event
+timeline, document viewer, dossiers, review queue, watchlists/alerts, tenant admin),
+every page calling the real `/v1` API this session just built -- never hardcoded
+demo data.
 
 ## Pending items carried over from the end of Phase 4 (not part of this brief, flagged
 so they are not lost)
