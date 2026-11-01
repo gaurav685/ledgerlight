@@ -147,10 +147,45 @@ completion commit `195a714`.
   full real evaluation run across all 30 companies happens at §11 ("run and verify"),
   not here, so its real output can be pasted into the final report once, not twice.
 
+- **§9 (2026-11-01)**: `tests/test_agent_adversarial.py`, the dedicated adversarial/
+  failure suite, covering every case the brief enumerates (several already had real
+  coverage in `test_agent_verifier.py`/`test_agent_state_machine.py`, cross-referenced
+  rather than duplicated -- see this file's own module docstring for the full map).
+  While preparing and writing it, found and fixed THREE more real gaps beyond what §7's
+  work had already surfaced:
+  - `check_entailment` was implemented and calibrated but never actually called from
+    `verify_claim`. Wired it in -- but NOT against the literal rendered "Findings"
+    sentence: confirmed directly against the real local DeBERTa model that a real,
+    correctly-supporting evidence span scores ~0.24 against that literal sentence
+    (which embeds an ISO timestamp and tier jargon the model does not read as entailed
+    prose) but ~0.99 against a minimal natural hypothesis like "An AUD_RESIGN event
+    occurred." Added a separate, minimal hypothesis builder in `verifier.py` for this
+    reason; factored the literal rendered sentences out of `render_offline` into
+    `event_claim_sentence`/`care_rating_claim_sentence` anyway, for clarity/reuse.
+  - `check_number_in_span`'s percent/percentage_points branch only checked whether a
+    bare matching number appeared anywhere in the span -- never the span's own real
+    unit wording, so "5 percentage points" would incorrectly validate a claimed 5
+    percent. Fixed with unit-aware regex patterns.
+  - `verifier.py`'s own docstring already claimed a verifier crash fails closed to
+    NEEDS_REVIEW, but `state_machine.py` never implemented that catch. Added a
+    try/except around the `verify_dossier` call.
+  - `find_contradictions` ran inside `verify_dossier` and was returned in its own
+    result, but nothing fed that back into a re-render -- the persisted dossier's
+    "Conflicting evidence" section was always empty, and `determine_routing`'s
+    `CONFLICTING_EVIDENCE` check could never actually fire. Added a `_render` helper in
+    `state_machine.py` that always recomputes `find_contradictions` from the active
+    claim set before every `render_offline` call (DRAFT, REPAIR, VERIFY's resume
+    fallback).
+  - Also discovered (not a bug, a real DB integrity guarantee): `event_fields.
+    evidence_version_id` has a real foreign-key constraint, so a broken evidence
+    reference can never be constructed this way for a real `Event` -- the
+    REPAIR-non-substitution test forces its real verify failure differently (a real,
+    resolving span whose own text just doesn't contain the claimed date).
+  Full default+integration suite re-run clean after every fix (380 + 169 passed).
+  **§9 is now fully complete.**
+
 ## Not yet started
 
-- §9: the full adversarial/failure test suite (prompt injection, crash/resume,
-  determinism, REPAIR-never-substitutes, etc.) -- no placeholder tests.
 - §10: the 7 CLI commands and the 9 required docs.
 - §11: run and verify (lint, typecheck, tests, migrations from empty, agent-eval,
   qc-seed + review-queue dry listing, dossier-export x2, pre-commit, full-history
@@ -161,13 +196,13 @@ completion commit `195a714`.
 
 ## Exact next step
 
-§4/§5/§6/§7/§8 (the library) are all done. LLM plan validation / LLM renderer were NOT
-built -- no `LLM_PROVIDER`/key is in `.env` in this environment, so per the brief's own
-instruction this records "LLM renderer not run" rather than being built against nothing
-real to test it with; revisit only if a real key is ever added. Next: §9 (adversarial/
-failure tests), §10 (the 7 CLI commands + docs), §11 (run and verify -- including the
-one, full, real `agent-eval` run across all 30 companies), §12 (commit/backup), §13
-(exit gates), §14 (final report).
+§4/§5/§6/§7/§8 (the library)/§9 are all done. LLM plan validation / LLM renderer were
+NOT built -- no `LLM_PROVIDER`/key is in `.env` in this environment, so per the brief's
+own instruction this records "LLM renderer not run" rather than being built against
+nothing real to test it with; revisit only if a real key is ever added. Next: §10 (the
+7 CLI commands + docs), §11 (run and verify -- including the one, full, real
+`agent-eval` run across all 30 companies), §12 (commit/backup), §13 (exit gates), §14
+(final report).
 
 ## Open defects / known limitations (not yet resolved)
 
