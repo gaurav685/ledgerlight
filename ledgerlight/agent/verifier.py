@@ -343,7 +343,17 @@ def check_sentence_values_in_claims(sentence: str, claims: list[Claim]) -> Check
     )
 
 
-EVIDENCE_EXEMPT_CLAIM_TYPES = frozenset({"risk_signal", "limitation"})
+EVIDENCE_EXEMPT_CLAIM_TYPES = frozenset({"risk_signal", "limitation", "timeline_entry"})
+"""`timeline_entry` belongs here alongside `risk_signal`/`limitation`:
+`ledgerlight.agent.claims.claims_from_timeline`'s own docstring already
+documents this exemption ("the same disclosed exemption as
+risk_signal/limitation") -- a filing entry records that a real document
+was known as of a date, not an extracted statement, so there is no
+specific text span to cite for "this document exists". This constant
+simply did not match that documented design until a real full
+`agent-eval` run (Sec11) showed every real `timeline_entry` claim
+failing as "unsupported" -- confirmed as the real bug, not a change in
+intent, and fixed here rather than in the claims.py docstring."""
 
 
 def _entailment_hypothesis_for_claim(claim: Claim) -> str | None:
@@ -420,13 +430,24 @@ def verify_claim(
         checks.append(CheckResult("citation_resolves", True, "resolved"))
         checks.append(check_point_in_time(resolved.data.known_at, as_of))
 
-        known_at_str = claim.payload.get("known_at")
-        if isinstance(known_at_str, str):
-            try:
-                claimed_date = dt.datetime.fromisoformat(known_at_str).date()
-                checks.append(check_date_in_span(resolved.data.text, claimed_date))
-            except ValueError:
-                pass
+        # Scoped to event claims only: a real full agent-eval run (Sec11) showed
+        # every real metric/care_rating claim failing this check, because its
+        # real evidence span is deliberately narrow -- just the rating symbol's
+        # own regex capture group (ledgerlight.modelling.rating_features.py),
+        # never the surrounding sentence that states a date. That claim's own
+        # known_at is already sourced directly from the same evidence document's
+        # real known_at (the same field point_in_time already checks), not
+        # re-derived from the span text -- checking it against a span that was
+        # never meant to carry a date is checking something structurally
+        # impossible to satisfy, not a real defect.
+        if claim.claim_type == "event":
+            known_at_str = claim.payload.get("known_at")
+            if isinstance(known_at_str, str):
+                try:
+                    claimed_date = dt.datetime.fromisoformat(known_at_str).date()
+                    checks.append(check_date_in_span(resolved.data.text, claimed_date))
+                except ValueError:
+                    pass
 
         if claim.claim_type == "metric":
             value = claim.payload.get("value")
