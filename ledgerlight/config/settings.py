@@ -8,9 +8,19 @@ values are missing or invalid.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Phase 5 §5: the real, known-weak default values every dev-only secret
+# below uses -- committed in plain sight on purpose (never a real
+# production secret) so the fail-fast check in `_no_weak_secrets_outside_dev`
+# has exact values to match against, rather than a heuristic.
+_DEV_DEFAULT_POSTGRES_PASSWORD = "changeme-local-only"
+_DEV_DEFAULT_APP_DB_PASSWORD = "changeme-local-only-app"
+_DEV_DEFAULT_SESSION_SECRET_KEY = "dev-only-session-secret-change-me"
+_DEV_DEFAULT_WEBHOOK_KEY = "UWhA93WPMUQ7e0aYCYjBP_nKSse4xZ0Bf6qC1TxZDyw="  # gitleaks:allow
 
 
 class Settings(BaseSettings):
@@ -20,6 +30,12 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    # Phase 5 §5: real environments this process can run as. "dev" is the
+    # default (every weak-secret default below is intentionally safe to
+    # use in dev) -- outside dev, `_no_weak_secrets_outside_dev` fails
+    # fast if any of them are still in their dev-only default state.
+    environment: Literal["dev", "staging", "production"] = Field(default="dev")
 
     # Identifies this project to third-party servers (User-Agent contact
     # address) and is required before the acquisition utility will run.
@@ -46,7 +62,7 @@ class Settings(BaseSettings):
     postgres_host: str = Field(default="127.0.0.1")
     postgres_port: int = Field(default=55432, gt=0, le=65535)
     postgres_user: str = Field(default="ledgerlight")
-    postgres_password: str = Field(default="changeme-local-only")
+    postgres_password: str = Field(default=_DEV_DEFAULT_POSTGRES_PASSWORD)
     postgres_db: str = Field(default="ledgerlight")
 
     # Generic S3-compatible endpoint for local infra (Garage; see
@@ -72,19 +88,17 @@ class Settings(BaseSettings):
     # this role automatically because it neither owns the tables nor is a
     # superuser — never because FORCE ROW LEVEL SECURITY was set.
     app_db_user: str = Field(default="ledgerlight_app")
-    app_db_password: str = Field(default="changeme-local-only-app")
+    app_db_password: str = Field(default=_DEV_DEFAULT_APP_DB_PASSWORD)
 
     # Phase 5 §2: session cookie/CSRF token signing and webhook-secret
     # encryption-at-rest keys. Dev defaults are deliberately obviously-fake
     # (never a real secret) so §5's fail-fast weak-secret check has
     # something real to catch outside dev mode.
-    session_secret_key: str = Field(default="dev-only-session-secret-change-me")
+    session_secret_key: str = Field(default=_DEV_DEFAULT_SESSION_SECRET_KEY)
     # A real, valid Fernet key -- but a dev-only one, committed in plain sight
     # (never a real production secret) precisely so §5's fail-fast weak-secret
     # check has a known, matchable value to reject outside dev mode.
-    webhook_secret_encryption_key: str = Field(
-        default="UWhA93WPMUQ7e0aYCYjBP_nKSse4xZ0Bf6qC1TxZDyw="
-    )
+    webhook_secret_encryption_key: str = Field(default=_DEV_DEFAULT_WEBHOOK_KEY)
 
     # Phase 5 §3: the real session cookie's own Secure attribute -- False
     # by default (this environment serves plain http on localhost); set
@@ -118,6 +132,36 @@ class Settings(BaseSettings):
                 f"got {v!r}"
             )
         return v
+
+    @model_validator(mode="after")
+    def _no_weak_secrets_outside_dev(self) -> Settings:
+        """Phase 5 §5: fails fast at startup -- never silently -- if this
+        process claims to be `staging`/`production` but is still carrying
+        one or more of the real, committed dev-only default secrets. A
+        real deployment config must set every one of these explicitly;
+        `environment="dev"` (the default) is the only state these defaults
+        are ever safe in."""
+        if self.environment == "dev":
+            return self
+        weak: list[str] = []
+        if self.postgres_password == _DEV_DEFAULT_POSTGRES_PASSWORD:
+            weak.append("LEDGERLIGHT_POSTGRES_PASSWORD")
+        if self.app_db_password == _DEV_DEFAULT_APP_DB_PASSWORD:
+            weak.append("LEDGERLIGHT_APP_DB_PASSWORD")
+        if self.session_secret_key == _DEV_DEFAULT_SESSION_SECRET_KEY:
+            weak.append("LEDGERLIGHT_SESSION_SECRET_KEY")
+        if self.webhook_secret_encryption_key == _DEV_DEFAULT_WEBHOOK_KEY:
+            weak.append("LEDGERLIGHT_WEBHOOK_SECRET_ENCRYPTION_KEY")
+        if not self.cookie_secure:
+            weak.append("LEDGERLIGHT_COOKIE_SECURE (must be true outside dev)")
+        if weak:
+            raise ValueError(
+                f"LEDGERLIGHT_ENVIRONMENT={self.environment!r} but the following "
+                f"settings are still at their real dev-only default: {', '.join(weak)}. "
+                "Set every one of these to a real, distinct value before running "
+                "outside dev -- see .env.example."
+            )
+        return self
 
 
 def load_settings() -> Settings:
