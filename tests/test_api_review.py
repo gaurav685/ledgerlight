@@ -101,7 +101,7 @@ def real_session() -> Iterator[Session]:
         session.close()
 
 
-def _login(client: TestClient, real_session: Session, role: str) -> Tenant:
+def _login(client: TestClient, real_session: Session, role: str) -> tuple[Tenant, str]:
     tenant = Tenant(name="Review Test Co", slug=f"review-test-{uuid.uuid4().hex[:8]}")
     real_session.add(tenant)
     real_session.flush()
@@ -127,7 +127,7 @@ def _login(client: TestClient, real_session: Session, role: str) -> Tenant:
     if response.status_code == 503:
         pytest.skip("ledgerlight_app role not reachable")
     assert response.status_code == 200, response.text
-    return tenant
+    return tenant, response.json()["csrf_token"]
 
 
 def _make_review_task(real_session: Session, tenant_id: uuid.UUID) -> ReviewTask:
@@ -181,7 +181,7 @@ def client() -> TestClient:
 def test_list_review_tasks_shows_a_real_open_task_for_the_owning_tenant(
     client: TestClient, real_session: Session
 ) -> None:
-    tenant = _login(client, real_session, role="reviewer")
+    tenant, _csrf_token = _login(client, real_session, role="reviewer")
     task = _make_review_task(real_session, tenant.id)
 
     response = client.get("/v1/review/tasks")
@@ -209,10 +209,12 @@ def test_list_review_tasks_hides_another_tenants_task(
 
 
 def test_viewer_role_cannot_decide_a_review_task(client: TestClient, real_session: Session) -> None:
-    tenant = _login(client, real_session, role="viewer")  # viewer lacks DECIDE_REVIEW
+    tenant, csrf_token = _login(client, real_session, role="viewer")  # lacks DECIDE_REVIEW
     task = _make_review_task(real_session, tenant.id)
     response = client.post(
-        f"/v1/review/tasks/{task.id}/decision", json={"decision": "approve", "notes": None}
+        f"/v1/review/tasks/{task.id}/decision",
+        json={"decision": "approve", "notes": None},
+        headers={"X-CSRF-Token": csrf_token},
     )
     assert response.status_code == 403
 
@@ -220,12 +222,13 @@ def test_viewer_role_cannot_decide_a_review_task(client: TestClient, real_sessio
 def test_reviewer_can_decide_a_real_task_and_it_is_audited(
     client: TestClient, real_session: Session
 ) -> None:
-    tenant = _login(client, real_session, role="reviewer")
+    tenant, csrf_token = _login(client, real_session, role="reviewer")
     task = _make_review_task(real_session, tenant.id)
 
     response = client.post(
         f"/v1/review/tasks/{task.id}/decision",
         json={"decision": "approve_with_edits", "notes": "looks fine after a minor edit"},
+        headers={"X-CSRF-Token": csrf_token},
     )
     assert response.status_code == 200, response.text
     body = response.json()
@@ -245,9 +248,18 @@ def test_reviewer_can_decide_a_real_task_and_it_is_audited(
 def test_decide_rejects_an_invalid_decision_value(
     client: TestClient, real_session: Session
 ) -> None:
-    tenant = _login(client, real_session, role="reviewer")
+    tenant, csrf_token = _login(client, real_session, role="reviewer")
     task = _make_review_task(real_session, tenant.id)
     response = client.post(
-        f"/v1/review/tasks/{task.id}/decision", json={"decision": "not_a_real_decision"}
+        f"/v1/review/tasks/{task.id}/decision",
+        json={"decision": "not_a_real_decision"},
+        headers={"X-CSRF-Token": csrf_token},
     )
     assert response.status_code == 422
+
+
+def test_decide_without_csrf_header_is_rejected(client: TestClient, real_session: Session) -> None:
+    tenant, _csrf_token = _login(client, real_session, role="reviewer")
+    task = _make_review_task(real_session, tenant.id)
+    response = client.post(f"/v1/review/tasks/{task.id}/decision", json={"decision": "approve"})
+    assert response.status_code == 403

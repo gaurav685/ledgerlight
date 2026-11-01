@@ -66,7 +66,7 @@ def real_session() -> Iterator[Session]:
         session.close()
 
 
-def _login(client: TestClient, real_session: Session, role: str) -> Tenant:
+def _login(client: TestClient, real_session: Session, role: str) -> tuple[Tenant, str]:
     tenant = Tenant(name="API Key Router Test Co", slug=f"apikey-router-{uuid.uuid4().hex[:8]}")
     real_session.add(tenant)
     real_session.flush()
@@ -92,7 +92,7 @@ def _login(client: TestClient, real_session: Session, role: str) -> Tenant:
     if response.status_code == 503:
         pytest.skip("ledgerlight_app role not reachable")
     assert response.status_code == 200, response.text
-    return tenant
+    return tenant, response.json()["csrf_token"]
 
 
 @pytest.fixture
@@ -105,17 +105,24 @@ def client() -> TestClient:
 
 
 def test_analyst_cannot_manage_api_keys(client: TestClient, real_session: Session) -> None:
-    _login(client, real_session, role="analyst")  # lacks MANAGE_API_KEYS
-    response = client.post("/v1/api-keys", json={"name": "My Key", "scopes": ["read"]})
+    _tenant, csrf_token = _login(client, real_session, role="analyst")  # lacks MANAGE_API_KEYS
+    response = client.post(
+        "/v1/api-keys",
+        json={"name": "My Key", "scopes": ["read"]},
+        headers={"X-CSRF-Token": csrf_token},
+    )
     assert response.status_code == 403
 
 
 def test_tenant_admin_can_create_list_and_revoke_a_real_key(
     client: TestClient, real_session: Session
 ) -> None:
-    _login(client, real_session, role="tenant_admin")
+    _tenant, csrf_token = _login(client, real_session, role="tenant_admin")
+    headers = {"X-CSRF-Token": csrf_token}
 
-    create_response = client.post("/v1/api-keys", json={"name": "CI Key", "scopes": ["read"]})
+    create_response = client.post(
+        "/v1/api-keys", json={"name": "CI Key", "scopes": ["read"]}, headers=headers
+    )
     assert create_response.status_code == 201, create_response.text
     body = create_response.json()
     key_id = body["id"]
@@ -135,10 +142,18 @@ def test_tenant_admin_can_create_list_and_revoke_a_real_key(
     )
     assert bearer_response.status_code == 200
 
-    revoke_response = client.delete(f"/v1/api-keys/{key_id}")
+    revoke_response = client.delete(f"/v1/api-keys/{key_id}", headers=headers)
     assert revoke_response.status_code == 204
 
     revoked_bearer_response = client.get(
         "/v1/companies/search", params={"q": "x"}, headers={"Authorization": f"Bearer {raw_key}"}
     )
     assert revoked_bearer_response.status_code == 401
+
+
+def test_create_api_key_without_csrf_header_is_rejected(
+    client: TestClient, real_session: Session
+) -> None:
+    _login(client, real_session, role="tenant_admin")
+    response = client.post("/v1/api-keys", json={"name": "Should Fail", "scopes": []})
+    assert response.status_code == 403

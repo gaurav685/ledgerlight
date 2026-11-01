@@ -25,7 +25,7 @@ from ledgerlight.agent.export import export_dossier_json, export_dossier_markdow
 from ledgerlight.agent.models import Dossier, Investigation
 from ledgerlight.agent.state_machine import run_investigation
 from ledgerlight.api import rbac
-from ledgerlight.api.deps import Identity, get_db, require_permission
+from ledgerlight.api.deps import Identity, get_db, require_csrf, require_permission
 from ledgerlight.api.schemas import DossierOut, InvestigationCreateRequest, InvestigationOut
 from ledgerlight.api.tenancy import tenant_scope
 from ledgerlight.config.settings import load_settings
@@ -64,7 +64,12 @@ def _run_investigation_in_background(
         session.close()
 
 
-@router.post("/investigations", response_model=InvestigationOut, status_code=202)
+@router.post(
+    "/investigations",
+    response_model=InvestigationOut,
+    status_code=202,
+    dependencies=[Depends(require_csrf)],
+)
 def create_investigation(
     payload: InvestigationCreateRequest,
     background_tasks: BackgroundTasks,

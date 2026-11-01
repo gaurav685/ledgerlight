@@ -77,7 +77,7 @@ def real_session() -> Iterator[Session]:
         session.close()
 
 
-def _login(client: TestClient, real_session: Session, role: str) -> Tenant:
+def _login(client: TestClient, real_session: Session, role: str) -> tuple[Tenant, str]:
     tenant = Tenant(name="Webhook Router Test Co", slug=f"webhook-router-{uuid.uuid4().hex[:8]}")
     real_session.add(tenant)
     real_session.flush()
@@ -103,7 +103,7 @@ def _login(client: TestClient, real_session: Session, role: str) -> Tenant:
     if response.status_code == 503:
         pytest.skip("ledgerlight_app role not reachable")
     assert response.status_code == 200, response.text
-    return tenant
+    return tenant, response.json()["csrf_token"]
 
 
 @pytest.fixture
@@ -116,17 +116,24 @@ def client() -> TestClient:
 
 
 def test_register_rejects_a_non_https_url(client: TestClient, real_session: Session) -> None:
-    _login(client, real_session, role="tenant_admin")
-    response = client.post("/v1/webhooks", json={"url": "http://1.1.1.1/hook"})
+    _tenant, csrf_token = _login(client, real_session, role="tenant_admin")
+    response = client.post(
+        "/v1/webhooks",
+        json={"url": "http://1.1.1.1/hook"},
+        headers={"X-CSRF-Token": csrf_token},
+    )
     assert response.status_code == 422
 
 
 def test_register_test_deliver_and_list_deliveries(
     client: TestClient, real_session: Session
 ) -> None:
-    _login(client, real_session, role="tenant_admin")
+    _tenant, csrf_token = _login(client, real_session, role="tenant_admin")
+    headers = {"X-CSRF-Token": csrf_token}
 
-    create_response = client.post("/v1/webhooks", json={"url": "https://1.1.1.1/hook"})
+    create_response = client.post(
+        "/v1/webhooks", json={"url": "https://1.1.1.1/hook"}, headers=headers
+    )
     assert create_response.status_code == 201, create_response.text
     body = create_response.json()
     webhook_id = body["id"]
@@ -138,7 +145,7 @@ def test_register_test_deliver_and_list_deliveries(
 
     with respx.mock(assert_all_called=True) as mock:
         mock.post("https://1.1.1.1/hook").mock(return_value=Response(200))
-        test_response = client.post(f"/v1/webhooks/{webhook_id}/test")
+        test_response = client.post(f"/v1/webhooks/{webhook_id}/test", headers=headers)
     assert test_response.status_code == 200, test_response.text
     assert test_response.json()["status"] == "success"
 
@@ -149,9 +156,12 @@ def test_register_test_deliver_and_list_deliveries(
 
 
 def test_delete_webhook(client: TestClient, real_session: Session) -> None:
-    _login(client, real_session, role="tenant_admin")
-    webhook_id = client.post("/v1/webhooks", json={"url": "https://1.1.1.1/hook"}).json()["id"]
-    response = client.delete(f"/v1/webhooks/{webhook_id}")
+    _tenant, csrf_token = _login(client, real_session, role="tenant_admin")
+    headers = {"X-CSRF-Token": csrf_token}
+    webhook_id = client.post(
+        "/v1/webhooks", json={"url": "https://1.1.1.1/hook"}, headers=headers
+    ).json()["id"]
+    response = client.delete(f"/v1/webhooks/{webhook_id}", headers=headers)
     assert response.status_code == 204
 
     get_deliveries = client.get(f"/v1/webhooks/{webhook_id}/deliveries")
@@ -159,6 +169,18 @@ def test_delete_webhook(client: TestClient, real_session: Session) -> None:
 
 
 def test_analyst_cannot_manage_webhooks(client: TestClient, real_session: Session) -> None:
-    _login(client, real_session, role="analyst")
+    _tenant, csrf_token = _login(client, real_session, role="analyst")
+    response = client.post(
+        "/v1/webhooks",
+        json={"url": "https://1.1.1.1/hook"},
+        headers={"X-CSRF-Token": csrf_token},
+    )
+    assert response.status_code == 403
+
+
+def test_register_webhook_without_csrf_header_is_rejected(
+    client: TestClient, real_session: Session
+) -> None:
+    _login(client, real_session, role="tenant_admin")
     response = client.post("/v1/webhooks", json={"url": "https://1.1.1.1/hook"})
     assert response.status_code == 403

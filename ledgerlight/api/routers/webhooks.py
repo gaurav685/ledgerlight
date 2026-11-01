@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session as DbSession
 
 from ledgerlight.api import audit, rbac
 from ledgerlight.api import webhooks as webhooks_module
-from ledgerlight.api.deps import Identity, get_db, require_permission
+from ledgerlight.api.deps import Identity, get_db, require_csrf, require_permission
 from ledgerlight.api.models import Webhook, WebhookDelivery
 from ledgerlight.api.schemas import (
     WebhookCreateRequest,
@@ -48,7 +48,12 @@ def list_webhooks(db: DbSession = Depends(get_db)) -> list[WebhookOut]:
     return [_to_out(row) for row in rows]
 
 
-@router.post("", response_model=WebhookCreateResponse, status_code=201)
+@router.post(
+    "",
+    response_model=WebhookCreateResponse,
+    status_code=201,
+    dependencies=[Depends(require_csrf)],
+)
 def create_webhook(
     payload: WebhookCreateRequest,
     identity: Identity = Depends(require_permission(rbac.MANAGE_WEBHOOKS)),
@@ -87,13 +92,20 @@ def create_webhook(
     )
 
 
-@router.delete("/{webhook_id}", status_code=204, response_model=None, dependencies=[_MANAGE])
+@router.delete(
+    "/{webhook_id}",
+    status_code=204,
+    response_model=None,
+    dependencies=[_MANAGE, Depends(require_csrf)],
+)
 def delete_webhook(webhook_id: uuid.UUID, db: DbSession = Depends(get_db)) -> None:
     row = _get_owned_webhook(db, webhook_id)
     db.delete(row)
 
 
-@router.post("/{webhook_id}/test", response_model=WebhookDeliveryOut)
+@router.post(
+    "/{webhook_id}/test", response_model=WebhookDeliveryOut, dependencies=[Depends(require_csrf)]
+)
 def test_webhook(
     webhook_id: uuid.UUID,
     identity: Identity = Depends(require_permission(rbac.MANAGE_WEBHOOKS)),

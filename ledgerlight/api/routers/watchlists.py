@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from ledgerlight.api import rbac
-from ledgerlight.api.deps import Identity, get_db, require_permission
+from ledgerlight.api.deps import Identity, get_db, require_csrf, require_permission
 from ledgerlight.api.models import Watchlist, WatchlistItem
 from ledgerlight.api.schemas import (
     WatchlistCreateRequest,
@@ -60,7 +60,7 @@ def list_watchlists(
     return [_to_out(row) for row in rows]
 
 
-@router.post("", response_model=WatchlistOut, status_code=201)
+@router.post("", response_model=WatchlistOut, status_code=201, dependencies=[Depends(require_csrf)])
 def create_watchlist(
     payload: WatchlistCreateRequest,
     identity: Identity = Depends(require_permission(rbac.MANAGE_OWN_WATCHLISTS)),
@@ -72,7 +72,9 @@ def create_watchlist(
     return _to_out(row)
 
 
-@router.delete("/{watchlist_id}", status_code=204, response_model=None)
+@router.delete(
+    "/{watchlist_id}", status_code=204, response_model=None, dependencies=[Depends(require_csrf)]
+)
 def delete_watchlist(
     watchlist_id: uuid.UUID,
     identity: Identity = Depends(require_permission(rbac.MANAGE_OWN_WATCHLISTS)),
@@ -105,7 +107,12 @@ def list_watchlist_items(
     ]
 
 
-@router.post("/{watchlist_id}/items", response_model=WatchlistItemOut, status_code=201)
+@router.post(
+    "/{watchlist_id}/items",
+    response_model=WatchlistItemOut,
+    status_code=201,
+    dependencies=[Depends(require_csrf)],
+)
 def add_watchlist_item(
     watchlist_id: uuid.UUID,
     payload: WatchlistItemCreateRequest,
@@ -125,7 +132,12 @@ def add_watchlist_item(
     )
 
 
-@router.delete("/{watchlist_id}/items/{item_id}", status_code=204, response_model=None)
+@router.delete(
+    "/{watchlist_id}/items/{item_id}",
+    status_code=204,
+    response_model=None,
+    dependencies=[Depends(require_csrf)],
+)
 def remove_watchlist_item(
     watchlist_id: uuid.UUID,
     item_id: uuid.UUID,

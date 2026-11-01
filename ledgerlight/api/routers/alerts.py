@@ -18,7 +18,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from ledgerlight.api import rbac
-from ledgerlight.api.deps import Identity, get_db, require_permission
+from ledgerlight.api.deps import Identity, get_db, require_csrf, require_permission
 from ledgerlight.api.models import Alert, AlertRule, Watchlist
 from ledgerlight.api.routers.watchlists import get_owned_watchlist
 from ledgerlight.api.schemas import AlertOut, AlertRuleCreateRequest, AlertRuleOut
@@ -64,7 +64,9 @@ def list_alert_rules(
     return [_rule_out(row) for row in rows]
 
 
-@router.post("/rules", response_model=AlertRuleOut, status_code=201)
+@router.post(
+    "/rules", response_model=AlertRuleOut, status_code=201, dependencies=[Depends(require_csrf)]
+)
 def create_alert_rule(
     payload: AlertRuleCreateRequest,
     identity: Identity = Depends(require_permission(rbac.MANAGE_OWN_WATCHLISTS)),
@@ -85,7 +87,9 @@ def create_alert_rule(
     return _rule_out(row)
 
 
-@router.delete("/rules/{rule_id}", status_code=204, response_model=None)
+@router.delete(
+    "/rules/{rule_id}", status_code=204, response_model=None, dependencies=[Depends(require_csrf)]
+)
 def delete_alert_rule(
     rule_id: uuid.UUID,
     identity: Identity = Depends(require_permission(rbac.MANAGE_OWN_WATCHLISTS)),
@@ -114,7 +118,9 @@ def list_alerts(
     return [_alert_out(row) for row in rows]
 
 
-@router.post("/{alert_id}/acknowledge", response_model=AlertOut)
+@router.post(
+    "/{alert_id}/acknowledge", response_model=AlertOut, dependencies=[Depends(require_csrf)]
+)
 def acknowledge_alert(
     alert_id: uuid.UUID,
     identity: Identity = Depends(require_permission(rbac.MANAGE_OWN_WATCHLISTS)),

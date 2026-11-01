@@ -63,7 +63,7 @@ def real_session() -> Iterator[Session]:
         session.close()
 
 
-def _login(client: TestClient, real_session: Session, role: str) -> Tenant:
+def _login(client: TestClient, real_session: Session, role: str) -> tuple[Tenant, str]:
     tenant = Tenant(name="Admin Router Test Co", slug=f"admin-router-{uuid.uuid4().hex[:8]}")
     real_session.add(tenant)
     real_session.flush()
@@ -89,7 +89,7 @@ def _login(client: TestClient, real_session: Session, role: str) -> Tenant:
     if response.status_code == 503:
         pytest.skip("ledgerlight_app role not reachable")
     assert response.status_code == 200, response.text
-    return tenant
+    return tenant, response.json()["csrf_token"]
 
 
 @pytest.fixture
@@ -102,10 +102,11 @@ def client() -> TestClient:
 
 
 def test_analyst_cannot_manage_users(client: TestClient, real_session: Session) -> None:
-    _login(client, real_session, role="analyst")
+    _tenant, csrf_token = _login(client, real_session, role="analyst")
     response = client.post(
         "/v1/admin/users",
         json={"email": "new@example.com", "password": "SomeRealPassword1", "role": "viewer"},
+        headers={"X-CSRF-Token": csrf_token},
     )
     assert response.status_code == 403
 
@@ -113,7 +114,8 @@ def test_analyst_cannot_manage_users(client: TestClient, real_session: Session) 
 def test_tenant_admin_creates_lists_changes_role_and_revokes_a_user(
     client: TestClient, real_session: Session
 ) -> None:
-    _login(client, real_session, role="tenant_admin")
+    _tenant, csrf_token = _login(client, real_session, role="tenant_admin")
+    headers = {"X-CSRF-Token": csrf_token}
 
     create_response = client.post(
         "/v1/admin/users",
@@ -122,6 +124,7 @@ def test_tenant_admin_creates_lists_changes_role_and_revokes_a_user(
             "password": "SomeRealPassword1",
             "role": "viewer",
         },
+        headers=headers,
     )
     assert create_response.status_code == 201, create_response.text
     user_id = create_response.json()["user_id"]
@@ -129,11 +132,13 @@ def test_tenant_admin_creates_lists_changes_role_and_revokes_a_user(
     list_response = client.get("/v1/admin/users")
     assert any(row["user_id"] == user_id for row in list_response.json())
 
-    role_response = client.patch(f"/v1/admin/users/{user_id}/role", json={"role": "analyst"})
+    role_response = client.patch(
+        f"/v1/admin/users/{user_id}/role", json={"role": "analyst"}, headers=headers
+    )
     assert role_response.status_code == 200
     assert role_response.json()["role"] == "analyst"
 
-    revoke_response = client.delete(f"/v1/admin/users/{user_id}")
+    revoke_response = client.delete(f"/v1/admin/users/{user_id}", headers=headers)
     assert revoke_response.status_code == 204
 
     list_after = client.get("/v1/admin/users")
@@ -142,20 +147,25 @@ def test_tenant_admin_creates_lists_changes_role_and_revokes_a_user(
 
 
 def test_create_user_rejects_a_duplicate_email(client: TestClient, real_session: Session) -> None:
-    _login(client, real_session, role="tenant_admin")
+    _tenant, csrf_token = _login(client, real_session, role="tenant_admin")
+    headers = {"X-CSRF-Token": csrf_token}
     email = f"{uuid.uuid4().hex[:8]}@example.com"
     first = client.post(
-        "/v1/admin/users", json={"email": email, "password": "SomeRealPassword1", "role": "viewer"}
+        "/v1/admin/users",
+        json={"email": email, "password": "SomeRealPassword1", "role": "viewer"},
+        headers=headers,
     )
     assert first.status_code == 201
     second = client.post(
-        "/v1/admin/users", json={"email": email, "password": "AnotherPassword1", "role": "viewer"}
+        "/v1/admin/users",
+        json={"email": email, "password": "AnotherPassword1", "role": "viewer"},
+        headers=headers,
     )
     assert second.status_code == 409
 
 
 def test_create_user_rejects_an_invalid_role(client: TestClient, real_session: Session) -> None:
-    _login(client, real_session, role="tenant_admin")
+    _tenant, csrf_token = _login(client, real_session, role="tenant_admin")
     response = client.post(
         "/v1/admin/users",
         json={
@@ -163,6 +173,7 @@ def test_create_user_rejects_an_invalid_role(client: TestClient, real_session: S
             "password": "SomeRealPassword1",
             "role": "superuser",
         },
+        headers={"X-CSRF-Token": csrf_token},
     )
     assert response.status_code == 422
 
@@ -170,7 +181,7 @@ def test_create_user_rejects_an_invalid_role(client: TestClient, real_session: S
 def test_audit_log_shows_real_actions_and_is_tenant_scoped(
     client: TestClient, real_session: Session
 ) -> None:
-    _login(client, real_session, role="tenant_admin")
+    _tenant, csrf_token = _login(client, real_session, role="tenant_admin")
     client.post(
         "/v1/admin/users",
         json={
@@ -178,6 +189,7 @@ def test_audit_log_shows_real_actions_and_is_tenant_scoped(
             "password": "SomeRealPassword1",
             "role": "viewer",
         },
+        headers={"X-CSRF-Token": csrf_token},
     )
     audit_response = client.get("/v1/admin/audit-log")
     assert audit_response.status_code == 200
@@ -188,3 +200,18 @@ def test_audit_log_shows_real_actions_and_is_tenant_scoped(
     other_audit_response = client.get("/v1/admin/audit-log")
     other_actions = [row for row in other_audit_response.json() if row["action"] == "user_created"]
     assert other_actions == []
+
+
+def test_create_user_without_csrf_header_is_rejected(
+    client: TestClient, real_session: Session
+) -> None:
+    _login(client, real_session, role="tenant_admin")
+    response = client.post(
+        "/v1/admin/users",
+        json={
+            "email": "should-fail@example.com",
+            "password": "SomeRealPassword1",
+            "role": "viewer",
+        },
+    )
+    assert response.status_code == 403

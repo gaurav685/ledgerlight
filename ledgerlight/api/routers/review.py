@@ -21,7 +21,7 @@ from sqlalchemy.orm import sessionmaker
 from ledgerlight.agent import review as agent_review
 from ledgerlight.agent.models import Dossier, Investigation, ReviewTask
 from ledgerlight.api import audit, rbac
-from ledgerlight.api.deps import Identity, get_db, require_permission
+from ledgerlight.api.deps import Identity, get_db, require_csrf, require_permission
 from ledgerlight.api.schemas import ReviewDecisionRequest, ReviewTaskOut
 from ledgerlight.api.tenancy import make_app_session_factory, tenant_scope
 from ledgerlight.config.settings import load_settings
@@ -110,7 +110,11 @@ def get_review_task(review_task_id: uuid.UUID, db: DbSession = Depends(get_db)) 
     return _to_out(_get_visible_task(db, review_task_id))
 
 
-@router.post("/tasks/{review_task_id}/decision", response_model=ReviewTaskOut)
+@router.post(
+    "/tasks/{review_task_id}/decision",
+    response_model=ReviewTaskOut,
+    dependencies=[Depends(require_csrf)],
+)
 def decide_review_task(
     review_task_id: uuid.UUID,
     payload: ReviewDecisionRequest,

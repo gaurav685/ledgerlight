@@ -100,7 +100,7 @@ def real_session() -> Iterator[Session]:
 
 def _login(
     client: TestClient, real_session: Session, role: str, tenant: Tenant | None = None
-) -> Tenant:
+) -> tuple[Tenant, str]:
     if tenant is None:
         tenant = Tenant(name="WL Test Co", slug=f"wl-test-{uuid.uuid4().hex[:8]}")
         real_session.add(tenant)
@@ -127,7 +127,7 @@ def _login(
     if response.status_code == 503:
         pytest.skip("ledgerlight_app role not reachable")
     assert response.status_code == 200, response.text
-    return tenant
+    return tenant, response.json()["csrf_token"]
 
 
 @pytest.fixture
@@ -140,8 +140,10 @@ def client() -> TestClient:
 
 
 def test_create_and_list_own_watchlist(client: TestClient, real_session: Session) -> None:
-    _login(client, real_session, role="analyst")
-    create_response = client.post("/v1/watchlists", json={"name": "My Watchlist"})
+    _tenant, csrf_token = _login(client, real_session, role="analyst")
+    create_response = client.post(
+        "/v1/watchlists", json={"name": "My Watchlist"}, headers={"X-CSRF-Token": csrf_token}
+    )
     assert create_response.status_code == 201, create_response.text
 
     list_response = client.get("/v1/watchlists")
@@ -152,8 +154,12 @@ def test_create_and_list_own_watchlist(client: TestClient, real_session: Session
 def test_analyst_cannot_see_a_different_analysts_watchlist_in_the_same_tenant(
     client: TestClient, real_session: Session
 ) -> None:
-    tenant = _login(client, real_session, role="analyst")
-    create_response = client.post("/v1/watchlists", json={"name": "Analyst A's List"})
+    tenant, csrf_token = _login(client, real_session, role="analyst")
+    create_response = client.post(
+        "/v1/watchlists",
+        json={"name": "Analyst A's List"},
+        headers={"X-CSRF-Token": csrf_token},
+    )
     watchlist_id = create_response.json()["id"]
 
     _login(client, real_session, role="analyst", tenant=tenant)  # a second analyst, same tenant
@@ -167,8 +173,10 @@ def test_analyst_cannot_see_a_different_analysts_watchlist_in_the_same_tenant(
 def test_tenant_admin_sees_every_analysts_watchlist(
     client: TestClient, real_session: Session
 ) -> None:
-    tenant = _login(client, real_session, role="analyst")
-    create_response = client.post("/v1/watchlists", json={"name": "Analyst's List"})
+    tenant, csrf_token = _login(client, real_session, role="analyst")
+    create_response = client.post(
+        "/v1/watchlists", json={"name": "Analyst's List"}, headers={"X-CSRF-Token": csrf_token}
+    )
     watchlist_id = create_response.json()["id"]
 
     _login(client, real_session, role="tenant_admin", tenant=tenant)
@@ -177,16 +185,21 @@ def test_tenant_admin_sees_every_analysts_watchlist(
 
 
 def test_add_item_and_create_alert_rule(client: TestClient, real_session: Session) -> None:
-    _login(client, real_session, role="analyst")
+    _tenant, csrf_token = _login(client, real_session, role="analyst")
+    headers = {"X-CSRF-Token": csrf_token}
     company = Company(display_name=f"Watch Target {uuid.uuid4().hex[:8]}")
     real_session.add(company)
     real_session.flush()
     real_session.info["created"]["companies"].append(company.id)
     real_session.commit()
 
-    watchlist_id = client.post("/v1/watchlists", json={"name": "List"}).json()["id"]
+    watchlist_id = client.post("/v1/watchlists", json={"name": "List"}, headers=headers).json()[
+        "id"
+    ]
     item_response = client.post(
-        f"/v1/watchlists/{watchlist_id}/items", json={"company_id": str(company.id)}
+        f"/v1/watchlists/{watchlist_id}/items",
+        json={"company_id": str(company.id)},
+        headers=headers,
     )
     assert item_response.status_code == 201
     assert item_response.json()["company_id"] == str(company.id)
@@ -198,6 +211,7 @@ def test_add_item_and_create_alert_rule(client: TestClient, real_session: Sessio
             "rule_type": "new_event_type",
             "config": {"event_type_code": "ANY"},
         },
+        headers=headers,
     )
     assert rule_response.status_code == 201, rule_response.text
     rule_id = rule_response.json()["id"]
@@ -209,10 +223,14 @@ def test_add_item_and_create_alert_rule(client: TestClient, real_session: Sessio
 def test_create_alert_rule_rejects_an_unowned_watchlist(
     client: TestClient, real_session: Session
 ) -> None:
-    tenant = _login(client, real_session, role="analyst")
-    watchlist_id = client.post("/v1/watchlists", json={"name": "A's List"}).json()["id"]
+    tenant, csrf_token = _login(client, real_session, role="analyst")
+    watchlist_id = client.post(
+        "/v1/watchlists", json={"name": "A's List"}, headers={"X-CSRF-Token": csrf_token}
+    ).json()["id"]
 
-    _login(client, real_session, role="analyst", tenant=tenant)  # second analyst, same tenant
+    _tenant2, csrf_token2 = _login(
+        client, real_session, role="analyst", tenant=tenant
+    )  # second analyst, same tenant
     response = client.post(
         "/v1/alerts/rules",
         json={
@@ -220,6 +238,7 @@ def test_create_alert_rule_rejects_an_unowned_watchlist(
             "rule_type": "new_event_type",
             "config": {"event_type_code": "ANY"},
         },
+        headers={"X-CSRF-Token": csrf_token2},
     )
     assert response.status_code == 404
 
@@ -227,10 +246,22 @@ def test_create_alert_rule_rejects_an_unowned_watchlist(
 def test_create_alert_rule_rejects_an_invalid_rule_type(
     client: TestClient, real_session: Session
 ) -> None:
-    _login(client, real_session, role="analyst")
-    watchlist_id = client.post("/v1/watchlists", json={"name": "List"}).json()["id"]
+    _tenant, csrf_token = _login(client, real_session, role="analyst")
+    headers = {"X-CSRF-Token": csrf_token}
+    watchlist_id = client.post("/v1/watchlists", json={"name": "List"}, headers=headers).json()[
+        "id"
+    ]
     response = client.post(
         "/v1/alerts/rules",
         json={"watchlist_id": watchlist_id, "rule_type": "not_a_real_type", "config": {}},
+        headers=headers,
     )
     assert response.status_code == 422
+
+
+def test_create_watchlist_without_csrf_header_is_rejected(
+    client: TestClient, real_session: Session
+) -> None:
+    _login(client, real_session, role="analyst")
+    response = client.post("/v1/watchlists", json={"name": "Should Fail"})
+    assert response.status_code == 403

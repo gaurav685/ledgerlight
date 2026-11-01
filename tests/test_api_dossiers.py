@@ -117,7 +117,7 @@ def real_session() -> Iterator[Session]:
         session.close()
 
 
-def _login(client: TestClient, real_session: Session, role: str = "analyst") -> Tenant:
+def _login(client: TestClient, real_session: Session, role: str = "analyst") -> tuple[Tenant, str]:
     tenant = Tenant(name="Dossiers Test Co", slug=f"dossiers-test-{uuid.uuid4().hex[:8]}")
     real_session.add(tenant)
     real_session.flush()
@@ -143,7 +143,7 @@ def _login(client: TestClient, real_session: Session, role: str = "analyst") -> 
     if response.status_code == 503:
         pytest.skip("ledgerlight_app role not reachable")
     assert response.status_code == 200, response.text
-    return tenant
+    return tenant, response.json()["csrf_token"]
 
 
 def _make_company(real_session: Session, name: str) -> Company:
@@ -167,12 +167,13 @@ def client() -> TestClient:
 def test_create_investigation_runs_to_a_real_finalised_dossier(
     client: TestClient, real_session: Session
 ) -> None:
-    _login(client, real_session)
+    _tenant, csrf_token = _login(client, real_session)
     company = _make_company(real_session, f"Dossier Target Co {uuid.uuid4().hex[:8]}")
 
     create_response = client.post(
         "/v1/dossiers/investigations",
         json={"company_id": str(company.id), "as_of": "2026-01-01"},
+        headers={"X-CSRF-Token": csrf_token},
     )
     assert create_response.status_code == 202, create_response.text
     investigation_id = create_response.json()["id"]
@@ -209,11 +210,12 @@ def test_create_investigation_runs_to_a_real_finalised_dossier(
 def test_create_investigation_requires_create_investigation_permission(
     client: TestClient, real_session: Session
 ) -> None:
-    _login(client, real_session, role="viewer")  # viewer lacks CREATE_INVESTIGATION
+    _tenant, csrf_token = _login(client, real_session, role="viewer")  # lacks CREATE_INVESTIGATION
     company = _make_company(real_session, f"No Permission Co {uuid.uuid4().hex[:8]}")
     response = client.post(
         "/v1/dossiers/investigations",
         json={"company_id": str(company.id), "as_of": "2026-01-01"},
+        headers={"X-CSRF-Token": csrf_token},
     )
     assert response.status_code == 403
 
@@ -226,11 +228,12 @@ def test_another_tenant_gets_a_real_404_never_a_403(
     cannot see the first tenant's row -- this must read as "not
     found", identical to a truly unknown id, never a 403 (which would
     itself leak that the id exists)."""
-    _login(client, real_session, role="analyst")
+    _tenant, csrf_token = _login(client, real_session, role="analyst")
     company = _make_company(real_session, f"Isolation Target Co {uuid.uuid4().hex[:8]}")
     create_response = client.post(
         "/v1/dossiers/investigations",
         json={"company_id": str(company.id), "as_of": "2026-01-01"},
+        headers={"X-CSRF-Token": csrf_token},
     )
     assert create_response.status_code == 202
     investigation_id = create_response.json()["id"]
@@ -244,3 +247,15 @@ def test_another_tenant_gets_a_real_404_never_a_403(
 
     list_response = client.get("/v1/dossiers/investigations")
     assert all(row["id"] != investigation_id for row in list_response.json())
+
+
+def test_create_investigation_without_csrf_header_is_rejected(
+    client: TestClient, real_session: Session
+) -> None:
+    _tenant, _csrf_token = _login(client, real_session)
+    company = _make_company(real_session, f"No CSRF Co {uuid.uuid4().hex[:8]}")
+    response = client.post(
+        "/v1/dossiers/investigations",
+        json={"company_id": str(company.id), "as_of": "2026-01-01"},
+    )
+    assert response.status_code == 403
