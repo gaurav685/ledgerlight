@@ -918,19 +918,17 @@
             "title": "Score",
             "type": "number"
           },
-          "shap_values": {
+          "shap_contributors": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "type": "number"
-                },
-                "type": "object"
+                "items": {},
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Shap Values"
+            "title": "Shap Contributors"
           }
         },
         "required": [

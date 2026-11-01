@@ -120,7 +120,7 @@ def get_company_score(
         as_of=result.score_as_of or as_of,
         score=result.calibrated_probability or 0.0,
         model_version="primary-risk-lightgbm:1.0",
-        shap_values=None,
+        shap_contributors=result.top_shap_contributors,
         model_limitations=result.model_limitations,
     )
 

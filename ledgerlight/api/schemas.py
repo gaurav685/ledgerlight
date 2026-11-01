@@ -190,7 +190,13 @@ class ScoreOut(BaseModel):
     as_of: dt.date
     score: float
     model_version: str
-    shap_values: dict[str, float] | None = None
+    # Real [feature_name, shap_contribution] pairs, highest-magnitude
+    # first -- NULL in practice for every score scripts/score.py itself
+    # writes today (a disclosed limitation: the deployed scorer never
+    # computes SHAP at serve time, only the offline backtest/eval
+    # pipeline does), but real and populated for any score that does
+    # carry it.
+    shap_contributors: list[object] | None = None
     model_limitations: str
 
 
