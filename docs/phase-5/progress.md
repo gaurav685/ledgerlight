@@ -79,12 +79,67 @@ parsed before the real lookup. Proven directly: a real app-role connection with 
 context set cannot see a real session/API-key row at all; scoped via the token's own
 extracted tenant_id, it resolves correctly.
 
-Not yet built: the actual FastAPI app (`app.py`) and its routers (health, auth,
-companies/events/scores/credibility, dossiers, review, watchlists/alerts, documents,
-webhooks, admin), the Dagster alerts-generation job, OpenAPI export.
+**§3's full router set is now built and tested, each against the real local Postgres
+stack via FastAPI's `TestClient`** (`ledgerlight/api/app.py` -- factory, request-ID
+middleware, security headers, the consistent error model):
+
+- `routers/health.py` -- `/healthz`, `/readyz`.
+- `routers/auth.py` -- login/logout/me, the first router to exercise `deps.py` end to
+  end.
+- `routers/companies.py` -- search/overview/events/timeline/scores/credibility, all
+  delegating to Phase 4's own already-tested `ledgerlight.agent.tools` functions
+  rather than re-deriving point-in-time logic. Credibility always honestly reports
+  insufficient data (`docs/modelling/guidance.md`'s own documented gap), never a
+  fabricated figure.
+- `routers/dossiers.py` -- create-investigation as a real async job (`BackgroundTasks`,
+  using `Investigation.state`/`final_status` as the job's own status, never a second
+  job table), status, dossier retrieval, export (markdown/JSON).
+- `routers/review.py` -- review queue list/get/decide, tenant isolation reached
+  transitively through each task's dossier's investigation (no `tenant_id` on
+  `review_tasks` itself).
+- `routers/watchlists.py` / `routers/alerts.py` -- CRUD, with a real "own vs all"
+  split inside one tenant (`MANAGE_OWN_WATCHLISTS` vs `MANAGE_ALL_WATCHLISTS`) on top
+  of RLS's own tenant-level isolation.
+- `routers/api_keys.py` / `routers/webhooks.py` -- create/list/revoke,
+  register/test/deliveries, both `tenant_admin`-only.
+- `routers/admin.py` -- user/role create/list/change/revoke, the tenant's own audit
+  log viewer.
+- `ledgerlight/api/documents.py` + `routers/documents.py` -- signed document links,
+  real 5-minute TTL cap, audited.
+
+**Five real bugs found and fixed while wiring this up** (each with a regression test):
+(1) the RLS-bootstrapping circular dependency (already recorded above, found while
+building `deps.py`); (2) `ledgerlight.agent.review.record_decision` commits
+internally, which is incompatible with being called inside `get_db`'s own
+request-scoped transaction (`InvalidRequestError: Can't operate on closed
+transaction`) -- fixed via an independent session, same pattern as `rate_limit.py`;
+(3) FastAPI still infers a response body from a `-> None` return annotation unless
+`response_model=None` is passed explicitly alongside `status_code=204` -- broke the
+WHOLE app at `create_app()` time the instant the first 204 route was added; (4) a
+50ms rate-limit test window was genuinely too tight for two separate real DB
+round-trips, made flaky, not a product bug -- widened to 1 second; (5)
+`run_investigation` never set `tenant_id` on the `Investigation` row it creates,
+which would make an API-created investigation permanently invisible to the very
+tenant who asked for it under RLS -- added an optional `tenant_id` param, `None` for
+every CLI/agent-eval call site (unchanged).
+
+One real test-environment gotcha resolved (not a product bug):
+`tests/conftest.py`'s own autouse `_isolate_env` wipes every real `LEDGERLIGHT_*` env
+var; every setting except S3 credentials has a class-level default matching the real
+local dev value, so `load_settings()` silently kept working through the wipe for
+those -- but S3 correctly has no such default, so the documents test needed the real
+S3 env vars restored via `monkeypatch.setenv` for its own duration.
+
+Commits: `0cbbc04` (app+auth), `47bb316` (companies), `2ca7df4` (dossiers,
+`run_investigation` tenant_id), `203e108` (review), `b5b22b0` (watchlists/alerts),
+`1ffd598` (api-keys/webhooks), `6412f24` (admin), `6f9ff75` (documents).
 
 ## Not yet started
 
+- §3 remainder: the real Dagster alerts-generation job (evaluate `alert_rules`
+  against new events/scores for watchlisted companies, create `Alert` rows, trigger
+  webhooks), OpenAPI export, §3's own docs (`docs/security/threat-model.md`,
+  `docs/security/controls.md`).
 - §4: the frontend (Next.js App Router, all pages, security headers, accessibility).
 - §5: Docker Compose, config, secrets, seed command.
 - §6: production deployment config (AWS architecture doc, Terraform -- not applied).
@@ -103,12 +158,9 @@ webhooks, admin), the Dagster alerts-generation job, OpenAPI export.
 
 ## Exact next step
 
-Finish §3: build `ledgerlight/api/app.py` (FastAPI factory, request-ID middleware, the
-consistent error model -- PermissionError->403, RateLimitExceeded->429 with
-Retry-After, HTTPException passthrough, a generic 500 handler that never leaks a real
-stack trace) and the real routers, each tested against the real DB via FastAPI's
-TestClient. Then the Dagster alerts job, OpenAPI export, and §3's own docs
-(threat-model.md, controls.md) before moving to §4.
+Build the real Dagster alerts-generation job in `ledgerlight.orchestration`, then
+OpenAPI export + §3's own remaining docs, closing out §3 fully before moving to §4
+(frontend).
 
 ## Pending items carried over from the end of Phase 4 (not part of this brief, flagged
 so they are not lost)
