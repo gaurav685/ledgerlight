@@ -13,10 +13,12 @@ import uuid
 from collections.abc import Iterator
 
 import pytest
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from ledgerlight.api import auth
 from ledgerlight.api.models import Tenant, User
+from ledgerlight.api.tenancy import make_app_session_factory, tenant_scope
 from ledgerlight.config.settings import Settings
 from ledgerlight.db.session import make_session_factory
 
@@ -108,6 +110,60 @@ def test_create_and_validate_a_real_session(real_session: Session) -> None:
     validated = auth.validate_session(real_session, raw_token)
     assert validated is not None
     assert validated.id == row.id
+
+
+def test_session_token_carries_a_real_tenant_id_routing_prefix(real_session: Session) -> None:
+    tenant, user = _make_tenant_and_user(real_session)
+    _row, raw_token = auth.create_session(real_session, tenant.id, user.id)
+    real_session.commit()
+
+    assert auth.extract_tenant_id_from_session_token(raw_token) == tenant.id
+
+
+def test_extract_tenant_id_from_session_token_rejects_malformed_tokens() -> None:
+    assert auth.extract_tenant_id_from_session_token("not-a-real-token") is None
+    assert auth.extract_tenant_id_from_session_token("not-a-uuid.the-rest") is None
+
+
+def test_validate_session_through_the_real_app_role_requires_tenant_scope(
+    real_session: Session,
+) -> None:
+    """The real bug this closes: `sessions` is itself a real,
+    RLS-protected table. A real app-role connection with NO tenant
+    context set cannot see the real session row at all (not merely
+    "wrong tenant" -- genuinely invisible), and the SAME connection
+    with the real tenant context set (derived from the token's own
+    routing prefix, exactly as `ledgerlight.api.deps._resolve_identity`
+    does it) resolves it correctly."""
+    tenant, user = _make_tenant_and_user(real_session)
+    _row, raw_token = auth.create_session(real_session, tenant.id, user.id)
+    real_session.commit()
+
+    from pathlib import Path
+
+    repo_root = Path(__file__).resolve().parent.parent
+    app_settings = Settings(_env_file=str(repo_root / ".env"))  # type: ignore[call-arg]
+    try:
+        app_factory = make_app_session_factory(app_settings)
+        with app_factory() as probe:
+            probe.execute(text("SELECT 1"))
+    except Exception as exc:
+        pytest.skip(f"ledgerlight_app role not reachable (migration 4dad2cd00443 applied?): {exc}")
+
+    with app_factory() as app_session, app_session.begin():
+        no_context_result = auth.validate_session(app_session, raw_token)
+        assert no_context_result is None
+
+    routing_tenant_id = auth.extract_tenant_id_from_session_token(raw_token)
+    assert routing_tenant_id == tenant.id
+    with (
+        app_factory() as app_session,
+        app_session.begin(),
+        tenant_scope(app_session, routing_tenant_id),
+    ):
+        scoped_result = auth.validate_session(app_session, raw_token)
+        assert scoped_result is not None
+        assert scoped_result.user_id == user.id
 
 
 def test_validate_session_rejects_an_unknown_token(real_session: Session) -> None:

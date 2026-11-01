@@ -10,10 +10,12 @@ import uuid
 from collections.abc import Iterator
 
 import pytest
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from ledgerlight.api import api_keys
 from ledgerlight.api.models import Tenant, User
+from ledgerlight.api.tenancy import make_app_session_factory, tenant_scope
 from ledgerlight.config.settings import Settings
 from ledgerlight.db.session import make_session_factory
 
@@ -77,6 +79,60 @@ def test_create_and_verify_a_real_api_key(real_session: Session) -> None:
     assert verified is not None
     assert verified.id == row.id
     assert verified.last_used_at is not None
+
+
+def test_api_key_carries_a_real_tenant_id_routing_segment(real_session: Session) -> None:
+    tenant, user = _make_tenant_and_user(real_session)
+    _row, raw_key = api_keys.create_api_key(real_session, tenant.id, user.id, "My Key", ["read"])
+    real_session.commit()
+
+    assert api_keys.extract_tenant_id_from_api_key(raw_key) == tenant.id
+
+
+def test_extract_tenant_id_from_api_key_rejects_malformed_keys() -> None:
+    assert api_keys.extract_tenant_id_from_api_key("not-a-real-key") is None
+    assert api_keys.extract_tenant_id_from_api_key("llk_abc.not-a-uuid.secret") is None
+
+
+def test_verify_api_key_through_the_real_app_role_requires_tenant_scope(
+    real_session: Session,
+) -> None:
+    """The real bug this closes: `api_keys` is itself a real,
+    RLS-protected table. A real app-role connection with NO tenant
+    context set cannot see the real key row at all, and the same
+    connection with the real tenant context set (derived from the
+    key's own routing segment, exactly as
+    `ledgerlight.api.deps._resolve_identity` does it) resolves it
+    correctly."""
+    tenant, user = _make_tenant_and_user(real_session)
+    _row, raw_key = api_keys.create_api_key(real_session, tenant.id, user.id, "My Key", ["read"])
+    real_session.commit()
+
+    from pathlib import Path
+
+    repo_root = Path(__file__).resolve().parent.parent
+    app_settings = Settings(_env_file=str(repo_root / ".env"))  # type: ignore[call-arg]
+    try:
+        app_factory = make_app_session_factory(app_settings)
+        with app_factory() as probe:
+            probe.execute(text("SELECT 1"))
+    except Exception as exc:
+        pytest.skip(f"ledgerlight_app role not reachable (migration 4dad2cd00443 applied?): {exc}")
+
+    with app_factory() as app_session, app_session.begin():
+        no_context_result = api_keys.verify_api_key(app_session, raw_key)
+        assert no_context_result is None
+
+    routing_tenant_id = api_keys.extract_tenant_id_from_api_key(raw_key)
+    assert routing_tenant_id == tenant.id
+    with (
+        app_factory() as app_session,
+        app_session.begin(),
+        tenant_scope(app_session, routing_tenant_id),
+    ):
+        scoped_result = api_keys.verify_api_key(app_session, raw_key)
+        assert scoped_result is not None
+        assert scoped_result.user_id == user.id
 
 
 def test_verify_api_key_rejects_an_unknown_key(real_session: Session) -> None:

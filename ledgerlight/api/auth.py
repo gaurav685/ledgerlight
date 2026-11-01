@@ -60,6 +60,26 @@ def _hash_token(raw_token: str) -> str:
     return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
 
 
+def extract_tenant_id_from_session_token(raw_token: str) -> uuid.UUID | None:
+    """Parses the real tenant_id routing prefix every real session
+    token carries (set by `create_session`) -- `None` if malformed.
+    `sessions` is itself a real, RLS-protected table: resolving a raw
+    token to its real row requires the real tenant context to already
+    be set (`ledgerlight.api.tenancy.tenant_scope`) BEFORE
+    `validate_session` ever queries it, and the only way to know which
+    tenant to scope to, before that query, is to read it straight off
+    the token string -- a real app-role connection with no tenant
+    context set cannot see ANY real session row to look one up
+    from, by design."""
+    tenant_id_str, _, rest = raw_token.partition(".")
+    if not rest:
+        return None
+    try:
+        return uuid.UUID(tenant_id_str)
+    except ValueError:
+        return None
+
+
 def create_session(
     db: DbSession,
     tenant_id: uuid.UUID,
@@ -71,8 +91,14 @@ def create_session(
 ) -> tuple[SessionRow, str]:
     """Creates one real session row and returns it with the real raw
     session token -- shown to the caller exactly once (it becomes the
-    real cookie value); only `session_token_hash` is ever persisted."""
-    raw_token = _random_token()
+    real cookie value); only `session_token_hash` is ever persisted.
+    The raw token itself carries a real `{tenant_id}.` routing prefix
+    (see `extract_tenant_id_from_session_token`) -- not a secret (a
+    tenant_id is just a routing identifier, the same way it is visible
+    in plenty of real multi-tenant products' own URLs), but required
+    so a caller can set the real RLS tenant context before this
+    table's own row can be looked up at all."""
+    raw_token = f"{tenant_id}.{_random_token()}"
     now = dt.datetime.now(dt.UTC)
     row = SessionRow(
         tenant_id=tenant_id,
@@ -93,7 +119,13 @@ def validate_session(db: DbSession, raw_token: str) -> SessionRow | None:
     """Resolves a real raw session token to its real, still-valid
     session row -- `None` if the token does not match any real
     session, the session is revoked, or it has expired. Updates
-    `last_seen_at` on every real successful validation."""
+    `last_seen_at` on every real successful validation.
+
+    `db`'s own real RLS tenant context MUST already be set to the
+    real tenant `extract_tenant_id_from_session_token(raw_token)`
+    returns before calling this -- `sessions` is a real, RLS-protected
+    table, so with no context set, or the wrong one, this correctly
+    finds nothing to return, not an error."""
     token_hash = _hash_token(raw_token)
     row = db.scalar(select(SessionRow).where(SessionRow.session_token_hash == token_hash))
     if row is None:
