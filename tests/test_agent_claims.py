@@ -125,9 +125,10 @@ def test_claims_from_outcomes_context_covers_ibbi_sebi_and_ratings() -> None:
 
 def test_standing_limitation_claims_are_always_non_empty() -> None:
     drafts = standing_limitation_claims()
-    assert len(drafts) == 3
+    assert len(drafts) == 4
     assert all(d.claim_type == "limitation" for d in drafts)
     assert all(d.evidence == [] for d in drafts)
+    assert sum(1 for d in drafts if d.payload.get("is_disclaimer")) == 1
 
 
 def test_entity_history_limitation_claim_is_none_when_tracked() -> None:

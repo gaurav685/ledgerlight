@@ -46,6 +46,11 @@ PARTIAL_IBBI_COVERAGE_LIMITATION = (
     "IBBI admission events are only available for companies with a real, auto-linked "
     "IBBI Filing; absence of an IBBI event is not proof no real admission occurred."
 )
+DISCLAIMER_TEXT = (
+    "This dossier is not investment advice. The red flags and risk signals it "
+    "contains are analytical signals derived from public documents and a statistical "
+    "model, not proof of misconduct, fraud, or a future default."
+)
 
 
 @dataclass
@@ -203,8 +208,13 @@ def claim_from_risk_score(risk: RiskScoreResult) -> ClaimDraft:
 def standing_limitation_claims() -> list[ClaimDraft]:
     """The real, standing, project-level limitation claims every
     dossier must disclose -- not derived per-investigation, since they
-    are true of this project's own corpus, not of any one company."""
-    return [
+    are true of this project's own corpus, not of any one company.
+    Includes the fixed legal disclaimer (§6.8) as its own claim
+    (`payload["is_disclaimer"] = True`), rather than rendering it as
+    claim-less boilerplate -- every real sentence in the dossier,
+    including the disclaimer, maps to a real claim ID, with no
+    exemption."""
+    standing = [
         ClaimDraft(
             claim_type="limitation",
             payload={"text": text, "source": source},
@@ -216,6 +226,18 @@ def standing_limitation_claims() -> list[ClaimDraft]:
             (PARTIAL_IBBI_COVERAGE_LIMITATION, "docs/modelling/data-quality.md"),
         )
     ]
+    standing.append(
+        ClaimDraft(
+            claim_type="limitation",
+            payload={
+                "text": DISCLAIMER_TEXT,
+                "source": "project disclaimer",
+                "is_disclaimer": True,
+            },
+            evidence=[],
+        )
+    )
+    return standing
 
 
 def entity_history_limitation_claim(entity_history: EntityHistory) -> ClaimDraft | None:
