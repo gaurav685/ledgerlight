@@ -114,6 +114,23 @@ def real_session() -> Iterator[Session]:
         if created_company_ids:
             session.execute(
                 text(
+                    "DELETE FROM review_decisions_audit WHERE review_task_id IN "
+                    "(SELECT id FROM review_tasks WHERE dossier_id IN "
+                    "(SELECT id FROM dossiers WHERE investigation_id IN "
+                    "(SELECT id FROM investigations WHERE company_id = ANY(:ids))))"
+                ),
+                {"ids": created_company_ids},
+            )
+            session.execute(
+                text(
+                    "DELETE FROM review_tasks WHERE dossier_id IN "
+                    "(SELECT id FROM dossiers WHERE investigation_id IN "
+                    "(SELECT id FROM investigations WHERE company_id = ANY(:ids)))"
+                ),
+                {"ids": created_company_ids},
+            )
+            session.execute(
+                text(
                     "DELETE FROM dossiers WHERE investigation_id IN "
                     "(SELECT id FROM investigations WHERE company_id = ANY(:ids))"
                 ),

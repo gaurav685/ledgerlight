@@ -40,13 +40,14 @@ from ledgerlight.agent.claims import (
     entity_history_limitation_claim,
     standing_limitation_claims,
 )
-from ledgerlight.agent.models import Claim, Investigation, InvestigationStep
+from ledgerlight.agent.models import Claim, Dossier, Investigation, InvestigationStep
 from ledgerlight.agent.render import (
     RENDERER_NAME,
     RENDERER_VERSION,
     RenderedDossier,
     render_offline,
 )
+from ledgerlight.agent.review import create_review_tasks
 from ledgerlight.agent.tools import (
     get_entity_history,
     get_events,
@@ -364,13 +365,19 @@ def run_investigation(
                 if investigation.failure_reason is None:
                     investigation.failure_reason = f"stopped in state {investigation.state}"
 
-        _persist_dossier(session, investigation, rendered)
+        dossier = _persist_dossier(session, investigation, rendered)
+        create_review_tasks(
+            session, investigation, dossier, _active_claims(session, investigation.id)
+        )
 
     except BudgetExceeded as exc:
         investigation.final_status = "NEEDS_REVIEW"
         investigation.failure_reason = exc.reason
         investigation.usage = usage.to_json()
-        _persist_dossier(session, investigation, rendered)
+        dossier = _persist_dossier(session, investigation, rendered)
+        create_review_tasks(
+            session, investigation, dossier, _active_claims(session, investigation.id)
+        )
 
     investigation.finished_at = _now()
     session.commit()
@@ -422,23 +429,21 @@ def _record_verification(
 
 def _persist_dossier(
     session: Session, investigation: Investigation, rendered: RenderedDossier | None
-) -> None:
-    from ledgerlight.agent.models import Dossier
-
+) -> Dossier:
     existing_versions = session.scalars(
         select(Dossier.version).where(Dossier.investigation_id == investigation.id)
     ).all()
     version = (max(existing_versions) + 1) if existing_versions else 1
 
-    session.add(
-        Dossier(
-            investigation_id=investigation.id,
-            version=version,
-            status=investigation.final_status or "NEEDS_REVIEW",
-            sections=rendered.sections if rendered else {},
-            claim_id_map=rendered.claim_id_map if rendered else {},
-            renderer_name=RENDERER_NAME,
-            renderer_version=RENDERER_VERSION,
-        )
+    dossier = Dossier(
+        investigation_id=investigation.id,
+        version=version,
+        status=investigation.final_status or "NEEDS_REVIEW",
+        sections=rendered.sections if rendered else {},
+        claim_id_map=rendered.claim_id_map if rendered else {},
+        renderer_name=RENDERER_NAME,
+        renderer_version=RENDERER_VERSION,
     )
+    session.add(dossier)
     session.flush()
+    return dossier
