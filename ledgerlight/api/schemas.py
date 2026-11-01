@@ -285,3 +285,15 @@ class AuditLogOut(BaseModel):
 class SignedDocumentLinkOut(BaseModel):
     url: str
     expires_in_seconds: int
+
+
+class DocumentPageTextOut(BaseModel):
+    """The real, immutable extracted text for one page -- the one real
+    source of truth every citation's `char_start`/`char_end` resolves
+    against (`ledgerlight.db.models.DocumentPage`'s own docstring).
+    The frontend's evidence viewer highlights the cited span directly
+    against this text, never against a rendered PDF's own coordinates."""
+
+    page_number: int
+    raw_text: str
+    char_count: int

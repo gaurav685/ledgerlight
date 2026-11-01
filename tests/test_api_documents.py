@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 from ledgerlight.api import auth
 from ledgerlight.api.models import Membership, Tenant, User
 from ledgerlight.config.settings import Settings
-from ledgerlight.db.models import Document, DocumentVersion
+from ledgerlight.db.models import Document, DocumentPage, DocumentVersion
 from ledgerlight.db.session import make_session_factory
 
 pytestmark = pytest.mark.integration
@@ -44,6 +44,13 @@ def real_session() -> Iterator[Session]:
     finally:
         session.execute(text("DELETE FROM rate_limit_counters WHERE key LIKE 'login_ip:%'"))
         if created["documents"]:
+            session.execute(
+                text(
+                    "DELETE FROM document_pages WHERE version_id IN "
+                    "(SELECT id FROM document_versions WHERE document_id = ANY(:ids))"
+                ),
+                {"ids": created["documents"]},
+            )
             session.execute(
                 text("DELETE FROM document_versions WHERE document_id = ANY(:ids)"),
                 {"ids": created["documents"]},
@@ -132,6 +139,23 @@ def _make_document_version(real_session: Session) -> DocumentVersion:
     return version
 
 
+def _make_document_page(real_session: Session, version: DocumentVersion, raw_text: str) -> None:
+    import hashlib
+
+    real_session.add(
+        DocumentPage(
+            version_id=version.id,
+            page_number=1,
+            raw_text=raw_text,
+            text_sha256=hashlib.sha256(raw_text.encode("utf-8")).hexdigest(),
+            char_count=len(raw_text),
+            extraction_method="text_layer",
+            extractor_version="test/1",
+        )
+    )
+    real_session.commit()
+
+
 @pytest.fixture
 def client() -> TestClient:
     try:
@@ -205,3 +229,27 @@ def test_signed_url_issuance_is_audited(
         {"tenant_id": tenant.id, "target_id": str(version.id)},
     ).scalar()
     assert count == 1
+
+
+def test_get_document_page_text_returns_the_real_raw_text(
+    client: TestClient, real_session: Session
+) -> None:
+    _login(client, real_session, role="viewer")
+    version = _make_document_version(real_session)
+    raw_text = "The real extracted page text, exactly as found in the filing."
+    _make_document_page(real_session, version, raw_text)
+
+    response = client.get(f"/v1/documents/{version.id}/pages/1")
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["raw_text"] == raw_text
+    assert body["char_count"] == len(raw_text)
+
+
+def test_get_document_page_text_404s_for_an_unknown_page(
+    client: TestClient, real_session: Session
+) -> None:
+    _login(client, real_session, role="viewer")
+    version = _make_document_version(real_session)
+    response = client.get(f"/v1/documents/{version.id}/pages/1")
+    assert response.status_code == 404
