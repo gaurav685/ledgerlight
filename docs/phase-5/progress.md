@@ -60,14 +60,55 @@ Phase 4's completion commit `d1daf12`.
 - §13: exit gates.
 - §14: final report, `docs/phase-5/phase-5-report.md`.
 
+## §3 in progress (2026-11-01)
+
+Foundations built and tested: `ledgerlight/api/audit.py` (generic append-only audit
+writer), `webhooks.py` (Fernet secret encryption, HMAC-SHA256 signing, real SSRF
+protection re-checked before every delivery attempt, retries/backoff), `rate_limit.py`
++ migration `780f44fe5dbc` (real Postgres-backed atomic fixed-window counter,
+`docs/adr/0010-rate-limiting.md`), `ObjectStore.presigned_get_url` (real boto3
+presigned GET), `deps.py` (the real per-request FastAPI dependency chain: app-role DB
+session, identity resolution, CSRF, RBAC).
+
+**Found and fixed a real structural bug** while building `deps.py`: `sessions`/
+`api_keys` are RLS-protected tables, so resolving a raw token to its row needs the
+tenant context set FIRST -- but that context can only be known AFTER finding the row.
+Fixed by giving every token a real, non-secret tenant_id routing segment
+(`auth.extract_tenant_id_from_session_token`/`api_keys.extract_tenant_id_from_api_key`),
+parsed before the real lookup. Proven directly: a real app-role connection with no
+context set cannot see a real session/API-key row at all; scoped via the token's own
+extracted tenant_id, it resolves correctly.
+
+Not yet built: the actual FastAPI app (`app.py`) and its routers (health, auth,
+companies/events/scores/credibility, dossiers, review, watchlists/alerts, documents,
+webhooks, admin), the Dagster alerts-generation job, OpenAPI export.
+
+## Not yet started
+
+- §4: the frontend (Next.js App Router, all pages, security headers, accessibility).
+- §5: Docker Compose, config, secrets, seed command.
+- §6: production deployment config (AWS architecture doc, Terraform -- not applied).
+- §7: CI/CD workflows (validated locally only -- no GitHub remote).
+- §8: observability, backup/restore, runbooks.
+- §9: security tests (authz matrix, cross-tenant isolation, auth, signed URLs,
+  webhooks, rate limiting, input validation, prompt-injection separation, security
+  headers, Playwright e2e, optional ZAP baseline).
+- §10: remaining documentation (API docs, frontend/deploy/ops docs, ADR 0009, Sec3's
+  own threat-model/controls docs, release-gates.md update, README update,
+  phase-5-report.md).
+- §11: run and verify.
+- §12: final commit/backup.
+- §13: exit gates.
+- §14: final report, `docs/phase-5/phase-5-report.md`.
+
 ## Exact next step
 
-§1/§2 are done. Next: §3 (the real FastAPI /v1 API -- company search/overview, event
-timelines, point-in-time scores, management credibility, dossiers, review tasks,
-watchlists/alerts, signed document links, webhooks, health checks, rate limits, audit
-logging, the Dagster alerts-generation job), wiring `ledgerlight.api.auth`/`rbac`/
-`tenancy` into real HTTP request handling (cookies, CSRF header, RBAC/scope checks on
-every endpoint).
+Finish §3: build `ledgerlight/api/app.py` (FastAPI factory, request-ID middleware, the
+consistent error model -- PermissionError->403, RateLimitExceeded->429 with
+Retry-After, HTTPException passthrough, a generic 500 handler that never leaks a real
+stack trace) and the real routers, each tested against the real DB via FastAPI's
+TestClient. Then the Dagster alerts job, OpenAPI export, and §3's own docs
+(threat-model.md, controls.md) before moving to §4.
 
 ## Pending items carried over from the end of Phase 4 (not part of this brief, flagged
 so they are not lost)
