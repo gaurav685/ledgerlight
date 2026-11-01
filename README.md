@@ -87,6 +87,30 @@ agent, API endpoints, or frontend. See `docs/phase-3/phase-3-report.md`
 for the full report and `docs/modelling/` for outcomes, features,
 guidance, data-quality, evaluation-protocol and model-card design docs.
 
+**Phase 4 — evidence-verified investigation agent and human review.** In
+progress. §1-§9 are complete: the checkpointed PLAN/GATHER/TIMELINE/
+DRAFT/VERIFY/REPAIR/FINALISE state machine; 7 read-only tools; the
+dossier data model and the offline deterministic renderer; a full
+per-claim/per-sentence verifier (citation, date, number/unit, name,
+real local-NLI entailment, banned language, contradiction detection);
+real budgets; the human review workflow (automatic routing, the
+append-only decision audit, the immutable event-feedback loop, seeded
+QC with a real catch-rate report); the real SEED+UNIVERSE evaluation
+library; and a dedicated adversarial/failure test suite (prompt
+injection, a verifier crash failing closed, REPAIR never substituting a
+new unsupported claim, real end-to-end runs on real SEED companies,
+dossier-hash determinism). §10's 7 CLI commands
+(`investigate`/`investigate-batch`/`dossier-show`/`dossier-export`/
+`dossier-review`/`qc-seed`/`agent-eval`) are built and smoke-tested
+against real companies. No LLM renderer/plan validator is active in
+this environment (no `LLM_PROVIDER`/key in `.env`) -- the default,
+fully-offline path is what every real investigation in this phase
+actually runs. §11 (run and verify), §12 (commit/backup), §13 (exit
+gates), and §14 (final report) remain. Human review of real dossiers
+is explicitly deferred to Phase 6, per the brief's own instruction
+(`docs/release/release-gates.md`). See `docs/phase-4/phase-4-report.md`
+(once written) and `docs/agent/` for the full report and design docs.
+
 ## Setup
 
 Requires [uv](https://docs.astral.sh/uv/) (Python 3.12 is fetched

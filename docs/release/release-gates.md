@@ -150,3 +150,30 @@ against it, 2021-2026) -- not resolved unilaterally, flagged for human review.
 **Closing this gap requires:** a materially larger real verified-coverage universe (more
 companies with both real IBBI and real CARE Filing coverage) before any predictive-skill
 claim can be made, plus a human decision on SpiceJet's control-group status.
+
+## Gap: no human review of investigation agent dossiers has ever happened
+
+**Status:** open, by explicit instruction. **Deferred to:** Phase 6, per the Phase 4
+brief's own §8 text: "Human quality evaluation DEFERRED to Phase 6."
+
+**What's missing:** every real dossier the Phase 4 investigation agent produces has been
+checked by the automated verifier (`docs/agent/verifier.md`) and, where §9's adversarial
+tests apply, by a synthetic/mocked scenario -- but no real human has reviewed a real,
+FINALISED dossier's prose for whether it is actually correct, well-calibrated, or useful,
+and no real human has worked through the `dossier-review` CLI's open queue at all. The
+seeded-QC mechanism (`ledgerlight.agent.qc_seed`, `docs/agent/review-workflow.md`) exists
+and is itself tested, but its real reviewer catch rate has never been measured against a
+real human, since no real human review has happened.
+
+**What this blocks:** any claim that a real dossier's prose is trustworthy beyond what the
+automated verifier checks (citation resolution, dates, numbers, entailment, banned
+language) -- things a verifier cannot judge, like whether a finding is actually
+material, whether the chosen severity is reasonable, or whether the overall narrative is
+misleading despite every individual sentence passing its own checks.
+
+**Closing this gap requires:** a real human reviewer running `dossier-review` against at
+least 10 real, FINALISED dossiers (not seeded QC items, not gold items) and recording real
+decisions, plus a real `qc-seed`-seeded batch reviewed by that same human so a real catch
+rate per flaw type can be reported -- both explicitly required before release, per the
+brief's own instruction, added here as a standing release gate rather than left only in a
+Phase 4 evaluation doc.
