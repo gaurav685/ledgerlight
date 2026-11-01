@@ -205,24 +205,38 @@ completion commit `195a714`.
   deferred-to-Phase-6 human review requirement, and a Phase 4 status paragraph in
   README.md. **§10 is now fully complete.**
 
+- **§11 (2026-11-01)**: real evidence captured for every real check the brief lists
+  (`docs/phase-4/evidence/sec11-*`): migrations from empty (upgrade head -> downgrade -1
+  -> upgrade head against a throwaway, created-and-dropped DB); lint/format/typecheck
+  clean; full default (380), integration (176), and network (2) suites all green; the
+  real, full `agent-eval` run across all 30 SEED+UNIVERSE companies x 2 as_of dates (60
+  real investigations, all FINALISED, 0 unsupported-claim leakage) -- which, on its
+  FIRST real run, surfaced two real verifier bugs (see §9/§5 above, commit `379fa27`:
+  `timeline_entry` claims not exempt from the evidence requirement despite being
+  documented as such, and `date_in_span` wrongly applied to metric/care_rating claims
+  whose real evidence span structurally cannot carry a date) -- fixed, with regression
+  tests, and re-run clean; a real `qc-seed batch` across the SEED track (2 of 15 seeded,
+  1 skipped for lacking a real donor claim, reported not crashed) and the resulting
+  real open review-queue listing, both decided correctly (100% catch rate on both real
+  flaw types); two real dossier exports (DHFL as Markdown, pasted into the final report;
+  GENSOL as JSON); a clean `pre-commit run --all-files`; a clean full-history gitleaks
+  scan (113 commits, no leaks found). **§11 is now fully complete.**
+
 ## Not yet started
 
-- §11: run and verify (lint, typecheck, tests, migrations from empty, agent-eval,
-  qc-seed + review-queue dry listing, dossier-export x2, pre-commit, full-history
-  gitleaks).
 - §12: final commit/backup.
 - §13: exit gates.
 - §14: final report, `docs/phase-4/phase-4-report.md`.
 
 ## Exact next step
 
-§4 through §10 are all done. LLM plan validation / LLM renderer were NOT built -- no
+§4 through §11 are all done. LLM plan validation / LLM renderer were NOT built -- no
 `LLM_PROVIDER`/key is in `.env` in this environment, so per the brief's own instruction
 this records "LLM renderer not run" rather than being built against nothing real to
-test it with; revisit only if a real key is ever added. Next: §11 (run and verify --
-including the one, full, real `agent-eval` run across all 30 companies, which also
-fills in `docs/evaluation/phase-4-agent-evaluation.md`'s real results), §12
-(commit/backup), §13 (exit gates), §14 (final report).
+test it with; revisit only if a real key is ever added. Next: §12 (final commit/backup
+-- largely continuous throughout this session already, but confirm/refresh), §13 (exit
+gates), §14 (final report, printed in full and saved to
+`docs/phase-4/phase-4-report.md`).
 
 ## Open defects / known limitations (not yet resolved)
 
