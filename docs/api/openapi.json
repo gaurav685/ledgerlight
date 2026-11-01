@@ -453,6 +453,30 @@
         "title": "CredibilityOut",
         "type": "object"
       },
+      "DocumentPageTextOut": {
+        "description": "The real, immutable extracted text for one page -- the one real\nsource of truth every citation's `char_start`/`char_end` resolves\nagainst (`ledgerlight.db.models.DocumentPage`'s own docstring).\nThe frontend's evidence viewer highlights the cited span directly\nagainst this text, never against a rendered PDF's own coordinates.",
+        "properties": {
+          "char_count": {
+            "title": "Char Count",
+            "type": "integer"
+          },
+          "page_number": {
+            "title": "Page Number",
+            "type": "integer"
+          },
+          "raw_text": {
+            "title": "Raw Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "page_number",
+          "raw_text",
+          "char_count"
+        ],
+        "title": "DocumentPageTextOut",
+        "type": "object"
+      },
       "DossierOut": {
         "properties": {
           "claim_id_map": {
@@ -2170,6 +2194,59 @@
         "summary": "Get Company Timeline",
         "tags": [
           "companies"
+        ]
+      }
+    },
+    "/v1/documents/{document_version_id}/pages/{page_number}": {
+      "get": {
+        "description": "The real, immutable `raw_text` for one page -- the frontend's\nevidence viewer renders this directly and highlights the cited\n`char_start`/`char_end` span against it, never against a rendered\nPDF's own coordinates (no real per-page PDF rendering is built).",
+        "operationId": "get_document_page_text_v1_documents__document_version_id__pages__page_number__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "page_number",
+            "required": true,
+            "schema": {
+              "title": "Page Number",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentPageTextOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Document Page Text",
+        "tags": [
+          "documents"
         ]
       }
     },
