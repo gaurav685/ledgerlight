@@ -76,6 +76,19 @@ class ObjectStore:
         body: bytes = self._client.get_object(Bucket=self._bucket, Key=key)["Body"].read()
         return body
 
+    def presigned_get_url(self, key: str, expires_in_seconds: int = 300) -> str:
+        """A real, time-limited presigned GET URL -- never a public
+        bucket (Phase 5 §3's own explicit requirement). Capped by the
+        caller (`ledgerlight.api.documents`) at 5 minutes; boto3 itself
+        places no such cap, so the real ceiling is enforced there, not
+        assumed here."""
+        url: str = self._client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": self._bucket, "Key": key},
+            ExpiresIn=expires_in_seconds,
+        )
+        return url
+
     def ensure_bucket(self) -> None:
         try:
             self._client.head_bucket(Bucket=self._bucket)

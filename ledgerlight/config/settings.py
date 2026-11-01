@@ -79,7 +79,17 @@ class Settings(BaseSettings):
     # (never a real secret) so §5's fail-fast weak-secret check has
     # something real to catch outside dev mode.
     session_secret_key: str = Field(default="dev-only-session-secret-change-me")
-    webhook_secret_encryption_key: str | None = Field(default=None)
+    # A real, valid Fernet key -- but a dev-only one, committed in plain sight
+    # (never a real production secret) precisely so §5's fail-fast weak-secret
+    # check has a known, matchable value to reject outside dev mode.
+    webhook_secret_encryption_key: str = Field(
+        default="UWhA93WPMUQ7e0aYCYjBP_nKSse4xZ0Bf6qC1TxZDyw="
+    )
+
+    # Phase 5 §3: the real session cookie's own Secure attribute -- False
+    # by default (this environment serves plain http on localhost); set
+    # True in any real deployment served over TLS.
+    cookie_secure: bool = Field(default=False)
 
     def app_database_url(self, db_name: str | None = None) -> str:
         """The same database as `database_url()`, but authenticating as
