@@ -259,15 +259,32 @@ def check_banned_language(sentence: str) -> CheckResult:
     return CheckResult("banned_language", True, f"banned terms {hits} all inside short quotes")
 
 
+EVIDENCE_EXEMPT_CLAIM_TYPES = frozenset({"risk_signal", "limitation"})
+
+
 def verify_claim(session: Session, claim: Claim, as_of: dt.date) -> ClaimVerificationResult:
-    """Runs the real, applicable checks for one real claim. Claims with
-    an empty `evidence` list (risk_signal, limitation) are exempt from
-    citation/point-in-time/entailment, per this module's own docstring
-    -- they still pass (there is nothing to fail), recorded explicitly
-    as `exempt`, not silently skipped."""
+    """Runs the real, applicable checks for one real claim. ONLY
+    `risk_signal`/`limitation` claims (`EVIDENCE_EXEMPT_CLAIM_TYPES`)
+    are exempt from citation/point-in-time/entailment when they carry
+    no evidence -- that is their real, by-design shape (see
+    `ledgerlight.agent.claims`'s own module docstring). Any OTHER
+    claim type (event, timeline_entry, metric) with an empty evidence
+    list is a real defect -- an unsupported claim -- and must FAIL,
+    never pass as exempt."""
     checks: list[CheckResult] = []
     if not claim.evidence:
-        checks.append(CheckResult("citation_resolves", True, "exempt: claim has no evidence span"))
+        if claim.claim_type in EVIDENCE_EXEMPT_CLAIM_TYPES:
+            checks.append(
+                CheckResult("citation_resolves", True, "exempt: claim has no evidence span")
+            )
+        else:
+            checks.append(
+                CheckResult(
+                    "citation_resolves",
+                    False,
+                    f"unsupported claim: {claim.claim_type} claim has no evidence span",
+                )
+            )
         return ClaimVerificationResult(claim_id=claim.id, checks=checks)
 
     for ev in claim.evidence:
