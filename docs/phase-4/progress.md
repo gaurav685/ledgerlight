@@ -222,21 +222,25 @@ completion commit `195a714`.
   GENSOL as JSON); a clean `pre-commit run --all-files`; a clean full-history gitleaks
   scan (113 commits, no leaks found). **§11 is now fully complete.**
 
+- **§12/§13/§14 (2026-11-01)**: §12 was continuous throughout this phase (a real commit
+  after every meaningful change, 37 commits total, all `gaurav685 <gaurav685@gmail.com>`,
+  no AI attribution, `git remote -v` empty, the backup bundle refreshed and verified at
+  every checkpoint) -- confirmed one final time via `git log -n 10` and a final bundle
+  verify. §13's 12 exit gates are all marked PASS with evidence. §14's full 15-section
+  final report is written and saved to `docs/phase-4/phase-4-report.md`.
+
+## PHASE 4 COMPLETE.
+
+All of §1 through §14 are done. Stop. **Phase 5 is not begun**, per the brief's own
+closing instruction.
+
 ## Not yet started
 
-- §12: final commit/backup.
-- §13: exit gates.
-- §14: final report, `docs/phase-4/phase-4-report.md`.
+(nothing -- Phase 4 is complete)
 
 ## Exact next step
 
-§4 through §11 are all done. LLM plan validation / LLM renderer were NOT built -- no
-`LLM_PROVIDER`/key is in `.env` in this environment, so per the brief's own instruction
-this records "LLM renderer not run" rather than being built against nothing real to
-test it with; revisit only if a real key is ever added. Next: §12 (final commit/backup
--- largely continuous throughout this session already, but confirm/refresh), §13 (exit
-gates), §14 (final report, printed in full and saved to
-`docs/phase-4/phase-4-report.md`).
+None -- Phase 4 is complete. Do not begin Phase 5 work in this branch.
 
 ## Open defects / known limitations (not yet resolved)
 
