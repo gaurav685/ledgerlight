@@ -150,7 +150,18 @@ def run_investigation(
     requested_by: str,
     budget_config: BudgetConfig | None = None,
     resume_investigation_id: uuid.UUID | None = None,
+    tenant_id: uuid.UUID | None = None,
 ) -> InvestigationOutcome:
+    """`tenant_id` is Phase 5 §3's own addition: set only when the real
+    API itself creates this investigation on behalf of a real tenant
+    -- every CLI/agent-eval call site leaves it `None` (unchanged
+    behaviour), which is exactly what `investigations.tenant_id`'s own
+    real RLS policy expects (a NULL tenant_id is never visible to any
+    tenant's own scoped connection -- see that column's own doc). A
+    real API-created investigation left with a NULL tenant_id here
+    would become permanently invisible to the very tenant who asked
+    for it, so the real app-role caller (`ledgerlight.api.routers.dossiers`)
+    always passes its own real tenant_id through."""
     if resume_investigation_id is not None:
         investigation = session.get(Investigation, resume_investigation_id)
         assert investigation is not None, "resume_investigation_id does not exist"
@@ -164,6 +175,7 @@ def run_investigation(
             company_id=company_id,
             as_of=as_of,
             requested_by=requested_by,
+            tenant_id=tenant_id,
             state="PLAN",
             budget_config=budget.to_json(),
             usage=usage.to_json(),
