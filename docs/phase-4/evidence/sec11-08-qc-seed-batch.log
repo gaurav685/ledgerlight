@@ -1,0 +1,7 @@
+C:\ledger light\.venv\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]Loading weights:  23%|##3       | 47/202 [00:00<00:00, 468.57it/s]Loading weights:  47%|####6     | 94/202 [00:00<00:00, 467.08it/s]Loading weights: 100%|##########| 202/202 [00:00<00:00, 972.18it/s]
+  skipped company=b6734f0a-0b56-4e84-b9d7-4f330eac4e0c as_of=2023-01-01 flaw_type=wrong_date: flaw_type='wrong_date' needs a real donor claim with a resolving evidence span to corrupt against; this investigation has no such claim
+seeded 2 real flawed dossier(s) of 15 real target(s)
+  company=e360a600-e453-43c0-8859-cafc0fdfb96c flaw_type=wrong_number
+  company=b75df19e-08c3-4eeb-ad32-1614b1487346 flaw_type=missing_citation

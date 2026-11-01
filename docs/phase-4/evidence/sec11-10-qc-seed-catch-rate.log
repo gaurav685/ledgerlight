@@ -1,0 +1,5 @@
+Seeded QC reviewer catch rate (seeded items excluded from every other real statistic):
+  wrong_date           seeded=0   reviewed=0   caught=0   rate=n/a (no decisions yet)
+  wrong_number         seeded=1   reviewed=1   caught=1   rate=100.0%
+  missing_citation     seeded=1   reviewed=1   caught=1   rate=100.0%
+  unsupported_claim    seeded=0   reviewed=0   caught=0   rate=n/a (no decisions yet)

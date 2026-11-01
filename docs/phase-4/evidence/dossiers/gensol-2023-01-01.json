@@ -1,0 +1,54 @@
+{
+  "investigation_id": "37237ea6-a979-4044-b32c-604fa21e2f4d",
+  "company_id": "c3f1cd29-fd6b-4c6f-963e-b83710203c9e",
+  "as_of": "2023-01-01",
+  "dossier_version": 1,
+  "status": "FINALISED",
+  "renderer_name": "offline_template",
+  "renderer_version": "1",
+  "sections": {
+    "summary": [
+      "This dossier covers GENSOL as of 2023-01-01, based on 0 real governance/outcome events (0 VERIFIED, 0 CANDIDATE) and 0 real filings known as of that date."
+    ],
+    "disclaimer": [
+      "This dossier is not investment advice. The red flags and risk signals it contains are analytical signals derived from public documents and a statistical model, not proof of misconduct, fraud, or a future default."
+    ],
+    "limitations": [
+      "Company display_name is a single current value in this project's schema -- no real name-change history is tracked. Only identifier history (ISIN/NSE_SYMBOL/BSE_CODE/CIN validity windows) is available.",
+      "NSE and BSE exchange-announcement sources are BLOCKED for this project (data/manifests/sources.yaml) -- no real company announcements from either exchange are in this corpus.",
+      "No real management-issued forward-guidance statements exist anywhere in this project's corpus (0 found after a real search of 4,759 pages) -- see docs/modelling/guidance-extraction-assessment.md.",
+      "The real IBBI full-universe discovery crawl was honestly stopped, not completed (~2.75% of the target universe covered) -- see docs/modelling/data-quality.md. IBBI admission events are only available for companies with a real, auto-linked IBBI Filing; absence of an IBBI event is not proof no real admission occurred."
+    ],
+    "risk_signals": [
+      "No real model score was available for this company as of this date.",
+      "## Intended use\n\nA research prototype that scores Indian listed companies for evidence-backed corporate-governance and financial-distress red flags. **Not investment advice, not a credit rating, and not validated for any production decision.** The real result below is that no model variant in this pipeline beats the training-fold base rate -- there is no demonstrated predictive skill to rely on."
+    ]
+  },
+  "claim_id_map": {
+    "summary:0": [
+      "659640db-770f-4c66-aa51-2f620c52baed"
+    ],
+    "disclaimer:0": [
+      "b09c2452-d1a1-40e4-abee-741cb4d4413b"
+    ],
+    "limitations:0": [
+      "0e135a2f-eace-4f62-a11e-8a4aca017b6c"
+    ],
+    "limitations:1": [
+      "a5c3d352-56a8-4e71-b101-0558e4db1fe9"
+    ],
+    "limitations:2": [
+      "7befd583-2bee-4248-8082-09a22daf9c0e"
+    ],
+    "limitations:3": [
+      "916988ab-2036-407b-b565-31298f0a06f5"
+    ],
+    "risk_signals:0": [
+      "659640db-770f-4c66-aa51-2f620c52baed"
+    ],
+    "risk_signals:1": [
+      "659640db-770f-4c66-aa51-2f620c52baed"
+    ]
+  },
+  "created_at": "2026-11-01T06:44:30.689808+00:00"
+}
