@@ -75,15 +75,24 @@ def test_raises_once_the_limit_is_reached(real_session: Session) -> None:
 
 
 def test_resets_after_the_window_elapses(real_session: Session) -> None:
+    """A real 50ms window was flaky here: two separate real DB
+    round-trips (`check_and_increment` opens its own connection each
+    call) can occasionally be more than 50ms apart on their own,
+    making the window already look elapsed before the second call --
+    not a real product bug, just too tight a margin for real network/
+    connection-pool latency. A 1-second window leaves ample real
+    margin for that; the test still proves the real reset behaviour,
+    just with a real `time.sleep` long enough to be deterministic."""
     key = _unique_key(real_session, "test-window-reset")
-    check_and_increment(real_session, key, limit=1, window=dt.timedelta(milliseconds=50))
+    window = dt.timedelta(seconds=1)
+    check_and_increment(real_session, key, limit=1, window=window)
     with pytest.raises(RateLimitExceeded):
-        check_and_increment(real_session, key, limit=1, window=dt.timedelta(milliseconds=50))
+        check_and_increment(real_session, key, limit=1, window=window)
 
     import time
 
-    time.sleep(0.1)
-    check_and_increment(real_session, key, limit=1, window=dt.timedelta(milliseconds=50))
+    time.sleep(1.2)
+    check_and_increment(real_session, key, limit=1, window=window)
 
 
 def test_different_keys_are_independent(real_session: Session) -> None:

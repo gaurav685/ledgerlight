@@ -44,6 +44,11 @@ def real_session() -> Iterator[Session]:
     try:
         yield session
     finally:
+        # Real logins made by this module's tests increment the shared
+        # `login_ip:*` rate-limit counter -- cleared here so repeated test
+        # runs inside the same real fixed window never trip the real
+        # per-IP login limit meant for a genuine credential-stuffing attempt.
+        session.execute(text("DELETE FROM rate_limit_counters WHERE key LIKE 'login_ip:%'"))
         if created["tenants"]:
             session.execute(
                 text("DELETE FROM audit_logs WHERE tenant_id = ANY(:ids)"),
