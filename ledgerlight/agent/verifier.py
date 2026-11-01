@@ -314,6 +314,17 @@ def verify_claim(session: Session, claim: Claim, as_of: dt.date) -> ClaimVerific
             except ValueError:
                 pass
 
+        if claim.claim_type == "metric":
+            value = claim.payload.get("value")
+            unit = claim.payload.get("unit")
+            if isinstance(value, int | float) and isinstance(unit, str):
+                checks.append(check_number_in_span(resolved.data.text, float(value), unit))
+            elif isinstance(value, str) and isinstance(unit, str):
+                # A non-numeric unit (e.g. "CARE_rating_symbol") means the
+                # real value is a name/symbol, not a number -- checked for
+                # real containment instead.
+                checks.append(check_name_in_span(resolved.data.text, value))
+
     return ClaimVerificationResult(claim_id=claim.id, checks=checks)
 
 

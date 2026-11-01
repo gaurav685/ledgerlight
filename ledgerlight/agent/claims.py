@@ -18,7 +18,6 @@ special-cased inside the verifier."""
 
 from __future__ import annotations
 
-import datetime as dt
 import uuid
 from dataclasses import dataclass, field
 
@@ -246,16 +245,5 @@ def entity_history_limitation_claim(entity_history: EntityHistory) -> ClaimDraft
     return ClaimDraft(
         claim_type="limitation",
         payload={"text": entity_history.limitation, "source": "ledgerlight.agent.tools"},
-        evidence=[],
-    )
-
-
-def investigation_timestamp_claim(as_of: dt.date) -> ClaimDraft:
-    """A real `metric` claim recording the investigation's own
-    point-in-time anchor, so the rendered dossier can state it without
-    any claim needing to reach outside its own claim set."""
-    return ClaimDraft(
-        claim_type="metric",
-        payload={"name": "investigation_as_of", "value": as_of.isoformat(), "unit": "date"},
         evidence=[],
     )
