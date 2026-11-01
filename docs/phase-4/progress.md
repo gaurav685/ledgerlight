@@ -106,12 +106,28 @@ completion commit `195a714`.
   Also deleted `investigation_timestamp_claim` from `claims.py` -- dead code, defined but
   never called anywhere (confirmed via grep).
 
+- **§7 qc-seed (2026-11-01)**: `ledgerlight/agent/qc_seed.py` -- `seed_flawed_dossier`
+  runs one real investigation to completion, then injects exactly one deliberately
+  flawed claim of a given flaw type (`wrong_date`, `wrong_number`, `missing_citation`,
+  `unsupported_claim`) on top of its real, passed-verification claim set and re-renders
+  through the real offline renderer -- the flaw reads as plausible prose, never
+  hand-written boilerplate bypassing the renderer. Produces a NEW dossier version;
+  dossier version 1 (the real, unflawed render) and `Investigation.final_status` (set
+  by the real run before the flaw is ever injected) are both left untouched -- the one,
+  documented exclusion rule §8's real statistics will rely on (filter on
+  `ReviewTask.seeded_qc=True` and the dossier versions they reference). `seed_qc_batch`
+  seeds a deterministic, configurable share of a target list, cycling through all four
+  flaw types. `compute_catch_rate_report` reads real, decided-only `ReviewTask` rows
+  with `seeded_qc=True` and compares the real recorded decision to that task's own real
+  `expected_outcome` (always "reject" -- every seeded flaw is a genuine defect). Added
+  `SEEDED_QC` to `review.py`'s `REASON_CODES`. 13 integration tests
+  (`tests/test_agent_qc_seed.py`), including real evidence-span corruption for
+  `wrong_date`/`wrong_number` (raises rather than fabricating a span when no real donor
+  claim exists), batch fraction edge cases, and catch/miss/undecided scenarios.
+  **§7 is now fully complete.**
+
 ## Not yet started
 
-- §7 remaining: `ledgerlight/agent/qc_seed.py` -- seeded QC (`qc-seed`): inject a
-  configurable share of known-flawed dossiers (wrong date, wrong number, missing
-  citation, unsupported claim) flagged `seeded_qc=True` with `expected_outcome`; a
-  catch-rate report per flaw type; seeded items excluded from all real statistics.
 - §8: `agent-eval` across the 15 SEED-track + ~15 UNIVERSE-track companies.
 - §9: the full adversarial/failure test suite (prompt injection, crash/resume,
   determinism, REPAIR-never-substitutes, etc.) -- no placeholder tests.
@@ -125,12 +141,10 @@ completion commit `195a714`.
 
 ## Exact next step
 
-§4/§5/§6 are done. §7 is done except `qc_seed.py` itself (routing, decisions, audit,
-feedback loop all real and tested). LLM plan validation / LLM renderer were NOT built --
-no `LLM_PROVIDER`/key is in `.env` in this environment, so per the brief's own
-instruction this records "LLM renderer not run" rather than being built against nothing
-real to test it with; revisit only if a real key is ever added. Next: `qc_seed.py`
-(seeded QC injection + catch-rate report, closing out §7), then §8 (`agent-eval` across
+§4/§5/§6/§7 are all done. LLM plan validation / LLM renderer were NOT built -- no
+`LLM_PROVIDER`/key is in `.env` in this environment, so per the brief's own instruction
+this records "LLM renderer not run" rather than being built against nothing real to
+test it with; revisit only if a real key is ever added. Next: §8 (`agent-eval` across
 15 SEED-track + ~15 UNIVERSE-track companies), §9 (adversarial/failure tests), §10 (the
 7 CLI commands + docs), §11 (run and verify), §12 (commit/backup), §13 (exit gates), §14
 (final report).
