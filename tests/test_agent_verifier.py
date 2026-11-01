@@ -253,19 +253,28 @@ def test_verify_claim_passes_with_a_real_resolving_citation(db_session: Session)
 
 
 @pytest.mark.integration
-def test_verify_claim_exempts_a_timeline_entry_claim_with_no_evidence(
+def test_verify_claim_passes_a_timeline_entry_with_a_real_resolving_version(
     db_session: Session,
 ) -> None:
     """A real bug found by Sec11's real agent-eval run: claims.py's own
     docstring documents timeline_entry as sharing the same empty-
     evidence exemption as risk_signal/limitation, but
     EVIDENCE_EXEMPT_CLAIM_TYPES never included it -- every real
-    timeline_entry claim failed as unsupported until this was fixed."""
+    timeline_entry claim failed as unsupported until this was fixed.
+    No evidence SPAN is needed, but a real, resolving version_id with
+    a matching known_at is -- never a blanket exemption."""
+    known_at = dt.datetime(2020, 1, 1, tzinfo=dt.UTC)
+    version = _make_document_version(db_session, "A real filing.", known_at)
     investigation_id = _make_investigation(db_session)
     claim = Claim(
         investigation_id=investigation_id,
         claim_type="timeline_entry",
-        payload={"kind": "filing", "label": "sebi:order", "known_at": "2020-01-01T00:00:00+00:00"},
+        payload={
+            "kind": "filing",
+            "label": "sebi:order",
+            "known_at": known_at.isoformat(),
+            "version_id": str(version.id),
+        },
         evidence=[],
     )
     db_session.add(claim)
@@ -273,6 +282,56 @@ def test_verify_claim_exempts_a_timeline_entry_claim_with_no_evidence(
 
     result = verify_claim(db_session, claim, as_of=dt.date(2020, 2, 1))
     assert result.passed
+
+
+@pytest.mark.integration
+def test_verify_claim_fails_a_timeline_entry_with_a_wrong_known_at(db_session: Session) -> None:
+    """The real adversarial case this fix closes: a timeline_entry
+    claiming a known_at that does not match its own real
+    document_version's known_at must fail, never silently pass just
+    because there was no evidence span to check against."""
+    known_at = dt.datetime(2020, 1, 1, tzinfo=dt.UTC)
+    version = _make_document_version(db_session, "A real filing.", known_at)
+    investigation_id = _make_investigation(db_session)
+    claim = Claim(
+        investigation_id=investigation_id,
+        claim_type="timeline_entry",
+        payload={
+            "kind": "filing",
+            "label": "sebi:order",
+            "known_at": "2019-06-15T00:00:00+00:00",  # wrong vs real known_at 2020-01-01
+            "version_id": str(version.id),
+        },
+        evidence=[],
+    )
+    db_session.add(claim)
+    db_session.flush()
+
+    result = verify_claim(db_session, claim, as_of=dt.date(2020, 2, 1))
+    assert not result.passed
+
+
+@pytest.mark.integration
+def test_verify_claim_fails_a_timeline_entry_with_a_nonexistent_version(
+    db_session: Session,
+) -> None:
+    investigation_id = _make_investigation(db_session)
+    claim = Claim(
+        investigation_id=investigation_id,
+        claim_type="timeline_entry",
+        payload={
+            "kind": "filing",
+            "label": "sebi:order",
+            "known_at": "2020-01-01T00:00:00+00:00",
+            "version_id": str(uuid.uuid4()),  # never a real document_version
+        },
+        evidence=[],
+    )
+    db_session.add(claim)
+    db_session.flush()
+
+    result = verify_claim(db_session, claim, as_of=dt.date(2020, 2, 1))
+    assert not result.passed
 
 
 @pytest.mark.integration
@@ -310,6 +369,44 @@ def test_verify_claim_skips_date_in_span_for_a_metric_claim(db_session: Session)
     result = verify_claim(db_session, claim, as_of=dt.date(2020, 2, 1))
     assert result.passed
     assert not any(c.check_name == "date_in_span" for c in result.checks)
+
+
+@pytest.mark.integration
+def test_verify_claim_fails_a_metric_claim_with_a_wrong_known_at(db_session: Session) -> None:
+    """The real adversarial case Phase 5's own preflight requires:
+    scoping date_in_span away from metric claims must not create a
+    blind spot for a wrong date. known_at_matches_evidence (the check
+    that now covers rating dates) must still fail a care_rating claim
+    whose claimed known_at does not equal its real evidence
+    document's own known_at, even though the span text and rating
+    symbol are both otherwise correct."""
+    known_at = dt.datetime(2020, 1, 1, tzinfo=dt.UTC)
+    version = _make_document_version(db_session, "BBB", known_at)
+    investigation_id = _make_investigation(db_session)
+    claim = Claim(
+        investigation_id=investigation_id,
+        claim_type="metric",
+        payload={
+            "name": "care_rating",
+            "value": "BBB",
+            "unit": "CARE_rating_symbol",
+            "known_at": "2019-06-15T00:00:00+00:00",  # wrong vs real known_at 2020-01-01
+        },
+        evidence=[
+            {
+                "document_version_id": str(version.id),
+                "page_number": 1,
+                "char_start": 0,
+                "char_end": 3,
+            }
+        ],
+    )
+    db_session.add(claim)
+    db_session.flush()
+
+    result = verify_claim(db_session, claim, as_of=dt.date(2020, 2, 1))
+    assert not result.passed
+    assert any(c.check_name == "known_at_matches_evidence" and not c.passed for c in result.checks)
 
 
 @pytest.mark.integration

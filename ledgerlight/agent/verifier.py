@@ -32,6 +32,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import cast
 
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from ledgerlight.agent.models import Claim
@@ -266,6 +267,88 @@ def check_point_in_time(known_at: dt.datetime, as_of: dt.date) -> CheckResult:
     return CheckResult("point_in_time", passed, f"known_at={known_at.date()} as_of={as_of}")
 
 
+def check_known_at_matches_evidence(
+    claimed_known_at: dt.datetime, evidence_known_at: dt.datetime
+) -> CheckResult:
+    """For a metric claim, whose real evidence span is too narrow to
+    literally state a date (`date_in_span` is scoped away from metric
+    claims for exactly this reason -- see the comment in
+    `verify_claim`), checks that the claim's own `known_at` EQUALS the
+    cited evidence's real `known_at` exactly. This is the real,
+    by-design relationship `claims_from_outcomes_context` relies on (a
+    rating claim's `known_at` is always copied directly from the same
+    real evidence document's `known_at`) -- a real, structural
+    guarantee in the only real code path that builds these claims
+    today, but checked here explicitly rather than merely assumed, so
+    a wrong date can never silently pass verification regardless of
+    how the claim was actually constructed."""
+    passed = claimed_known_at == evidence_known_at
+    return CheckResult(
+        "known_at_matches_evidence",
+        passed,
+        f"claimed {claimed_known_at.isoformat()} vs "
+        f"evidence {evidence_known_at.isoformat()}: {passed}",
+    )
+
+
+def check_timeline_entry_claim(session: Session, claim: Claim, as_of: dt.date) -> CheckResult:
+    """A real `timeline_entry` claim carries no evidence SPAN (there is
+    no specific text to cite for "this document exists"), but its real
+    `document_version_id` ("version_id" in its own payload) IS a real,
+    checkable fact -- resolved here directly against
+    `document_versions`, confirming the version really exists, that
+    its real `known_at` matches the claim's own claimed `known_at`
+    exactly, and that it is point-in-time valid (`known_at <= as_of`).
+    A wrong claimed date, a reference to a nonexistent version, or a
+    future-known version all fail this one check -- a real
+    `timeline_entry` claim never passes just because there was no
+    evidence span to resolve in the first place."""
+    version_id_str = claim.payload.get("version_id")
+    claimed_known_at_str = claim.payload.get("known_at")
+    if not isinstance(version_id_str, str) or not isinstance(claimed_known_at_str, str):
+        return CheckResult(
+            "timeline_entry_version_resolves",
+            False,
+            "payload is missing a real version_id or known_at",
+        )
+    try:
+        version_id = uuid.UUID(version_id_str)
+        claimed_known_at = dt.datetime.fromisoformat(claimed_known_at_str)
+    except ValueError:
+        return CheckResult(
+            "timeline_entry_version_resolves",
+            False,
+            f"malformed version_id {version_id_str!r} or known_at {claimed_known_at_str!r}",
+        )
+
+    row = session.execute(
+        text("SELECT known_at FROM document_versions WHERE id = :id"), {"id": version_id}
+    ).one_or_none()
+    if row is None:
+        return CheckResult(
+            "timeline_entry_version_resolves",
+            False,
+            f"document_version {version_id} does not exist",
+        )
+    real_known_at = cast(dt.datetime, row[0])
+    if real_known_at.date() > as_of:
+        return CheckResult(
+            "timeline_entry_version_resolves",
+            False,
+            f"document_version {version_id} known_at={real_known_at.date()} is after as_of={as_of}",
+        )
+    if real_known_at != claimed_known_at:
+        return CheckResult(
+            "timeline_entry_version_resolves",
+            False,
+            f"claimed known_at {claimed_known_at.isoformat()} != real document_version "
+            f"known_at {real_known_at.isoformat()}",
+        )
+    return CheckResult(
+        "timeline_entry_version_resolves", True, "resolved, point-in-time valid, known_at matches"
+    )
+
+
 def check_banned_language(sentence: str) -> CheckResult:
     """Fails if a banned term appears OUTSIDE a short (<=15-word),
     quoted, attributed excerpt. A real quoted excerpt is detected as
@@ -387,17 +470,23 @@ def verify_claim(
     as_of: dt.date,
     nli_threshold: float = DEFAULT_NLI_ENTAILMENT_THRESHOLD,
 ) -> ClaimVerificationResult:
-    """Runs the real, applicable checks for one real claim. ONLY
-    `risk_signal`/`limitation` claims (`EVIDENCE_EXEMPT_CLAIM_TYPES`)
-    are exempt from citation/point-in-time/entailment when they carry
-    no evidence -- that is their real, by-design shape (see
-    `ledgerlight.agent.claims`'s own module docstring). Any OTHER
-    claim type (event, timeline_entry, metric) with an empty evidence
-    list is a real defect -- an unsupported claim -- and must FAIL,
-    never pass as exempt."""
+    """Runs the real, applicable checks for one real claim. `risk_signal`/
+    `limitation` claims (`EVIDENCE_EXEMPT_CLAIM_TYPES`) are exempt from
+    citation/point-in-time/entailment when they carry no evidence --
+    that is their real, by-design shape (see
+    `ledgerlight.agent.claims`'s own module docstring), and there is no
+    other real fact about them to check. `timeline_entry` claims also
+    carry no evidence SPAN by design, but DO have a real
+    `document_version_id` to check directly (`check_timeline_entry_claim`)
+    -- never blanket-exempted, so a wrong date or value still fails.
+    Any OTHER claim type (event, metric) with an empty evidence list is
+    a real defect -- an unsupported claim -- and must FAIL, never pass
+    as exempt."""
     checks: list[CheckResult] = []
     if not claim.evidence:
-        if claim.claim_type in EVIDENCE_EXEMPT_CLAIM_TYPES:
+        if claim.claim_type == "timeline_entry":
+            checks.append(check_timeline_entry_claim(session, claim, as_of))
+        elif claim.claim_type in EVIDENCE_EXEMPT_CLAIM_TYPES:
             checks.append(
                 CheckResult("citation_resolves", True, "exempt: claim has no evidence span")
             )
@@ -430,16 +519,13 @@ def verify_claim(
         checks.append(CheckResult("citation_resolves", True, "resolved"))
         checks.append(check_point_in_time(resolved.data.known_at, as_of))
 
-        # Scoped to event claims only: a real full agent-eval run (Sec11) showed
-        # every real metric/care_rating claim failing this check, because its
-        # real evidence span is deliberately narrow -- just the rating symbol's
-        # own regex capture group (ledgerlight.modelling.rating_features.py),
-        # never the surrounding sentence that states a date. That claim's own
-        # known_at is already sourced directly from the same evidence document's
-        # real known_at (the same field point_in_time already checks), not
-        # re-derived from the span text -- checking it against a span that was
-        # never meant to carry a date is checking something structurally
-        # impossible to satisfy, not a real defect.
+        # date_in_span is scoped to event claims only: a real full agent-eval run
+        # (Sec11) showed every real metric/care_rating claim failing this check,
+        # because its real evidence span is deliberately narrow -- just the
+        # rating symbol's own regex capture group
+        # (ledgerlight.modelling.rating_features.py), never the surrounding
+        # sentence that states a date. A metric claim's date is checked a
+        # different, structurally appropriate way instead, below.
         if claim.claim_type == "event":
             known_at_str = claim.payload.get("known_at")
             if isinstance(known_at_str, str):
@@ -450,6 +536,16 @@ def verify_claim(
                     pass
 
         if claim.claim_type == "metric":
+            known_at_str = claim.payload.get("known_at")
+            if isinstance(known_at_str, str):
+                try:
+                    claimed_known_at = dt.datetime.fromisoformat(known_at_str)
+                    checks.append(
+                        check_known_at_matches_evidence(claimed_known_at, resolved.data.known_at)
+                    )
+                except ValueError:
+                    pass
+
             value = claim.payload.get("value")
             unit = claim.payload.get("unit")
             if isinstance(value, int | float) and isinstance(unit, str):
