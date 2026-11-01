@@ -268,7 +268,28 @@ def run_investigation(
                     rendered = render_offline(
                         session, active_claims, company_name, as_of.isoformat()
                     )
-                result = verify_dossier(session, active_claims, rendered, as_of)
+                try:
+                    result = verify_dossier(session, active_claims, rendered, as_of)
+                except Exception as verify_exc:
+                    # Sec9's explicit requirement: a verifier crash or timeout fails
+                    # closed to NEEDS_REVIEW, never propagates uncaught and never
+                    # silently passes. Whatever real claims/dossier already exist
+                    # (this step's own render, already in `rendered`) are kept, not
+                    # discarded -- a human reviewer still has something concrete.
+                    investigation.final_status = "NEEDS_REVIEW"
+                    investigation.failure_reason = (
+                        f"verifier_crashed: {type(verify_exc).__name__}: {verify_exc}"
+                    )
+                    investigation.usage = usage.to_json()
+                    _checkpoint(
+                        session,
+                        investigation,
+                        "VERIFY",
+                        [],
+                        {"verifier_crashed": True, "error": str(verify_exc)},
+                    )
+                    session.commit()
+                    break
                 _record_verification(active_claims, result, rendered)
                 _checkpoint(
                     session,

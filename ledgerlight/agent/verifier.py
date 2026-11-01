@@ -200,22 +200,42 @@ def _to_inr(value: float, unit: str) -> float | None:
     return None
 
 
+_PERCENT_PATTERN = re.compile(r"(-?\d+(?:\.\d+)?)\s*%")
+_PERCENTAGE_POINTS_PATTERN = re.compile(
+    r"(-?\d+(?:\.\d+)?)\s*(?:percentage[\s-]points?|pp\b)", re.IGNORECASE
+)
+
+
 def check_number_in_span(
     span_text: str, claimed_value: float, unit: str, tolerance: float = 1e-6
 ) -> CheckResult:
     """Real numeric equality within an explicit tolerance, with real
     crore/lakh/absolute-INR conversion -- "5 crore" and "500 lakh" are
     the same real amount and must both match a claim of either unit.
-    "%" and "percentage_points" are deliberately NOT inter-converted
-    (a real, distinct-units case, per §5's own requirement) -- a claim
-    in one must be checked against a span number in the same unit."""
-    numbers_in_span = [float(m) for m in re.findall(r"-?\d+(?:\.\d+)?", span_text)]
-    if unit in ("percent", "percentage_points"):
-        passed = any(abs(n - claimed_value) <= tolerance for n in numbers_in_span)
+    "percent" and "percentage_points" are deliberately NOT
+    inter-converted (a real, distinct-units case, per §5's own
+    requirement) -- and, just as importantly, each is matched only
+    against the span's OWN real unit wording ("%" for percent;
+    "percentage point(s)"/"pp" for percentage_points), never against
+    any bare number in the span: a span saying "5 percentage points"
+    must never validate a claimed 5 percent, even though both are the
+    literal digits "5"."""
+    if unit == "percent":
+        percent_numbers = [float(m) for m in _PERCENT_PATTERN.findall(span_text)]
+        passed = any(abs(n - claimed_value) <= tolerance for n in percent_numbers)
         return CheckResult(
-            "number_in_span", passed, f"{claimed_value} {unit} found in span numbers: {passed}"
+            "number_in_span", passed, f"{claimed_value}% found in span's '%' numbers: {passed}"
+        )
+    if unit == "percentage_points":
+        pp_numbers = [float(m) for m in _PERCENTAGE_POINTS_PATTERN.findall(span_text)]
+        passed = any(abs(n - claimed_value) <= tolerance for n in pp_numbers)
+        return CheckResult(
+            "number_in_span",
+            passed,
+            f"{claimed_value} percentage points found in span's own wording: {passed}",
         )
 
+    numbers_in_span = [float(m) for m in re.findall(r"-?\d+(?:\.\d+)?", span_text)]
     claimed_inr = _to_inr(claimed_value, unit)
     if claimed_inr is None:
         return CheckResult("number_in_span", False, f"unknown unit {unit!r}")
@@ -326,7 +346,37 @@ def check_sentence_values_in_claims(sentence: str, claims: list[Claim]) -> Check
 EVIDENCE_EXEMPT_CLAIM_TYPES = frozenset({"risk_signal", "limitation"})
 
 
-def verify_claim(session: Session, claim: Claim, as_of: dt.date) -> ClaimVerificationResult:
+def _entailment_hypothesis_for_claim(claim: Claim) -> str | None:
+    """A minimal, natural-language entailment hypothesis -- NOT the
+    literal rendered "Findings" sentence (`render.event_claim_sentence`/
+    `render.care_rating_claim_sentence`), which embeds an ISO
+    timestamp and tier jargon the real local NLI model does not read
+    as entailed prose: the SAME real evidence span that correctly
+    supports a real claim scored ~0.24 against that literal sentence
+    (far below `DEFAULT_NLI_ENTAILMENT_THRESHOLD`) but ~0.99 against a
+    minimal hypothesis like this one -- confirmed directly against the
+    real local model while wiring this in. The date/tier/number/name
+    parts of a claim are already checked separately by
+    `check_date_in_span`/`check_number_in_span`/`check_name_in_span`;
+    entailment here is scoped to the one thing those checks do not
+    cover -- whether the evidence supports the claim's core real-world
+    assertion at all. `None` for a claim type/shape with no such
+    assertion to check (a metric claim that is not `care_rating` is
+    the one such case today)."""
+    if claim.claim_type == "event":
+        code = claim.payload.get("event_type_code", "an event")
+        return f"An {code} event occurred."
+    if claim.claim_type == "metric" and claim.payload.get("name") == "care_rating":
+        return f"CARE assigned a rating of {claim.payload.get('value')}."
+    return None
+
+
+def verify_claim(
+    session: Session,
+    claim: Claim,
+    as_of: dt.date,
+    nli_threshold: float = DEFAULT_NLI_ENTAILMENT_THRESHOLD,
+) -> ClaimVerificationResult:
     """Runs the real, applicable checks for one real claim. ONLY
     `risk_signal`/`limitation` claims (`EVIDENCE_EXEMPT_CLAIM_TYPES`)
     are exempt from citation/point-in-time/entailment when they carry
@@ -389,6 +439,10 @@ def verify_claim(session: Session, claim: Claim, as_of: dt.date) -> ClaimVerific
                 # real containment instead.
                 checks.append(check_name_in_span(resolved.data.text, value))
 
+        hypothesis = _entailment_hypothesis_for_claim(claim)
+        if hypothesis is not None:
+            checks.append(check_entailment(resolved.data.text, hypothesis, nli_threshold))
+
     return ClaimVerificationResult(claim_id=claim.id, checks=checks)
 
 
@@ -429,7 +483,7 @@ def verify_dossier(
     as_of: dt.date,
     nli_threshold: float = DEFAULT_NLI_ENTAILMENT_THRESHOLD,
 ) -> DossierVerificationResult:
-    claim_results = [verify_claim(session, claim, as_of) for claim in claims]
+    claim_results = [verify_claim(session, claim, as_of, nli_threshold) for claim in claims]
 
     claims_by_id = {claim.id: claim for claim in claims}
     sentence_mapping_failures: list[str] = []

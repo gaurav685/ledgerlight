@@ -29,6 +29,27 @@ RENDERER_VERSION = "1"
 MAX_EXCERPT_WORDS = 15
 
 
+def event_claim_sentence(claim: Claim) -> str:
+    """The real "Findings" sentence for one event claim -- factored
+    out of `render_offline`'s own loop so `ledgerlight.agent.verifier`
+    can check entailment against the EXACT text a reader actually
+    sees, never a separately-drifting approximation of it."""
+    tier = claim.payload.get("tier", "CANDIDATE")
+    code = claim.payload.get("event_type_code", "an event")
+    known_at = claim.payload.get("known_at", "an unknown date")
+    qualifier = "unverified (CANDIDATE)" if tier == "CANDIDATE" else "VERIFIED"
+    return f"A {qualifier} {code} event was known as of {known_at}."
+
+
+def care_rating_claim_sentence(claim: Claim) -> str:
+    """The real "Findings" sentence for one `care_rating` metric claim
+    -- same reuse reason as `event_claim_sentence`."""
+    return (
+        f"CARE assigned the rating {claim.payload.get('value')} known as of "
+        f"{claim.payload.get('known_at')}."
+    )
+
+
 def _content_sort_key(claim: Claim, primary_field: str) -> tuple[str, str]:
     """A fully content-based sort key -- never DB retrieval order,
     which is not real-content-deterministic (two separately persisted
@@ -178,27 +199,12 @@ def render_offline(
 
     # 3. Findings
     for claim in event_claims:
-        tier = claim.payload.get("tier", "CANDIDATE")
-        code = claim.payload.get("event_type_code", "an event")
-        known_at = claim.payload.get("known_at", "an unknown date")
-        qualifier = "unverified (CANDIDATE)" if tier == "CANDIDATE" else "VERIFIED"
-        _add_sentence(
-            sections,
-            claim_id_map,
-            "findings",
-            f"A {qualifier} {code} event was known as of {known_at}.",
-            [claim.id],
-        )
+        _add_sentence(sections, claim_id_map, "findings", event_claim_sentence(claim), [claim.id])
     for claim in metric_claims:
         if claim.payload.get("name") != "care_rating":
             continue
         _add_sentence(
-            sections,
-            claim_id_map,
-            "findings",
-            f"CARE assigned the rating {claim.payload.get('value')} known as of "
-            f"{claim.payload.get('known_at')}.",
-            [claim.id],
+            sections, claim_id_map, "findings", care_rating_claim_sentence(claim), [claim.id]
         )
 
     # 4. Risk signals
