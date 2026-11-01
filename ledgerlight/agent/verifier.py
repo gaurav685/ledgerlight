@@ -64,6 +64,17 @@ BANNED_TERMS = (
 )
 MAX_QUOTED_BANNED_TERM_WORDS = 15
 DISCLAIMER_SECTION = "disclaimer"
+SENTENCE_VALUE_EXEMPT_SECTIONS = frozenset({"summary", "sources"})
+"""`check_sentence_values_in_claims` is scoped away from these two
+sections, disclosed rather than silently narrowed: "summary"'s
+sentence is a real, honest AGGREGATE (counts of event/timeline claims
+in the whole set), never copied from any one claim's own payload, so
+it has no single claim to check its numbers against. "sources"'
+sentence carries a real citation date and a real document excerpt --
+both read from the document/citation itself (`_resolve_source_citations`),
+not from any claim's payload -- and the citation's own real numbers
+are already checked, per claim, by `verify_claim`'s own
+citation/point-in-time/date-in-span checks."""
 
 _CRORE = 1e7
 _LAKH = 1e5
@@ -123,6 +134,7 @@ class DossierVerificationResult:
     claim_results: list[ClaimVerificationResult]
     sentence_mapping_failures: list[str]
     banned_language_failures: list[str]
+    sentence_value_failures: list[str]
     contradictions: list[ContradictionGroup]
 
     @property
@@ -131,6 +143,7 @@ class DossierVerificationResult:
             all(r.passed for r in self.claim_results)
             and not self.sentence_mapping_failures
             and not self.banned_language_failures
+            and not self.sentence_value_failures
         )
 
     @property
@@ -259,6 +272,57 @@ def check_banned_language(sentence: str) -> CheckResult:
     return CheckResult("banned_language", True, f"banned terms {hits} all inside short quotes")
 
 
+def _flatten_payload_numbers(payload: dict[str, object]) -> set[float]:
+    """Every real number appearing anywhere in a claim's own payload --
+    both actual numeric fields and numbers embedded in a payload
+    string (e.g. an ISO date/datetime), so a date rendered verbatim
+    from `known_at` is recognized as "in the claim" the same way a
+    numeric field like `percentile` is."""
+    numbers: set[float] = set()
+    for value in payload.values():
+        if isinstance(value, bool):
+            continue
+        if isinstance(value, int | float):
+            numbers.add(float(value))
+        elif isinstance(value, str):
+            numbers.update(float(m) for m in re.findall(r"-?\d+(?:\.\d+)?", value))
+    return numbers
+
+
+def check_sentence_values_in_claims(sentence: str, claims: list[Claim]) -> CheckResult:
+    """Every real number appearing in a rendered sentence must exist
+    somewhere in the payload of one of its own mapped claims -- real
+    insurance against a renderer (an LLM renderer, or any future one)
+    introducing a number no real claim actually carries. The real
+    offline template renderer only ever copies payload values verbatim
+    into prose, so this never fires against it.
+
+    Scoped to numbers only -- a real, disclosed limitation (see
+    `docs/agent/verifier.md`): free-text name checking would need to
+    tell claim-sourced tokens (e.g. an event_type_code) apart from
+    ordinary connective prose ("was", "known", "as of"), which a
+    generic containment check cannot do without rejecting real,
+    correctly-rendered sentences."""
+    sentence_numbers = [float(m) for m in re.findall(r"-?\d+(?:\.\d+)?", sentence)]
+    if not sentence_numbers:
+        return CheckResult("sentence_values_in_claims", True, "no numbers in sentence")
+
+    claim_numbers: set[float] = set()
+    for claim in claims:
+        claim_numbers.update(_flatten_payload_numbers(claim.payload))
+
+    missing = [n for n in sentence_numbers if not any(abs(n - c) < 1e-6 for c in claim_numbers)]
+    if missing:
+        return CheckResult(
+            "sentence_values_in_claims",
+            False,
+            f"sentence number(s) {missing} not found in any mapped claim's payload",
+        )
+    return CheckResult(
+        "sentence_values_in_claims", True, "every sentence number found in a mapped claim"
+    )
+
+
 EVIDENCE_EXEMPT_CLAIM_TYPES = frozenset({"risk_signal", "limitation"})
 
 
@@ -370,6 +434,7 @@ def verify_dossier(
     claims_by_id = {claim.id: claim for claim in claims}
     sentence_mapping_failures: list[str] = []
     banned_language_failures: list[str] = []
+    sentence_value_failures: list[str] = []
 
     for section, sentences in rendered.sections.items():
         for idx, sentence in enumerate(sentences):
@@ -378,11 +443,21 @@ def verify_dossier(
             if not claim_ids:
                 sentence_mapping_failures.append(f"{key}: no claim ID mapped")
                 continue
+            mapped_claims: list[Claim] = []
             for claim_id_str in claim_ids:
-                if uuid.UUID(claim_id_str) not in claims_by_id:
+                claim_id = uuid.UUID(claim_id_str)
+                mapped_claim = claims_by_id.get(claim_id)
+                if mapped_claim is None:
                     sentence_mapping_failures.append(
                         f"{key}: claim id {claim_id_str} does not exist"
                     )
+                else:
+                    mapped_claims.append(mapped_claim)
+
+            if section not in SENTENCE_VALUE_EXEMPT_SECTIONS:
+                value_check = check_sentence_values_in_claims(sentence, mapped_claims)
+                if not value_check.passed:
+                    sentence_value_failures.append(f"{key}: {value_check.detail}")
 
             if section == DISCLAIMER_SECTION:
                 # Fixed project boilerplate (ledgerlight.agent.claims.DISCLAIMER_TEXT),
@@ -404,5 +479,6 @@ def verify_dossier(
         claim_results=claim_results,
         sentence_mapping_failures=sentence_mapping_failures,
         banned_language_failures=banned_language_failures,
+        sentence_value_failures=sentence_value_failures,
         contradictions=contradictions,
     )

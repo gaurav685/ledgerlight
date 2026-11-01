@@ -292,7 +292,8 @@ def run_investigation(
                         f"verification_failed after {repair_round} repair round(s): "
                         f"{len(result.failed_claim_ids)} claim(s) failing, "
                         f"{len(result.sentence_mapping_failures)} sentence-mapping failure(s), "
-                        f"{len(result.banned_language_failures)} banned-language failure(s)"
+                        f"{len(result.banned_language_failures)} banned-language failure(s), "
+                        f"{len(result.sentence_value_failures)} sentence-value failure(s)"
                     )
                     session.commit()
                     break
@@ -364,13 +365,14 @@ def _record_verification(
             for c in claim_result.checks
         ]
 
-    # Sentence-level failures (banned language) are not per-claim verify_claim
-    # results -- resolve the failing sentence key back to its real claim ID(s)
-    # via claim_id_map and mark those claims failed too, so REPAIR actually
+    # Sentence-level failures (banned language, a sentence number not found
+    # in its own mapped claims) are not per-claim verify_claim results --
+    # resolve the failing sentence key back to its real claim ID(s) via
+    # claim_id_map and mark those claims failed too, so REPAIR actually
     # removes them on re-render (a "no claim ID mapped" sentence_mapping
     # failure has no real claim to blame; it is a renderer defect, not
     # something REPAIR can fix by removing a claim).
-    for failure in result.banned_language_failures:
+    for failure in [*result.banned_language_failures, *result.sentence_value_failures]:
         key = failure.split(":", 2)
         sentence_key = f"{key[0]}:{key[1]}" if len(key) >= 2 else failure
         for claim_id_str in rendered.claim_id_map.get(sentence_key, []):
