@@ -73,12 +73,45 @@ completion commit `195a714`.
   a byte-identical final dossier to an uninterrupted run. **§4 and §5 are both now
   functionally complete.**
 
+- **§6 (2026-11-01)**: `ledgerlight/agent/export.py` -- `export_dossier_markdown` (8
+  sections in fixed order, empty sections explicitly marked "None found."),
+  `export_dossier_json` (round-trips `sections`/`claim_id_map`/status). 4 unit tests
+  against hand-built real ORM-shaped objects (no DB write needed).
+- **§7 routing/decisions/audit/feedback (2026-11-01)**: `ledgerlight/agent/review.py` --
+  `REASON_CODES` (6 enumerated codes), `determine_routing` (checks conflicting_evidence,
+  budget_exceeded/verification_failed from `final_status`, high_severity_finding,
+  candidate_tier_majority, low_confidence_extraction via a real join to `event_fields`),
+  `create_review_tasks`, `record_decision` (append-only `review_decisions_audit`),
+  `apply_event_feedback` (new immutable `EventVersion` row, never mutates `events.status`
+  in place). Fixed a real routing bug: `conflicting_evidence` was only checked as a
+  fallback when no other reason had fired, so a real conflict could be silently missed
+  behind e.g. `budget_exceeded` -- moved to an unconditional check. 10 integration tests
+  (`tests/test_agent_review.py`), using the same `real_session`-with-manual-cleanup
+  pattern as `test_agent_state_machine.py` for the committing functions.
+
+  While designing `qc_seed.py`'s `unsupported_claim` seed (a claim with `evidence: []`),
+  found and fixed a real scoping bug in `verify_claim`: the empty-evidence exemption
+  checked only `if not claim.evidence`, with no check on `claim.claim_type` -- so an
+  `event`/`timeline_entry`/`metric` claim with empty evidence would incorrectly pass as
+  exempt, when only `risk_signal`/`limitation` are meant to be. Fixed with an explicit
+  `EVIDENCE_EXEMPT_CLAIM_TYPES = frozenset({"risk_signal", "limitation"})` check; other
+  claim types with empty evidence now correctly fail as "unsupported claim: {type} claim
+  has no evidence span". Also found `check_number_in_span`/`check_name_in_span` were
+  implemented and unit-tested but never actually called from `verify_claim` -- only
+  `check_date_in_span` ran for a metric claim. Wired both in (numeric value+unit ->
+  number check; string value with a non-numeric unit, e.g. `CARE_rating_symbol` -> name
+  check). Verified safe against real data: `rating_features.py`'s `rating_symbol` and its
+  evidence span share one regex capture group, so the real span text equals the real
+  rating value; confirmed via a live GENSOL smoke test (still FINALISED, no regression).
+  Also deleted `investigation_timestamp_claim` from `claims.py` -- dead code, defined but
+  never called anywhere (confirmed via grep).
+
 ## Not yet started
 
-- §6: Markdown + JSON dossier export (the content model itself -- sections/claim_id_map
-  -- already exists via `ledgerlight.agent.render.RenderedDossier`).
-- §7: the human review CLI (`dossier-review`), reason codes, append-only audit, the
-  immutable-event-version feedback loop, seeded QC (`qc-seed`).
+- §7 remaining: `ledgerlight/agent/qc_seed.py` -- seeded QC (`qc-seed`): inject a
+  configurable share of known-flawed dossiers (wrong date, wrong number, missing
+  citation, unsupported claim) flagged `seeded_qc=True` with `expected_outcome`; a
+  catch-rate report per flaw type; seeded items excluded from all real statistics.
 - §8: `agent-eval` across the 15 SEED-track + ~15 UNIVERSE-track companies.
 - §9: the full adversarial/failure test suite (prompt injection, crash/resume,
   determinism, REPAIR-never-substitutes, etc.) -- no placeholder tests.
@@ -92,15 +125,15 @@ completion commit `195a714`.
 
 ## Exact next step
 
-§4/§5 are done (LLM plan validation / LLM renderer were NOT built -- no `LLM_PROVIDER`/
-key is in `.env` in this environment, so per the brief's own instruction this records
-"LLM renderer not run" rather than being built against nothing real to test it with;
-revisit only if a real key is ever added). Next: §6 (Markdown + JSON export functions
-for a `RenderedDossier` + `Investigation`/`Dossier` row -- the content model itself is
-already real), then §7 (human review CLI, reason codes, append-only audit, the
-`EventVersion` feedback loop, `qc-seed`), §8 (`agent-eval` across 15 SEED-track +
-~15 UNIVERSE-track companies), §9 (adversarial/failure tests), §10 (the 7 CLI commands
-+ docs), §11 (run and verify), §12 (commit/backup), §13 (exit gates), §14 (final report).
+§4/§5/§6 are done. §7 is done except `qc_seed.py` itself (routing, decisions, audit,
+feedback loop all real and tested). LLM plan validation / LLM renderer were NOT built --
+no `LLM_PROVIDER`/key is in `.env` in this environment, so per the brief's own
+instruction this records "LLM renderer not run" rather than being built against nothing
+real to test it with; revisit only if a real key is ever added. Next: `qc_seed.py`
+(seeded QC injection + catch-rate report, closing out §7), then §8 (`agent-eval` across
+15 SEED-track + ~15 UNIVERSE-track companies), §9 (adversarial/failure tests), §10 (the
+7 CLI commands + docs), §11 (run and verify), §12 (commit/backup), §13 (exit gates), §14
+(final report).
 
 ## Open defects / known limitations (not yet resolved)
 
