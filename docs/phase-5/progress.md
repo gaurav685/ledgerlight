@@ -21,8 +21,29 @@ Phase 4's completion commit `d1daf12`.
   re-verified against real DHFL data and the full suite. No stop condition
   triggered -- cleared to proceed.
 
+- **§2 (2026-11-01)**: `ledgerlight/api/models.py` -- every real tenant-owned table the
+  brief lists; migration `4dad2cd00443` (tables, nullable `investigations.tenant_id`,
+  the real non-superuser `ledgerlight_app` role, grants, RLS policies on every
+  tenant-owned table). `ledgerlight/api/tenancy.py` (`tenant_scope`, the real
+  per-transaction `app.tenant_id` GUC via `set_config`), `auth.py` (argon2id password
+  hashing, real Postgres-backed sessions with rotation, CSRF, login lockout via
+  `audit_logs`), `api_keys.py`, `rbac.py` (the 4-role permission matrix). 5 real
+  DB-level RLS isolation tests (`tests/test_api_rls.py`, connecting as the real
+  restricted role) plus 27 more for auth/api_keys/rbac -- every real function
+  hand-verified against the real local Postgres stack before being written as a test.
+  `docs/security/rbac.md`, `docs/adr/0008-api-auth-tenancy.md`.
+
+  **Two real bugs found and fixed**: (1) a Python-side `ForeignKey("tenants.id")` on
+  the existing Phase 4 `Investigation` model broke every real Phase 1-4 entry point
+  that does not import `ledgerlight.api.models` (a real `NoReferencedTableError`,
+  confirmed running `run_investigation` against real GENSOL/DHFL data) -- fixed by
+  dropping the Python-side FK object on every cross-package reference (the real DB-level
+  constraint still enforces it); (2) Postgres rejects a real bound parameter inside a
+  `SET LOCAL x = $1` statement -- fixed by using `set_config(..., is_local=true)`
+  instead, confirmed directly. **§2 is now fully complete.**
+
 ## Not yet started
-- §2: tenancy, auth, RBAC (migrations, RLS, sessions, API keys, permission matrix).
+
 - §3: the API (FastAPI /v1, all endpoints, rate limits, audit logs, alert generation).
 - §4: the frontend (Next.js App Router, all pages, security headers, accessibility).
 - §5: Docker Compose, config, secrets, seed command.
@@ -41,10 +62,12 @@ Phase 4's completion commit `d1daf12`.
 
 ## Exact next step
 
-§1 preflight: create branch `phase-5/api-ui-security` from `d1daf12`, run the full
-checks for a green baseline, print the required verbatim Phase 3/4 sections, run the
-verifier-fix audit and review-routing audit, check the 4 stop conditions. Do not
-proceed into §2 if any stop condition triggers.
+§1/§2 are done. Next: §3 (the real FastAPI /v1 API -- company search/overview, event
+timelines, point-in-time scores, management credibility, dossiers, review tasks,
+watchlists/alerts, signed document links, webhooks, health checks, rate limits, audit
+logging, the Dagster alerts-generation job), wiring `ledgerlight.api.auth`/`rbac`/
+`tenancy` into real HTTP request handling (cookies, CSRF header, RBAC/scope checks on
+every endpoint).
 
 ## Pending items carried over from the end of Phase 4 (not part of this brief, flagged
 so they are not lost)
