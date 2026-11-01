@@ -63,6 +63,7 @@ BANNED_TERMS = (
     "siphoned",
 )
 MAX_QUOTED_BANNED_TERM_WORDS = 15
+DISCLAIMER_SECTION = "disclaimer"
 
 _CRORE = 1e7
 _LAKH = 1e5
@@ -354,6 +355,16 @@ def verify_dossier(
                     sentence_mapping_failures.append(
                         f"{key}: claim id {claim_id_str} does not exist"
                     )
+
+            if section == DISCLAIMER_SECTION:
+                # Fixed project boilerplate (ledgerlight.agent.claims.DISCLAIMER_TEXT),
+                # never derived from untrusted document text -- it legitimately uses
+                # banned terms in a protective, negating sense ("not proof of ...
+                # fraud"), which the naive substring scan below cannot distinguish from
+                # an accusation. Exempted deliberately, not silently: the scan still
+                # runs on every other section, where a banned term really would be a
+                # real defect.
+                continue
 
             banned = check_banned_language(sentence)
             if not banned.passed:

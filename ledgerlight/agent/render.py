@@ -13,6 +13,7 @@ path that works with LLM_PROVIDER unset.
 from __future__ import annotations
 
 import datetime as dt
+import json
 import uuid
 from dataclasses import dataclass
 from typing import cast
@@ -26,6 +27,18 @@ RENDERER_NAME = "offline_template"
 RENDERER_VERSION = "1"
 
 MAX_EXCERPT_WORDS = 15
+
+
+def _content_sort_key(claim: Claim, primary_field: str) -> tuple[str, str]:
+    """A fully content-based sort key -- never DB retrieval order,
+    which is not real-content-deterministic (two separately persisted
+    copies of the same real claim set can tie on `created_at`, since
+    Postgres `now()` is constant within one transaction, and then get
+    arbitrarily ordered by their own random UUIDs). The real payload
+    JSON (sorted keys) is the tiebreaker, so even same-`primary_field`
+    claims sort identically across runs."""
+    primary = cast(str, claim.payload.get(primary_field, ""))
+    return primary, json.dumps(claim.payload, sort_keys=True)
 
 
 @dataclass
@@ -114,11 +127,28 @@ def render_offline(
     claim_id_map: dict[str, list[str]] = {}
     contradictions = contradictions or []
 
-    event_claims = [c for c in claims if c.claim_type == "event"]
-    timeline_claims = [c for c in claims if c.claim_type == "timeline_entry"]
-    metric_claims = [c for c in claims if c.claim_type == "metric"]
+    # Sorted by real content, never by DB retrieval order: two separately
+    # persisted copies of the same real claim set (e.g. a first pass and a
+    # resumed run) can tie on `created_at` (same-transaction `now()`) and
+    # get arbitrarily ordered by their random UUIDs otherwise -- a real
+    # determinism bug this sort fixes at the source, not downstream.
+    event_claims = sorted(
+        (c for c in claims if c.claim_type == "event"),
+        key=lambda c: _content_sort_key(c, "known_at"),
+    )
+    timeline_claims = sorted(
+        (c for c in claims if c.claim_type == "timeline_entry"),
+        key=lambda c: _content_sort_key(c, "known_at"),
+    )
+    metric_claims = sorted(
+        (c for c in claims if c.claim_type == "metric"),
+        key=lambda c: _content_sort_key(c, "known_at"),
+    )
     risk_claims = [c for c in claims if c.claim_type == "risk_signal"]
-    limitation_claims = [c for c in claims if c.claim_type == "limitation"]
+    limitation_claims = sorted(
+        (c for c in claims if c.claim_type == "limitation"),
+        key=lambda c: _content_sort_key(c, "text"),
+    )
 
     # 1. Summary
     verified_count = sum(1 for c in event_claims if c.payload.get("tier") == "VERIFIED")
@@ -135,7 +165,7 @@ def render_offline(
     )
 
     # 2. Chronology
-    for claim in sorted(timeline_claims, key=lambda c: cast(str, c.payload.get("known_at", ""))):
+    for claim in timeline_claims:
         label = claim.payload.get("label", "a filing")
         known_at = claim.payload.get("known_at", "an unknown date")
         _add_sentence(
@@ -147,7 +177,7 @@ def render_offline(
         )
 
     # 3. Findings
-    for claim in sorted(event_claims, key=lambda c: cast(str, c.payload.get("known_at", ""))):
+    for claim in event_claims:
         tier = claim.payload.get("tier", "CANDIDATE")
         code = claim.payload.get("event_type_code", "an event")
         known_at = claim.payload.get("known_at", "an unknown date")
