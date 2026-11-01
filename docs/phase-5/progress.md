@@ -6,12 +6,22 @@ Phase 4's completion commit `d1daf12`.
 
 ## Sections done
 
-(none yet -- brief just saved)
+- **§1 (2026-11-01)**: branch `phase-5/api-ui-security` created from Phase 4 HEAD
+  `d1daf12`. Green baseline (`docs/phase-5/evidence/preflight-*`): lint/format/typecheck
+  clean, 380 default + 179 integration tests passed. Verbatim Phase 3/4 evidence,
+  verifier-fix audit, and review-routing audit all in
+  `docs/phase-5/evidence/sec01-preflight-verbatim-and-audits.md`.
+  **This preflight itself found two more real verifier blind spots** (commit
+  `9189752`, before the main evidence-gathering commit `11fd242`): scoping
+  `date_in_span` away from metric claims (Phase 4's own fix) removed the only check
+  comparing a care_rating claim's `known_at` to anything, and making `timeline_entry`
+  blanket-exempt removed any check on its real `document_version_id` -- both would
+  have let a wrong-dated claim of either type pass uncaught. Fixed with
+  `check_known_at_matches_evidence`/`check_timeline_entry_claim`, regression-tested,
+  re-verified against real DHFL data and the full suite. No stop condition
+  triggered -- cleared to proceed.
 
 ## Not yet started
-
-- §1: preflight (branch, green baseline, verbatim Phase 3/4 evidence, verifier-fix
-  audit, review-routing audit, stop-condition check).
 - §2: tenancy, auth, RBAC (migrations, RLS, sessions, API keys, permission matrix).
 - §3: the API (FastAPI /v1, all endpoints, rate limits, audit logs, alert generation).
 - §4: the frontend (Next.js App Router, all pages, security headers, accessibility).
