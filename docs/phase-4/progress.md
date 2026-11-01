@@ -38,14 +38,35 @@ completion commit `195a714`.
   (`tests/test_agent_tools.py`), each building small controlled fixtures so the
   point-in-time filter is directly checkable.
 
+- **§4 budgets/claims/render (2026-11-01)**: `ledgerlight/agent/budgets.py`
+  (BudgetConfig/Usage, JSON round-trippable, BudgetExceeded). `ledgerlight/agent/claims.py`
+  (builds real ClaimDraft objects from Sec3 tool envelopes; `risk_signal`/`limitation`
+  claims are a disclosed exception to "every claim has a real evidence span", including
+  the disclaimer itself as a real claim so "every sentence maps to a claim ID" holds with
+  zero exemptions). `ledgerlight/agent/render.py` (the offline deterministic template
+  renderer, real source citations with a real <=15-word excerpt, a real determinism
+  test). The state-machine orchestration itself (PLAN/GATHER/TIMELINE/VERIFY-REPAIR loop)
+  is still pending -- see "Not yet started".
+- **§5 (2026-11-01)**: `ledgerlight/agent/nli.py` (real local DeBERTa entailment, reusing
+  Phase 2's exact model + its TOKENIZERS_PARALLELISM fix). `ledgerlight/agent/verifier.py`
+  (citation resolution, point-in-time, date-in-span with real DD/MM/YYYY-only parsing
+  -- never MM/DD, crore/lakh-aware number checking, banned-language scan, contradiction
+  detection). `ledgerlight/agent/nli_calibration.py` +
+  `scripts/calibrate_nli_threshold.py`: real calibration against a SYNTHETIC labelled
+  set -- every threshold 0.35-0.95 gives perfect precision/recall on that small set;
+  `DEFAULT_NLI_ENTAILMENT_THRESHOLD` set to 0.95 (top of the plateau, chosen for
+  precision over recall, consistent with this project's "inconclusive is acceptable"
+  culture). Real output: `docs/agent/nli-calibration.json`.
+
 ## Not yet started
 
-- §4: the explicit PLAN -> GATHER -> TIMELINE -> DRAFT -> VERIFY -> REPAIR -> FINALISE
-  state machine, checkpointed, with budgets enforced.
-- §5: the verifier (citation resolution, names, dates, numbers/units, DeBERTa NLI
-  entailment against a labelled SYNTHETIC set, point-in-time, tier labelling,
-  contradiction handling, banned-language check, fail-closed behaviour).
-- §6: the 8-section dossier content model, Markdown + JSON export.
+- §4 orchestration: the state machine itself
+  (`ledgerlight/agent/state_machine.py`) tying budgets/tools/claims/render/verifier
+  together -- PLAN -> GATHER -> TIMELINE -> DRAFT -> VERIFY -> REPAIR -> FINALISE,
+  checkpointed via `InvestigationStep`, with the VERIFY<->REPAIR loop (remove failed
+  claims, re-render, never substitute a new unsupported claim, <= max_repair_rounds).
+- §6: Markdown + JSON dossier export (the content model itself -- sections/claim_id_map
+  -- already exists via `ledgerlight.agent.render.RenderedDossier`).
 - §7: the human review CLI (`dossier-review`), reason codes, append-only audit, the
   immutable-event-version feedback loop, seeded QC (`qc-seed`).
 - §8: `agent-eval` across the 15 SEED-track + ~15 UNIVERSE-track companies.
@@ -61,13 +82,18 @@ completion commit `195a714`.
 
 ## Exact next step
 
-Begin §4: the explicit state machine (`ledgerlight/agent/state_machine.py` or similar) --
-PLAN -> GATHER -> TIMELINE -> DRAFT -> VERIFY -> REPAIR -> FINALISE, each step
-checkpointed via `InvestigationStep` so a crashed run resumes from the last completed
-step, with budgets (max steps, wall time, tool calls, LLM tokens, cost) enforced and
-tested. PLAN's deterministic default plan and DRAFT's offline-template renderer come
-first; the optional LLM paths (plan validation, LLM renderer) are built but gated on
-`LLM_PROVIDER`/a key being present in `.env`, recording "not run" otherwise.
+Build `ledgerlight/agent/state_machine.py`: the real orchestration loop. Design already
+settled (see this session's own reasoning): claims are persisted progressively during
+TIMELINE/DRAFT (real `Claim` rows, so render_offline always has real claim IDs); a
+`Dossier` row is persisted exactly once, at the end (FINALISE or the terminal
+NEEDS_REVIEW), carrying the LAST real render (even on failure, for human review) --
+never one per repair round. REPAIR removes failed claims from the active set (never
+adds a replacement) and re-renders with the reduced set; the VERIFY<->REPAIR loop runs
+at most `budget.max_repair_rounds` times. Resume-from-crash reads `Investigation.state`
+(the next state to execute) and continues from there, re-deriving nothing already
+persisted. PLAN's deterministic default plan and DRAFT's offline-template renderer
+come first; the optional LLM paths (plan validation, LLM renderer) are gated on
+`LLM_PROVIDER`/a key in `.env`, recording "not run" otherwise.
 
 ## Open defects / known limitations (not yet resolved)
 
