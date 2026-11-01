@@ -12,11 +12,13 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from ledgerlight.api.rate_limit import RateLimitExceeded
+from ledgerlight.api.routers import alerts as alerts_router
 from ledgerlight.api.routers import auth as auth_router
 from ledgerlight.api.routers import companies as companies_router
 from ledgerlight.api.routers import dossiers as dossiers_router
 from ledgerlight.api.routers import health as health_router
 from ledgerlight.api.routers import review as review_router
+from ledgerlight.api.routers import watchlists as watchlists_router
 
 logger = structlog.get_logger(__name__)
 
@@ -107,6 +109,8 @@ def create_app() -> FastAPI:
     app.include_router(companies_router.router)
     app.include_router(dossiers_router.router)
     app.include_router(review_router.router)
+    app.include_router(watchlists_router.router)
+    app.include_router(alerts_router.router)
 
     return app
 
