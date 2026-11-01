@@ -20,10 +20,13 @@ from ledgerlight.agent.review import (
     CANDIDATE_TIER_MAJORITY,
     CONFLICTING_EVIDENCE,
     HIGH_SEVERITY_FINDING,
+    LOW_CONFIDENCE_EXTRACTION,
     VERIFICATION_FAILED,
     apply_event_feedback,
     create_review_tasks,
     determine_routing,
+    get_task_dossier,
+    list_open_tasks,
     record_decision,
 )
 from ledgerlight.knowledge.models import Company, Event, EventType
@@ -172,14 +175,16 @@ def _cleanup(session: Session, created: dict[str, list[uuid.UUID]]) -> None:
             text(
                 "DELETE FROM review_decisions_audit WHERE review_task_id IN "
                 "(SELECT id FROM review_tasks WHERE dossier_id IN "
-                "(SELECT id FROM dossiers WHERE investigation_id = ANY(:ids)))"
+                "(SELECT id FROM dossiers WHERE investigation_id = ANY(:ids)) "
+                "OR claim_id IN (SELECT id FROM claims WHERE investigation_id = ANY(:ids)))"
             ),
             {"ids": investigation_ids},
         )
         session.execute(
             text(
                 "DELETE FROM review_tasks WHERE dossier_id IN "
-                "(SELECT id FROM dossiers WHERE investigation_id = ANY(:ids))"
+                "(SELECT id FROM dossiers WHERE investigation_id = ANY(:ids)) "
+                "OR claim_id IN (SELECT id FROM claims WHERE investigation_id = ANY(:ids))"
             ),
             {"ids": investigation_ids},
         )
@@ -228,6 +233,112 @@ def test_create_review_tasks_persists_real_rows(real_session: Session) -> None:
     assert len(tasks) == 1
     assert tasks[0].reason_code == BUDGET_EXCEEDED
     assert tasks[0].status == "open"
+
+
+def test_list_open_tasks_orders_by_priority_then_created_at(real_session: Session) -> None:
+    company = Company(id=uuid.uuid4(), display_name="List Open Tasks Co")
+    real_session.add(company)
+    real_session.commit()
+    real_session.info["created"]["companies"].append(company.id)
+
+    investigation = _investigation(final_status="NEEDS_REVIEW", failure_reason="budget_exceeded: x")
+    investigation.company_id = company.id
+    real_session.add(investigation)
+    real_session.commit()
+    real_session.info["created"]["investigations"].append(investigation.id)
+
+    dossier = _dossier(investigation.id)
+    real_session.add(dossier)
+    real_session.commit()
+
+    low = ReviewTask(dossier_id=dossier.id, reason_code=LOW_CONFIDENCE_EXTRACTION, priority=0)
+    high = ReviewTask(dossier_id=dossier.id, reason_code=HIGH_SEVERITY_FINDING, priority=10)
+    closed = ReviewTask(
+        dossier_id=dossier.id, reason_code=BUDGET_EXCEEDED, priority=10, status="closed"
+    )
+    real_session.add_all([low, high, closed])
+    real_session.commit()
+
+    tasks = list_open_tasks(real_session)
+    task_ids = [t.id for t in tasks]
+    assert closed.id not in task_ids
+    assert task_ids.index(high.id) < task_ids.index(low.id)
+
+
+def test_list_open_tasks_respects_limit(real_session: Session) -> None:
+    company = Company(id=uuid.uuid4(), display_name="List Open Tasks Limit Co")
+    real_session.add(company)
+    real_session.commit()
+    real_session.info["created"]["companies"].append(company.id)
+
+    investigation = _investigation(final_status="FINALISED")
+    investigation.company_id = company.id
+    real_session.add(investigation)
+    real_session.commit()
+    real_session.info["created"]["investigations"].append(investigation.id)
+
+    dossier = _dossier(investigation.id)
+    real_session.add(dossier)
+    real_session.commit()
+
+    real_session.add_all(
+        [
+            ReviewTask(dossier_id=dossier.id, reason_code=HIGH_SEVERITY_FINDING, priority=10),
+            ReviewTask(dossier_id=dossier.id, reason_code=LOW_CONFIDENCE_EXTRACTION, priority=0),
+        ]
+    )
+    real_session.commit()
+
+    assert len(list_open_tasks(real_session, limit=1)) == 1
+
+
+def test_get_task_dossier_returns_the_real_dossier(real_session: Session) -> None:
+    company = Company(id=uuid.uuid4(), display_name="Get Task Dossier Co")
+    real_session.add(company)
+    real_session.commit()
+    real_session.info["created"]["companies"].append(company.id)
+
+    investigation = _investigation(final_status="FINALISED")
+    investigation.company_id = company.id
+    real_session.add(investigation)
+    real_session.commit()
+    real_session.info["created"]["investigations"].append(investigation.id)
+
+    dossier = _dossier(investigation.id)
+    real_session.add(dossier)
+    real_session.commit()
+
+    task = ReviewTask(dossier_id=dossier.id, reason_code=HIGH_SEVERITY_FINDING, priority=10)
+    real_session.add(task)
+    real_session.commit()
+
+    found = get_task_dossier(real_session, task.id)
+    assert found is not None
+    assert found.id == dossier.id
+
+
+def test_get_task_dossier_returns_none_for_a_claim_only_task(real_session: Session) -> None:
+    company = Company(id=uuid.uuid4(), display_name="Claim Only Task Co")
+    real_session.add(company)
+    real_session.commit()
+    real_session.info["created"]["companies"].append(company.id)
+
+    investigation = _investigation(final_status="FINALISED")
+    investigation.company_id = company.id
+    real_session.add(investigation)
+    real_session.commit()
+    real_session.info["created"]["investigations"].append(investigation.id)
+
+    claim = _event_claim(severity="low", tier="VERIFIED")
+    claim.investigation_id = investigation.id
+    real_session.add(claim)
+    real_session.commit()
+
+    task = ReviewTask(claim_id=claim.id, reason_code=LOW_CONFIDENCE_EXTRACTION, priority=0)
+    real_session.add(task)
+    real_session.commit()
+
+    assert get_task_dossier(real_session, task.id) is None
 
 
 def test_record_decision_appends_to_the_audit(real_session: Session) -> None:

@@ -9,7 +9,7 @@ import datetime as dt
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import text
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from ledgerlight.agent.models import Claim, Dossier, Investigation, ReviewDecisionAudit, ReviewTask
@@ -127,6 +127,30 @@ def create_review_tasks(
         tasks.append(task)
     session.flush()
     return tasks
+
+
+def list_open_tasks(session: Session, limit: int | None = None) -> list[ReviewTask]:
+    """The real open review queue -- highest real priority first, then
+    oldest first, the same ordering a human reviewer would want to
+    work through."""
+    query = (
+        select(ReviewTask)
+        .where(ReviewTask.status == "open")
+        .order_by(ReviewTask.priority.desc(), ReviewTask.created_at)
+    )
+    if limit is not None:
+        query = query.limit(limit)
+    return list(session.scalars(query).all())
+
+
+def get_task_dossier(session: Session, review_task_id: uuid.UUID) -> Dossier | None:
+    """The real dossier a review task is about, or `None` if this task
+    references a single claim rather than a whole dossier (the CHECK
+    constraint on `review_tasks` allows either)."""
+    task = session.get(ReviewTask, review_task_id)
+    if task is None or task.dossier_id is None:
+        return None
+    return session.get(Dossier, task.dossier_id)
 
 
 def record_decision(
