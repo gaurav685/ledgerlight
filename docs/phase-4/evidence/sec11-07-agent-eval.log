@@ -1,0 +1,20 @@
+C:\ledger light\.venv\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]Loading weights:  27%|##6       | 54/202 [00:00<00:00, 535.19it/s]Loading weights: 100%|##########| 202/202 [00:00<00:00, 1236.68it/s]
+Real investigations run: 60
+Status breakdown (track:final_status -> count):
+  SEED:FINALISED: 30
+  UNIVERSE:FINALISED: 30
+Total claims in final dossiers: 740
+Total claims removed in REPAIR: 72
+Per-check-type pass rate:
+  citation_resolves: 743/812 (91.5%)
+  date_in_span: 0/3 (0.0%)
+  entailment: 146/146 (100.0%)
+  name_in_span: 143/143 (100.0%)
+  point_in_time: 146/146 (100.0%)
+Unsupported-claim leakage into a final dossier: 0
+Runtime seconds: p50=0.08 p95=9.05
+Tool calls: p50=5.0 p95=5.0
+LLM tokens: p50=0.0 p95=0.0
+Cost USD: p50=0.0000 p95=0.0000

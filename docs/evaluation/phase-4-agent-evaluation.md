@@ -65,5 +65,69 @@ twice.
 
 ## Real results
 
-_Pending §11's full real run -- see `docs/phase-4/phase-4-report.md`
-for the real pasted output once it exists._
+From the real §11 run (`docs/phase-4/evidence/sec11-07-agent-eval.log`),
+60 real investigations (15 SEED + 15 UNIVERSE companies, 2 as_of dates
+each):
+
+```
+Real investigations run: 60
+Status breakdown (track:final_status -> count):
+  SEED:FINALISED: 30
+  UNIVERSE:FINALISED: 30
+Total claims in final dossiers: 740
+Total claims removed in REPAIR: 72
+Per-check-type pass rate:
+  citation_resolves: 743/812 (91.5%)
+  date_in_span: 0/3 (0.0%)
+  entailment: 146/146 (100.0%)
+  name_in_span: 143/143 (100.0%)
+  point_in_time: 146/146 (100.0%)
+Unsupported-claim leakage into a final dossier: 0
+Runtime seconds: p50=0.08 p95=9.05
+Tool calls: p50=5.0 p95=5.0
+LLM tokens: p50=0.0 p95=0.0
+Cost USD: p50=0.0000 p95=0.0000
+```
+
+**All 60 real investigations reached FINALISED** -- none needed review
+for this run (no budget exceeded, no verifier crash, no exhausted
+REPAIR rounds). **Zero real unsupported-claim leakage** into any final
+dossier, across all 60 -- the target the brief sets.
+
+This is the SECOND real run of this evaluation. The first real run
+surfaced two real verifier bugs (`docs/phase-4/progress.md`'s §9/§11
+entries, commit `379fa27`): `timeline_entry` claims were not exempt
+from the empty-evidence requirement despite being documented as such,
+and `date_in_span` ran against metric/care_rating claims whose real
+evidence span structurally cannot carry a date. Before the fix: 452
+claims removed in REPAIR, citation_resolves at 62.3%. After: 72 claims
+removed, citation_resolves at 91.5% -- both logs are preserved in
+`docs/phase-4/evidence/` history (via git) for anyone wanting the
+before/after.
+
+**The remaining ~9% of citation_resolves failures are real and
+disclosed, not a Phase 4 defect**: 69 of 127 real `event_fields` rows
+(`field_name='order_document'`) carry a genuinely zero-length evidence
+span (`char_start=char_end=0`) -- a real, pre-existing Phase 1-3
+extraction characteristic (that field cites "the whole document", not
+a specific quotable span). `get_evidence`/`verify_claim` correctly
+refuse to treat a zero-length span as real, citable evidence; any
+event claim relying solely on such a span fails as unsupported and is
+removed in REPAIR, which is the real, intended "precision over
+recall" behaviour this project has stated throughout, not a bug to
+suppress.
+
+**`date_in_span` at 0/3**: the only 3 event claims that got far enough
+to run this check (most `event` claims failed earlier at
+`citation_resolves`, for the same `order_document` reason above) each
+cite an evidence span stating only an admission *status*
+("petition was admitted", "admitted into CIRP") rather than the
+specific date -- the real date for that same event is evidenced by a
+separate, narrower `EventField` whose own span IS checked
+independently. `ClaimVerificationResult.passed` requires every check
+on every cited evidence item to pass, so a claim with one date-bearing
+and one status-only evidence item fails overall on the status-only
+item's missing date. A real, conservative design consequence (not
+fixed here, consistent with this project's stated "a false pass is
+worse than an unnecessary REPAIR" priority) -- disclosed rather than
+loosened late in this phase.
