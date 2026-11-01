@@ -8,6 +8,7 @@ from sqlalchemy import engine_from_config, pool
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT))
 
+import ledgerlight.agent.models  # noqa: E402,F401 -- registers Phase 4 tables on Base.metadata
 import ledgerlight.knowledge.models  # noqa: E402,F401 -- registers Phase 2 tables on Base.metadata
 from ledgerlight.config.settings import load_settings  # noqa: E402
 from ledgerlight.db.models import Base  # noqa: E402
