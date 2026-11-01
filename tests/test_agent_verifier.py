@@ -253,6 +253,66 @@ def test_verify_claim_passes_with_a_real_resolving_citation(db_session: Session)
 
 
 @pytest.mark.integration
+def test_verify_claim_exempts_a_timeline_entry_claim_with_no_evidence(
+    db_session: Session,
+) -> None:
+    """A real bug found by Sec11's real agent-eval run: claims.py's own
+    docstring documents timeline_entry as sharing the same empty-
+    evidence exemption as risk_signal/limitation, but
+    EVIDENCE_EXEMPT_CLAIM_TYPES never included it -- every real
+    timeline_entry claim failed as unsupported until this was fixed."""
+    investigation_id = _make_investigation(db_session)
+    claim = Claim(
+        investigation_id=investigation_id,
+        claim_type="timeline_entry",
+        payload={"kind": "filing", "label": "sebi:order", "known_at": "2020-01-01T00:00:00+00:00"},
+        evidence=[],
+    )
+    db_session.add(claim)
+    db_session.flush()
+
+    result = verify_claim(db_session, claim, as_of=dt.date(2020, 2, 1))
+    assert result.passed
+
+
+@pytest.mark.integration
+def test_verify_claim_skips_date_in_span_for_a_metric_claim(db_session: Session) -> None:
+    """A real bug found by Sec11's real agent-eval run: a care_rating
+    claim's real evidence span is deliberately just the rating
+    symbol's own regex capture group (never a date-bearing sentence),
+    so date_in_span could never pass for it -- scoped to event claims
+    only. A metric claim whose span has no date must still pass
+    overall if its name/number check passes."""
+    known_at = dt.datetime(2020, 1, 1, tzinfo=dt.UTC)
+    version = _make_document_version(db_session, "BBB", known_at)
+    investigation_id = _make_investigation(db_session)
+    claim = Claim(
+        investigation_id=investigation_id,
+        claim_type="metric",
+        payload={
+            "name": "care_rating",
+            "value": "BBB",
+            "unit": "CARE_rating_symbol",
+            "known_at": "2020-01-01T00:00:00+00:00",
+        },
+        evidence=[
+            {
+                "document_version_id": str(version.id),
+                "page_number": 1,
+                "char_start": 0,
+                "char_end": 3,
+            }
+        ],
+    )
+    db_session.add(claim)
+    db_session.flush()
+
+    result = verify_claim(db_session, claim, as_of=dt.date(2020, 2, 1))
+    assert result.passed
+    assert not any(c.check_name == "date_in_span" for c in result.checks)
+
+
+@pytest.mark.integration
 def test_verify_claim_fails_with_a_missing_citation(db_session: Session) -> None:
     investigation_id = _make_investigation(db_session)
     claim = Claim(
