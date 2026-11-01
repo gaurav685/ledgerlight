@@ -41,6 +41,7 @@ from __future__ import annotations
 import datetime as dt
 import random
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import cast
 
@@ -249,13 +250,26 @@ def seed_qc_batch(
     requested_by: str = "qc-seed",
     budget_config: BudgetConfig | None = None,
     rng_seed: int = 0,
+    on_skip: Callable[[uuid.UUID, dt.date, str, str], None] | None = None,
 ) -> list[SeededQCItem]:
     """Deterministically (fixed `rng_seed`) picks `seed_fraction` of
     `targets` -- at least one if `targets` is non-empty and
     `seed_fraction` > 0 -- and seeds one flawed dossier for each,
     cycling through all four flaw types in a fixed order so a real
     batch gets real coverage of every type, not whichever the random
-    choice happens to favour."""
+    choice happens to favour.
+
+    A real target that has no real donor claim for its assigned flaw
+    type (`wrong_date`/`wrong_number` need one; `missing_citation`/
+    `unsupported_claim` never do) is skipped, never retried with a
+    different flaw type -- the deterministic cycling order is itself
+    this function's real, documented per-type coverage guarantee, not
+    something to work around per company. The real investigation
+    `seed_flawed_dossier` already ran before hitting that limit is
+    kept regardless; only its flawed v2 dossier is not created.
+    `on_skip`, if given, is called with (company_id, as_of, flaw_type,
+    reason) for every real skip, so a caller (a CLI, say) can report
+    it -- this function itself does no I/O."""
     if not 0.0 <= seed_fraction <= 1.0:
         raise ValueError(f"seed_fraction must be in [0, 1], got {seed_fraction}")
     if not targets:
@@ -272,9 +286,15 @@ def seed_qc_batch(
     items: list[SeededQCItem] = []
     for i, (company_id, as_of) in enumerate(chosen):
         flaw_type = ALL_FLAW_TYPES[i % len(ALL_FLAW_TYPES)]
-        items.append(
-            seed_flawed_dossier(session, company_id, as_of, flaw_type, requested_by, budget_config)
-        )
+        try:
+            items.append(
+                seed_flawed_dossier(
+                    session, company_id, as_of, flaw_type, requested_by, budget_config
+                )
+            )
+        except ValueError as exc:
+            if on_skip is not None:
+                on_skip(company_id, as_of, flaw_type, str(exc))
     return items
 
 

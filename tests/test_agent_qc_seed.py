@@ -357,6 +357,30 @@ def test_seed_qc_batch_rejects_an_out_of_range_fraction(real_session: Session) -
         seed_qc_batch(real_session, [(company_id, dt.date(2020, 1, 1))], seed_fraction=1.5)
 
 
+def test_seed_qc_batch_skips_a_target_with_no_donor_instead_of_crashing(
+    real_session: Session,
+) -> None:
+    """A fresh company has no claim with a resolving evidence span --
+    wrong_date (ALL_FLAW_TYPES[0], always assigned to the one chosen
+    target at fraction=1.0) needs one. The real batch must skip this
+    target via on_skip, never raise and abort the whole batch."""
+    company_id = _make_company(real_session, "QC Seed Batch No Donor Co")
+    skips: list[tuple[uuid.UUID, dt.date, str, str]] = []
+
+    items = seed_qc_batch(
+        real_session,
+        [(company_id, dt.date(2020, 1, 1))],
+        seed_fraction=1.0,
+        on_skip=lambda cid, as_of, flaw_type, reason: skips.append((cid, as_of, flaw_type, reason)),
+    )
+
+    assert items == []
+    assert len(skips) == 1
+    assert skips[0][0] == company_id
+    assert skips[0][2] == FLAW_WRONG_DATE
+    assert "needs a real donor claim" in skips[0][3]
+
+
 # --- compute_catch_rate_report -------------------------------------------------
 
 
