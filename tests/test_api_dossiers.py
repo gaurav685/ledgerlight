@@ -183,6 +183,10 @@ def test_create_investigation_runs_to_a_real_finalised_dossier(
     assert body["state"] == "FINALISE"
     assert body["final_status"] == "FINALISED"
 
+    list_response = client.get("/v1/dossiers/investigations")
+    assert list_response.status_code == 200
+    assert any(row["id"] == investigation_id for row in list_response.json())
+
     dossier_response = client.get(f"/v1/dossiers/investigations/{investigation_id}/dossier")
     assert dossier_response.status_code == 200
     dossier_body = dossier_response.json()
@@ -237,3 +241,6 @@ def test_another_tenant_gets_a_real_404_never_a_403(
     _login(client, real_session, role="analyst")
     response = client.get(f"/v1/dossiers/investigations/{investigation_id}")
     assert response.status_code == 404
+
+    list_response = client.get("/v1/dossiers/investigations")
+    assert all(row["id"] != investigation_id for row in list_response.json())

@@ -118,6 +118,33 @@ def _get_visible_investigation(db: DbSession, investigation_id: uuid.UUID) -> In
 
 
 @router.get(
+    "/investigations",
+    response_model=list[InvestigationOut],
+    dependencies=[Depends(require_permission(rbac.VIEW_DOSSIER))],
+)
+def list_investigations(db: DbSession = Depends(get_db)) -> list[InvestigationOut]:
+    """Real investigations for the caller's own tenant -- `investigations`
+    is directly RLS-protected (migration `4dad2cd00443`), so a plain
+    query under the app role already returns only this tenant's own
+    rows; no extra filtering is needed here."""
+    rows = db.scalars(
+        select(Investigation).order_by(Investigation.started_at.desc()).limit(200)
+    ).all()
+    return [
+        InvestigationOut(
+            id=row.id,
+            company_id=row.company_id,
+            as_of=row.as_of,
+            state=row.state,
+            final_status=row.final_status,
+            started_at=row.started_at,
+            finished_at=row.finished_at,
+        )
+        for row in rows
+    ]
+
+
+@router.get(
     "/investigations/{investigation_id}",
     response_model=InvestigationOut,
     dependencies=[Depends(require_permission(rbac.VIEW_DOSSIER))],

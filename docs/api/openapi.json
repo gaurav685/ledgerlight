@@ -2292,6 +2292,30 @@
       }
     },
     "/v1/dossiers/investigations": {
+      "get": {
+        "description": "Real investigations for the caller's own tenant -- `investigations`\nis directly RLS-protected (migration `4dad2cd00443`), so a plain\nquery under the app role already returns only this tenant's own\nrows; no extra filtering is needed here.",
+        "operationId": "list_investigations_v1_dossiers_investigations_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InvestigationOut"
+                  },
+                  "title": "Response List Investigations V1 Dossiers Investigations Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Investigations",
+        "tags": [
+          "dossiers"
+        ]
+      },
       "post": {
         "description": "Creates the real `Investigation` row synchronously (so the\ncaller gets a real id back immediately), then hands the real work\noff to a background task -- a real async job, using the row's own\n`state`/`final_status` columns as its real job status, never a\nsecond, parallel job-tracking table.",
         "operationId": "create_investigation_v1_dossiers_investigations_post",
