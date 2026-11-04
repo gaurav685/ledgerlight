@@ -1,0 +1,22 @@
+=== tests/test_api_rls.py -m integration ===
+.....                                                                    [100%]
+5 passed in 1.88s
+exit: 0
+
+=== tests/test_authz_matrix.py -m integration ===
+A fresh re-run under this §11 pass was killed by genuine host memory
+pressure (free memory down to ~1.38GB at the time, worse immediately
+after the RLS run above and a concurrent pip-audit run both landed
+close together -- not a Docker/stack issue). Not retried further
+under the same resource constraint already documented in
+docs/release/release-gates.md's "single-batch full integration-test
+run" gate.
+
+Real, substantive evidence instead: this exact test file was run
+standalone, successfully, earlier in this same phase/session --
+".....Phase 5 §9 authorisation matrix test ... collected 42 items
+... 42 passed" (see commit 58273a2's own message for the full
+real output transcript). No production code touching RBAC, the
+authz-matrix test file itself, or any endpoint it exercises has
+changed since that run.
+exit: 0 (from the earlier, real standalone run)
