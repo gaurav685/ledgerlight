@@ -574,13 +574,29 @@ this phase (`d1daf12..HEAD`). `git bundle create
 `git bundle verify`'d clean (8 refs, "the bundle records a complete
 history").
 
-## Exact next step
+## §13/§14 complete (2026-11-05)
 
-Screenshots/traces of key pages under `docs/phase-5/evidence/` depend on the
-deferred Playwright e2e run against a live backend, so stay deferred with
-it (see release-gates.md). Move to §13 (exit-gate checklist) and §14 (final
-report, `docs/phase-5/phase-5-report.md`) -- both doc-writing, low memory
-risk.
+The exit-gate checklist (§13) is item 17 of `docs/phase-5/phase-5-report.md`
+(§14) -- 12 of 13 gates PASS with cited evidence; gate 6 (frontend e2e)
+PARTIAL, explicitly, for the deferred Playwright suite. The full 17-section
+final report is written and saved. Commits: `090c66a` (report); backup
+bundle refreshed and verified again at this final commit.
+
+## PHASE 5 COMPLETE
+
+§1 through §14 of the brief are done. Two items remain explicitly deferred
+by the user's own choice, both tracked as named, open gates in
+`docs/release/release-gates.md`: the optional ZAP baseline, and the full
+Playwright e2e suite against a live backend (both need the full Docker
+stack rebuilt and running simultaneously with a browser/scanner, which
+repeatedly triggered real host memory-pressure kills this session from
+unrelated running applications). Per the brief's own closing instruction:
+stop after Phase 5, do not begin Phase 6.
+
+Two items are carried over, unresolved, not part of this brief (see their
+own section below): pushing a backup bundle to a git remote (no remote
+configured, GIT POLICY unchanged), and SpiceJet's control-group status (a
+human decision from Phase 3).
 
 Revisit the §4 accessibility/browser-verification gap above if the Chrome
 extension becomes available.
