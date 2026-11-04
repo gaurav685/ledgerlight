@@ -1,0 +1,69 @@
+Restoring C:\ledgerlight-backups\db\ledgerlight-20261104T184350Z.dump into a fresh database 'ledgerlight_restore_drill'...
+
+table                                   source   restored
+---------------------------------------------------------
+alembic_version                              1          1
+alert_rules                                  1          1
+alerts                                       0          0
+api_keys                                     0          0
+audit_logs                                  47         47
+chunks                                    2591       2591
+claims                                    1736       1736
+companies                                 6287       6287
+company_identifiers                      14638      14638
+dead_letters                                 0          0
+document_pages                            6131       6131
+document_versions                         2807       2807
+documents                                 3044       3044
+dossiers                                   131        131
+entities                                    13         13
+entity_identifiers                           0          0
+entity_links                                 3          3
+entity_merges                                0          0
+event_fields                               127        127
+event_types                                 15         15
+event_versions                               0          0
+events                                    8470       8470
+experiments                                  5          5
+feature_definitions                         35         35
+feature_snapshots                       236427     236427
+filings                                    364        364
+identifier_window_corrections             2861       2861
+ingestion_runs                              32         32
+investigation_steps                        735        735
+investigations                             131        131
+label_item_fields                            0          0
+label_items                                433        433
+memberships                                 21         21
+mentions                                     3          3
+model_registry                               2          2
+outcomes                                  8463       8463
+price_bars                             3063934    3063934
+processing_attempts                          0          0
+rate_limit_counters                          0          0
+review_assignments                           0          0
+review_decisions_audit                       0          0
+review_queue                                 1          1
+review_tasks                                 0          0
+scores                                       5          5
+sessions                                    20         20
+sources                                     29         29
+taxonomy_versions                            2          2
+tenants                                     15         15
+users                                       21         21
+watchlist_items                              1          1
+watchlists                                   1          1
+webhook_deliveries                           0          0
+webhooks                                     0          0
+
+Restoring C:\ledgerlight-backups\objects\20261104T184350Z into a fresh bucket 'ledgerlight-raw-restore-drill'...
+Restored 2626 objects, 2626 sha256-verified after restore.
+
+Cleaning up drill resources...
+Drill database and bucket removed.
+
+=========================================================
+RESTORE DRILL: ledgerlight-20261104T184350Z.dump + 20261104T184350Z
+Row counts: ALL MATCH
+Objects: 2626 restored, 2626 sha256-verified
+=========================================================

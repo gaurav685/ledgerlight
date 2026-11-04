@@ -324,14 +324,71 @@ until the user explicitly provides a remote URL and confirms the policy override
 
 406 default + 268 integration tests pass. Commit: `594444d`.
 
+## §8 complete (2026-11-05)
+
+`ledgerlight.common.logging.configure_logging()` -- real Phase 0 structlog-JSON-
+to-stdout infrastructure -- was wired into `ledgerlight.api.app.create_app()`, the
+first real entry point in this project's history to ever call it (confirmed via
+`grep -rln "configure_logging"` returning only the definition file beforehand).
+`ledgerlight/api/metrics.py`: a real `/metrics` endpoint (Prometheus exposition
+format, `include_in_schema=False`, never routed through the public ALB listener)
+with request-count/duration metrics labelled by method/route-template/status --
+deliberately never raw path or tenant_id, to avoid unbounded cardinality. `tenant_id`
+is bound into structlog's contextvars in `deps.get_identity()`, alongside the
+`request_id` `app.py`'s own middleware already binds.
+
+**Two real bugs found and fixed while verifying this end-to-end, not just
+building it**: (1) `configure_logging()`'s own processor chain never included
+`structlog.contextvars.merge_contextvars` -- every bound `request_id`/`tenant_id`
+was silently dropped from every real log line; confirmed directly before and after
+the fix. (2) A handler registered for the bare `Exception` class is wired by
+Starlette into the OUTERMOST `ServerErrorMiddleware`, above every
+`@app.middleware("http")` layer -- so on a real unhandled exception,
+`X-Request-ID` and all four security headers were silently missing from the
+response (the header-setting middlewares' own post-`call_next` mutations never
+ran for this path). Fixed by setting those headers directly inside the one
+affected handler; confirmed directly before and after. Also removed
+`configure_logging()`'s eager `sys.stdout` capture (now defaults to structlog's
+own early-bound reference) after it left a dead file object behind in a
+cross-test interaction found while writing the regression tests for the above.
+
+`scripts/backup.py`: a real `pg_dump -Fc` of the real `ledgerlight` database (via
+`docker exec` into the real Postgres container) plus a real object-by-object sync
+of the real Garage bucket, every object's sha256 checked against its own
+content-addressed key as it's downloaded. Output goes to
+`../ledgerlight-backups/` (outside the repo, same convention as this project's
+existing git-bundle backups).
+
+`scripts/restore_drill.py`: a REAL restore drill, not simulated -- restores the
+latest backup into a fresh, disposable database and a fresh, disposable Garage
+bucket, compares real row counts for every one of the real database's 53 tables
+(queried from `pg_tables`, never a hardcoded list) against the source, re-verifies
+every restored object's sha256, then drops the drill resources. **Actually run**
+this phase (`docs/phase-5/evidence/restore-drill.log`): all 53 tables matched
+exactly; all 2,626 objects restored and sha256-verified.
+
+`docs/ops/`: 7 real runbooks, each grounded in this project's own actual code
+(startup-shutdown, secret-rotation, key-revocation, restore, incident-response,
+rate-limit-tuning, webhook-failures). Secret rotation and key-revocation both
+surface a real, honestly-disclosed gap found while writing them: the webhook
+secret-encryption key has no safe one-step rotation (every existing
+`webhooks.secret_encrypted` value is encrypted under the old key -- the runbook
+documents the real re-encrypt-then-swap procedure needed); and there is no single
+admin action to force-expire a specific user's existing sessions immediately
+(membership revocation takes effect on the user's very next request, but the raw
+session row otherwise lives until its own 12-hour expiry -- the runbook documents
+the direct manual-delete remediation for an urgent case).
+
+406 default + 272 integration tests pass (4 new, all in `tests/test_api_app.py`).
+ruff/mypy clean. Commits: `24dba64` (observability).
+
 ## Not yet started
 
-- §8: observability, backup/restore, runbooks.
 - §9: security tests (authz matrix, cross-tenant isolation, auth, signed URLs,
   webhooks, rate limiting, input validation, prompt-injection separation, security
   headers, Playwright e2e, optional ZAP baseline).
-- §10: remaining documentation (frontend/deploy/ops docs, ADR 0009, release-gates.md
-  update, README update, phase-5-report.md). API/security docs are already done
+- §10: remaining documentation (frontend/deploy docs, ADR 0009, release-gates.md
+  update, README update, phase-5-report.md). API/security/ops docs are already done
   (above).
 - §11: run and verify.
 - §12: final commit/backup.
@@ -340,13 +397,13 @@ until the user explicitly provides a remote URL and confirms the policy override
 
 ## Exact next step
 
-§7 is complete and committed. Move to §8: observability (structured JSON logs with
-request ID + tenant ID, no secrets/doc text; a Prometheus metrics endpoint;
-health/readiness checks -- already real via `/healthz`/`/readyz`), backup (pg_dump +
-Garage bucket sync, then a REAL restore drill into a fresh local stack with row
-counts/object hashes verified and printed), and runbooks under `docs/ops/`
-(startup/shutdown, secret rotation, key revocation, restore, incident response,
-rate-limit tuning, webhook failures).
+§8 is complete; its backup/restore-drill/runbooks commit is still pending (the
+observability piece is committed as `24dba64`). Move to §9: the full security test
+suite (authz matrix, cross-tenant isolation via IDOR attempts, auth tests, signed-
+URL expiry, webhook SSRF/signature tests, rate-limit 429 tests, input-
+validation/error-model tests, prompt-injection-separation proof reusing Phase 4's
+adversarial documents, security-headers presence, optional ZAP baseline, full
+Playwright e2e suite against a live backend).
 Revisit the §4 accessibility/browser-verification gap above if the Chrome extension
 becomes available.
 
