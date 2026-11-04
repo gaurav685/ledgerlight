@@ -12,6 +12,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from functools import lru_cache
 
+import structlog
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
@@ -125,6 +126,12 @@ def get_identity(request: Request, db: DbSession = Depends(get_db)) -> Identity:
     identity = _resolve_identity(request, db)
     with tenant_scope(db, identity.tenant_id):
         pass
+    # Phase 5 §8: binds the real tenant_id into every subsequent real
+    # structured log line for this request (the request_id is already
+    # bound earlier, by app.py's own request-ID middleware, before
+    # identity is even known) -- never anything else from `identity`
+    # (no email, no raw token) is ever logged.
+    structlog.contextvars.bind_contextvars(tenant_id=str(identity.tenant_id))
     return identity
 
 
