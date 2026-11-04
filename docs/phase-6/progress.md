@@ -11,7 +11,12 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 ## Sections
 
 - §0 Ground rules -- standing, applies throughout.
-- §1 Preflight: consolidated evidence file -- NOT STARTED.
+- §1 Preflight: consolidated evidence file -- **COMPLETE** (2026-11-05).
+  Green baseline (408 default + 322 integration, one sequential pass, no
+  memory kill -- resolves the open Phase 5 full-batch gate).
+  `docs/phase-6/orchestrator-evidence.md` built with verbatim Phase 2-5
+  evidence. All 5 stop conditions checked explicitly: none triggered.
+  Commit: `66f7020`.
 - §2 Low-memory stack profile + deferred e2e/ZAP runs -- NOT STARTED.
 - §3 End-to-end pipeline test (ingestion -> dossier) -- NOT STARTED.
 - §4 Regression suite -- NOT STARTED.
@@ -33,10 +38,12 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 
 ## Exact next step
 
-§1: run the full backend/frontend checks for a green baseline, then build
-`docs/phase-6/orchestrator-evidence.md` with verbatim Phase 2-5 evidence per
-the brief's own list. Check the 5 real stop conditions before continuing
-past §1.
+§2: measure real per-service memory use (idle + under e2e load), build the
+`e2e-lite` Compose profile/override, run the full Playwright e2e suite
+against it, then the ZAP baseline. Check real memory headroom before each
+heavy step given this session's own established, repeated OOM-kill history
+(not from this project's Docker stack -- from the user's other running
+applications).
 
 ## Known starting context (from Phase 5)
 
