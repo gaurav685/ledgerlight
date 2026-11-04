@@ -476,25 +476,35 @@ machine) -- this round touched zero production code, only new test files, so
 the risk is low and they were green earlier this same phase. Commits:
 `58273a2` (authz matrix), `013d852` (IDOR + security controls).
 
+`tests/test_api_documents.py` gained a real signed-URL expiry test (an
+actually-expired presigned URL is genuinely refused by Garage, not just that
+the issued TTL is capped). `tests/test_api_webhooks.py` gained two real
+DNS-rebinding tests (the brief's own named SSRF case) -- one against
+`validate_webhook_url` directly, one through the full `deliver_webhook` retry
+loop, proving re-resolution happens fresh on every attempt.
+`tests/test_prompt_injection_separation.py` reuses Phase 4's own adversarial-
+document shape through the real API (not just at the agent level): a real
+investigation over `<script>`+instruction-injected text completes normally,
+no claim or exported line treats it as an unattributed instruction, and a
+repo-wide grep confirms the frontend never uses `dangerouslySetInnerHTML`.
+406 default + 24 of these new/affected tests individually confirmed pass.
+Commit: `29ffcb7`.
+
 ## Exact next step
 
-Continue §9 with the remaining required security tests: auth (API key
-hash-only storage/revocation/scope enforcement already covered by
-`test_api_api_keys.py`; CSRF rejection and lockout/backoff already covered by
-`test_api_app.py`/`test_api_auth.py` -- nothing further needed there), signed-
-URL expiry (confirm an ACTUALLY-expired presigned URL is rejected, not just
-that the issued TTL is capped at 300s -- not yet proven), webhook signature-
-verification vector and the DNS-rebinding re-resolution-at-send-time case
-specifically (loopback/private/metadata already covered;
-`deliver_webhook`'s own re-validation-per-attempt exists but has no dedicated
-rebinding-scenario test), prompt-injection separation (reuse Phase 4's
-adversarial documents -- proves rendering escapes script/HTML and an
-investigation over such a document changes no agent behaviour), an optional
-ZAP baseline against the local stack, and the full Playwright e2e suite
-against the live backend (distinct from §7's minimal build-smoke suite):
-login, search, overview with as_of, timeline, evidence view with highlighted
-span, start an investigation, view the dossier, review a task, create a
-watchlist and receive an alert, plus a cross-tenant attempt that is denied.
+Remaining §9 items: an optional ZAP baseline against the local stack, and the
+full Playwright e2e suite against the live backend (distinct from §7's
+minimal build-smoke suite): login, search, overview with as_of, timeline,
+evidence view with highlighted span, start an investigation, view the
+dossier, review a task, create a watchlist and receive an alert, plus a
+cross-tenant attempt that is denied. Both need the full real stack
+(postgres/garage/api/worker/web) up via `docker compose` -- check real host
+memory headroom before attempting either, given this session's own repeated
+real memory-pressure kills from unrelated running applications; `scripts/
+backup.py` first if anything destructive is risked. Every other §9 line item
+(authz matrix, cross-tenant IDOR, auth, signed URLs, webhook SSRF/signature,
+rate limiting, input validation/error model, prompt-injection separation,
+security headers) is now done.
 
 Revisit the §4 accessibility/browser-verification gap above if the Chrome
 extension becomes available.
