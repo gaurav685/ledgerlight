@@ -285,9 +285,47 @@ stated plainly in `infra/aws/README.md`.
 
 406 default tests still pass (no Python/TS code touched). Commit: `b73343a`.
 
+## §7 complete (2026-11-04)
+
+Replaced the earlier single-job `.github/workflows/ci.yml` with 5 real workflows
+(`backend.yml`, `frontend.yml`, `security.yml`, `build.yml`, `deploy.yml`), every one
+validated via the real, official `rhysd/actionlint` Docker image (zero findings) and
+by running every real job's own commands directly on this machine. `backend.yml`
+runs against a real Postgres service container (268 real integration tests pass);
+`frontend.yml` added a real, minimal Playwright smoke suite
+(`frontend/e2e/smoke.spec.ts`) against a real `next start` build.
+
+**Found and fixed two real, significant issues** while building `security.yml`, not
+just describing it: (1) `pip-audit` found 43 vulnerabilities across 5 packages --
+bumped `cryptography`/`fastapi` (pulling a real `starlette` bump), re-tested fully,
+cut to 24/3; the remainder needs real major-version jumps with undemonstrated
+compatibility risk, triaged and documented rather than forced. (2) a real `trivy
+image` scan found both Dockerfiles' pinned base images carrying real, already-
+Debian-patched CVEs (92 OS findings/9 CRITICAL in the api image, 50/6 CRITICAL in the
+web image, plus a real CRITICAL `tar` CVE bundled inside npm itself) -- added a real
+`apt-get upgrade` to both Dockerfiles and pinned `npm@11.21.1` in
+`frontend/Dockerfile` (`npm@latest` needs a newer node than this image pins -- a real
+`EBADENGINE` failure, confirmed directly). Real before/after: api image 92→38 (9→2
+CRITICAL); web image 50→33 OS + 13→3 language findings (6→1, 1→0 CRITICAL). Every
+remaining CRITICAL in both images is the same real `zlib1g` CVE, `will_not_fix` by
+Debian upstream -- genuinely not fixable here. Both rebuilt images re-verified
+functional afterward.
+
+`act` was not attempted -- this session hit three real, confirmed host-memory-
+pressure failures during Docker builds already (two Docker build kills, one full
+Docker Desktop crash requiring a WSL shutdown + restart to recover); running act's
+own full GitHub-runner-equivalent containers was a real, avoidable risk of a fourth
+crash, not attempted given the brief's own explicit "if feasible" qualifier.
+
+`docs/release/release-gates.md` gained a new standing gate: every one of these 5
+workflows is UNVERIFIED on GitHub's own hosted runners until a first real push,
+deferred per this project's own standing GIT POLICY (commit locally only, no remote)
+until the user explicitly provides a remote URL and confirms the policy override.
+
+406 default + 268 integration tests pass. Commit: `594444d`.
+
 ## Not yet started
 
-- §7: CI/CD workflows (validated locally only -- no GitHub remote).
 - §8: observability, backup/restore, runbooks.
 - §9: security tests (authz matrix, cross-tenant isolation, auth, signed URLs,
   webhooks, rate limiting, input validation, prompt-injection separation, security
@@ -302,12 +340,13 @@ stated plainly in `infra/aws/README.md`.
 
 ## Exact next step
 
-§6 is complete and committed. Move to §7: GitHub Actions workflows (backend
-ruff/mypy/pytest+service containers; frontend eslint/tsc/unit/Playwright smoke;
-security pip-audit/pnpm audit/gitleaks/trivy; build images; deploy smoke-test gated
-behind AWS creds, disabled) -- validate with `actionlint`, run every job's own
-commands locally, try `act` if feasible without sudo, state GitHub-hosted execution
-UNVERIFIED until a first real push (no remote exists -- GIT POLICY is local-only).
+§7 is complete and committed. Move to §8: observability (structured JSON logs with
+request ID + tenant ID, no secrets/doc text; a Prometheus metrics endpoint;
+health/readiness checks -- already real via `/healthz`/`/readyz`), backup (pg_dump +
+Garage bucket sync, then a REAL restore drill into a fresh local stack with row
+counts/object hashes verified and printed), and runbooks under `docs/ops/`
+(startup/shutdown, secret rotation, key revocation, restore, incident response,
+rate-limit tuning, webhook failures).
 Revisit the §4 accessibility/browser-verification gap above if the Chrome extension
 becomes available.
 
