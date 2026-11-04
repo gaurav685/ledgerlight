@@ -1,0 +1,85 @@
+name: Security
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python-deps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: pip-audit against the real locked dependency set
+        run: |
+          uv pip install pip-audit
+          uv run pip-audit --strict || uv run pip-audit
+
+  frontend-deps:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm audit against the real locked dependency set
+        run: pnpm audit --audit-level=high
+
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: gitleaks (full real commit history)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  container-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the real api image
+        run: docker build -t ledgerlight-api:ci -f Dockerfile .
+
+      - name: Build the real web image
+        run: docker build -t ledgerlight-web:ci -f frontend/Dockerfile frontend
+
+      - name: Trivy scan -- api image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ledgerlight-api:ci
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+
+      - name: Trivy scan -- web image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ledgerlight-web:ci
+          severity: CRITICAL,HIGH
+          exit-code: "1"

@@ -3,6 +3,22 @@
 # specific Node LTS patch release, not a floating "node:24" tag.
 FROM node:24.14.0-bookworm-slim@sha256:d8e448a56fc63242f70026718378bd4b00f8c82e78d20eefb199224a4d8e33d8 AS base
 
+# Phase 5 §7: a real trivy image scan found several real, already-
+# patched Debian security updates not yet baked into this base image
+# (libgnutls30 CVE-2026-33845 CRITICAL, perl-base CVE-2026-13221
+# CRITICAL, among others), plus a real CRITICAL CVE-2026-59873 in
+# `tar` bundled inside npm's own vendored dependencies (confirmed
+# directly: `/usr/local/lib/node_modules/npm/node_modules/tar`, never
+# invoked at this image's own runtime -- only `next start` runs --
+# but still present in the image filesystem npm itself ships).
+# `npm@latest` (12.2.1) requires node >=24.15.0/26 -- one patch above
+# this image's own pinned 24.14.0 (confirmed directly, a real
+# EBADENGINE failure) -- pinned to 11.21.1 instead, which supports
+# node >=22.9.0 and bundles a real patched `tar@^7.5.22`. See
+# docs/phase-5/evidence/trivy-*.log for the real before/after scan.
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/* \
+    && npm install -g npm@11.21.1
+
 FROM base AS deps
 WORKDIR /app
 RUN corepack enable

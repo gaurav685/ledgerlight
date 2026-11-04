@@ -177,3 +177,34 @@ decisions, plus a real `qc-seed`-seeded batch reviewed by that same human so a r
 rate per flaw type can be reported -- both explicitly required before release, per the
 brief's own instruction, added here as a standing release gate rather than left only in a
 Phase 4 evaluation doc.
+
+## Gap: GitHub Actions workflows have never run on GitHub -- UNVERIFIED until a first real push
+
+**Status:** open, by design. **Reason:** this project's own standing GIT POLICY (every
+phase since Phase 0) is commit locally only, no remote, no push -- `git remote -v` has
+been empty throughout. The five real workflows under `.github/workflows/`
+(`backend.yml`, `frontend.yml`, `security.yml`, `build.yml`, `deploy.yml`) were validated
+the only way possible without a remote: `actionlint` (via the real, official
+`rhysd/actionlint` Docker image -- clean, zero findings) and running every real job's own
+commands directly on this machine (lint/typecheck/test/migrate for backend; lint/
+typecheck/build/Playwright smoke for frontend; `pip-audit`/`pnpm audit`/`gitleaks`/`trivy`
+for security; real `docker build` for both images) -- all passing, evidence in
+`docs/phase-5/evidence/`.
+
+**What's missing:** real execution on GitHub's own hosted runners. `actionlint` and a
+local command run both verify syntax and real command correctness, but neither proves a
+workflow behaves identically under GitHub's own runner environment, its own real
+`GITHUB_TOKEN` permissions, its own real service-container networking, or its own real
+`gitleaks-action`/`trivy-action`/`docker/build-push-action` marketplace-action versions
+pulling real images at real run time.
+
+**What this blocks:** calling any of these five workflows "CI-verified" in the sense of
+"has actually run green on GitHub" -- it has not, and cannot, without a real push to a
+real GitHub remote, which this project's own GIT POLICY defers until the user explicitly
+provides a remote URL and confirms the policy override (tracked separately in
+`docs/phase-5/progress.md`'s own "Pending items carried over" section).
+
+**Closing this gap requires:** the user supplying a real remote URL and explicitly
+confirming the GIT POLICY override, a real push, and then a real, green run of every one
+of these five workflows observed directly in GitHub's own Actions tab -- not assumed from
+local validation alone.

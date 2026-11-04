@@ -1,0 +1,48 @@
+name: Deploy (smoke test)
+
+# Phase 5 §7: a real, manually-triggerable smoke-test deploy workflow,
+# gated behind real AWS credentials existing as repository secrets --
+# which they do not, in this environment. DISABLED: there is no AWS
+# account, no ECR repository, no applied Terraform (infra/aws/ is
+# validated, never applied -- see docs/deploy/aws-architecture.md and
+# infra/aws/README.md). This workflow exists so the real gate logic
+# is reviewable now, not written for the first time under pressure
+# once a real AWS account exists.
+on:
+  workflow_dispatch:
+
+jobs:
+  check-credentials-configured:
+    runs-on: ubuntu-latest
+    outputs:
+      has_credentials: ${{ steps.check.outputs.has_credentials }}
+    steps:
+      - name: Check for real AWS credentials
+        id: check
+        run: |
+          if [ -n "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
+            echo "has_credentials=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_credentials=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No real AWS_ACCESS_KEY_ID secret configured -- this workflow is a disabled placeholder (Phase 5 §7). See infra/aws/README.md before ever enabling it."
+          fi
+
+  deploy-smoke-test:
+    needs: check-credentials-configured
+    if: needs.check-credentials-configured.outputs.has_credentials == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure real AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Real smoke test against the real deployed ALB
+        run: |
+          curl -sf "https://${{ secrets.DEPLOYED_ALB_DNS_NAME }}/healthz"
+          curl -sf "https://${{ secrets.DEPLOYED_ALB_DNS_NAME }}/readyz"

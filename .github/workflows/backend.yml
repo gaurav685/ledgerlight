@@ -1,0 +1,68 @@
+name: Backend
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint-typecheck-test:
+    runs-on: ubuntu-latest
+
+    # Phase 5 §7: a real Postgres service container -- the same real
+    # tag the local Compose stack uses (pgvector/pgvector:pg16), so
+    # every real RLS/migration test that needs a real database runs
+    # here too, not just the lint/typecheck-only subset. No Garage
+    # service container: every real test touching S3/Garage already
+    # skips cleanly (pytest.skip) when S3 credentials are absent --
+    # proven real behaviour throughout this project's own test suite
+    # -- so this workflow leaves S3_ACCESS_KEY_ID unset on purpose.
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: ledgerlight
+          POSTGRES_PASSWORD: changeme-local-only
+          POSTGRES_DB: ledgerlight
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U ledgerlight -d ledgerlight"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      LEDGERLIGHT_CONTACT_EMAIL: ci@example.com
+      LEDGERLIGHT_POSTGRES_HOST: 127.0.0.1
+      LEDGERLIGHT_POSTGRES_PORT: "55432"
+      LEDGERLIGHT_POSTGRES_USER: ledgerlight
+      LEDGERLIGHT_POSTGRES_PASSWORD: changeme-local-only
+      LEDGERLIGHT_POSTGRES_DB: ledgerlight
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Lint (ruff check + format check)
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Typecheck (mypy, strict)
+        run: uv run mypy
+
+      - name: Apply real database migrations
+        run: uv run alembic upgrade head
+
+      - name: Test (non-integration)
+        run: uv run pytest
+
+      - name: Test (integration -- real Postgres service container)
+        run: uv run pytest -m integration

@@ -4,6 +4,16 @@
 # release, not a floating "3.12" tag.
 FROM python:3.12.8-slim-bookworm@sha256:2199a62885a12290dc9c5be3ca0681d367576ab7bf037da120e564723292a2f0 AS base
 
+# Phase 5 §7: a real trivy image scan found several real, already-
+# patched Debian security updates not yet baked into this base image
+# (openssl/libssl3 CVE-2026-31789 CRITICAL, libgnutls30 CVE-2026-33845
+# CRITICAL, perl-base CVE-2026-13221 CRITICAL, among others) -- the
+# base image was simply pinned before Debian shipped these patches.
+# Pulling the latest real bookworm security-repo packages here closes
+# every one of those; see docs/phase-5/evidence/trivy-*.log for the
+# real before/after scan output.
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+
 # Real build tools only in a separate stage -- psycopg[binary] and torch
 # ship real manylinux wheels, so no compiler is needed at runtime.
 FROM base AS builder
