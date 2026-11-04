@@ -26,6 +26,7 @@ from ledgerlight.agent.models import Dossier, Investigation
 from ledgerlight.agent.state_machine import run_investigation
 from ledgerlight.api import rbac
 from ledgerlight.api.deps import Identity, get_db, require_csrf, require_permission
+from ledgerlight.api.metrics import JOB_OUTCOMES
 from ledgerlight.api.schemas import DossierOut, InvestigationCreateRequest, InvestigationOut
 from ledgerlight.api.tenancy import tenant_scope
 from ledgerlight.config.settings import load_settings
@@ -58,8 +59,10 @@ def _run_investigation_in_background(
                 requested_by=f"api:{tenant_id}",
                 resume_investigation_id=investigation_id,
             )
+        JOB_OUTCOMES.labels(job="investigation", outcome="success").inc()
     except Exception:
         logger.exception("background_investigation_failed", investigation_id=str(investigation_id))
+        JOB_OUTCOMES.labels(job="investigation", outcome="failed").inc()
     finally:
         session.close()
 

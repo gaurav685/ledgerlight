@@ -31,8 +31,11 @@ from sqlalchemy.orm import Session  # noqa: E402
 
 from ledgerlight.api import webhooks as webhooks_module  # noqa: E402
 from ledgerlight.api.models import Alert  # noqa: E402
+from ledgerlight.common.logging import configure_logging, get_logger  # noqa: E402
 from ledgerlight.config.settings import Settings, load_settings  # noqa: E402
 from ledgerlight.db.session import make_session_factory  # noqa: E402
+
+logger = get_logger(__name__)
 
 
 def _already_alerted_fact_ids(session: Session, alert_rule_id: uuid.UUID, key: str) -> set[str]:
@@ -176,6 +179,7 @@ def _deliver_to_tenant_webhooks(
 
 
 def main() -> int:
+    configure_logging()
     settings = load_settings()
     session = make_session_factory(settings)()
     created = 0
@@ -210,9 +214,12 @@ def main() -> int:
                 _deliver_to_tenant_webhooks(settings, session, tenant_id, alert)
                 created += 1
         session.commit()
+    except Exception:
+        logger.exception("job_outcome", job="alert_generation", outcome="failed")
+        raise
     finally:
         session.close()
-    print(f"generate_alerts: created {created} real new alert(s)")
+    logger.info("job_outcome", job="alert_generation", outcome="success", alerts_created=created)
     return 0
 
 

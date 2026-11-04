@@ -167,6 +167,14 @@ def client() -> TestClient:
 def test_create_investigation_runs_to_a_real_finalised_dossier(
     client: TestClient, real_session: Session
 ) -> None:
+    metric_line = 'ledgerlight_job_outcomes_total{job="investigation",outcome="success"}'
+    before_text = client.get("/metrics").text
+    before = sum(
+        float(line.rsplit(" ", 1)[1])
+        for line in before_text.splitlines()
+        if line.startswith(metric_line)
+    )
+
     _tenant, csrf_token = _login(client, real_session)
     company = _make_company(real_session, f"Dossier Target Co {uuid.uuid4().hex[:8]}")
 
@@ -177,6 +185,14 @@ def test_create_investigation_runs_to_a_real_finalised_dossier(
     )
     assert create_response.status_code == 202, create_response.text
     investigation_id = create_response.json()["id"]
+
+    after_text = client.get("/metrics").text
+    after = sum(
+        float(line.rsplit(" ", 1)[1])
+        for line in after_text.splitlines()
+        if line.startswith(metric_line)
+    )
+    assert after == before + 1
 
     status_response = client.get(f"/v1/dossiers/investigations/{investigation_id}")
     assert status_response.status_code == 200

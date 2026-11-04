@@ -22,6 +22,11 @@ REQUEST_DURATION_SECONDS = Histogram(
     "Real HTTP request duration in seconds",
     ["method", "route"],
 )
+JOB_OUTCOMES = Counter(
+    "ledgerlight_job_outcomes_total",
+    "Real outcomes of background jobs run inside this process",
+    ["job", "outcome"],
+)
 
 
 def _real_route_template(request: Request) -> str:
