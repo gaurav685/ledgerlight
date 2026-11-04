@@ -1,17 +1,13 @@
 import type { NextConfig } from "next";
 
-// Phase 5 §4: every /api/* request the browser makes is proxied,
-// server-side, straight through to the real FastAPI backend -- same
-// origin from the browser's own point of view, so the real session
-// cookie Set by /api/auth/login is scoped to this app's own origin
-// and is sent back automatically on every later /api/* request, with
-// no CORS configuration needed anywhere.
-const BACKEND_ORIGIN = process.env.LEDGERLIGHT_API_ORIGIN ?? "http://127.0.0.1:8000";
-
+// Phase 5 §5: real security headers -- these are baked into
+// routes-manifest.json at `next build` time (confirmed directly), but
+// they never depend on anything runtime-environment-specific, so
+// that's fine. The API proxy itself is NOT done here -- see
+// app/api/[...path]/route.ts's own docstring for why `rewrites()`
+// (which has the identical build-time-freezing problem) was wrong for
+// that job specifically.
 const nextConfig: NextConfig = {
-  async rewrites() {
-    return [{ source: "/api/:path*", destination: `${BACKEND_ORIGIN}/v1/:path*` }];
-  },
   async headers() {
     return [
       {
