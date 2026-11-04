@@ -201,11 +201,64 @@ fix), `8cc95ab` (scaffold + first 4 pages), `2ccdb2d` (list_investigations),
 `b24f1c0` (dossiers pages), `0d5f4bf` (the CSRF fix), `123713e` (review/watchlists/
 admin pages).
 
+## §5 complete (2026-11-04)
+
+`Dockerfile` (real multi-stage build, api/worker share it): uv-synced dependencies in
+a builder stage, a real non-root `ledgerlight` user (uid/gid 1000) in the final
+stage, Python base image pinned by digest (resolved via a real `docker pull`, never
+guessed). **Found and fixed a real, significant gap**: `uv.lock` was stale --
+fastapi/uvicorn/argon2-cffi/cryptography (all added to `pyproject.toml` back in §2/§3)
+were never in the committed lock file at all, so `uv sync --frozen` inside the image
+silently installed nothing for them -- confirmed directly: `python -c "import
+ledgerlight.api.app"` failed with `ModuleNotFoundError: No module named 'fastapi'`
+inside the built container. Regenerated the lock, rebuilt, confirmed the import
+succeeds.
+
+`infra/docker-compose.yml`: real `api`/`worker`/`web` services added alongside the
+existing `postgres`/`garage`, all on the same real Compose network, real
+service-name DNS (never `127.0.0.1`, which only reaches the host's own loopback from
+inside a container).
+
+**Found and fixed a real Next.js architectural bug** while verifying the web
+container against a real api container: `next.config.ts`'s own `rewrites()` return
+value is frozen into `routes-manifest.json` at `next build` time (confirmed
+directly) -- a proxy destination read from `process.env.LEDGERLIGHT_API_ORIGIN`
+there would be baked in at image-build time, unable to pick up a different real
+value from `docker run -e`/Compose's own per-environment config at container start,
+exactly the scenario this deployment needs. Replaced with a real Route Handler
+(`frontend/app/api/[...path]/route.ts`) whose function body runs fresh per request;
+proven directly -- the same built image, pointed at two differently-named api
+containers via `-e` at container start (no rebuild), reached the correct one both
+times.
+
+`scripts/dev.ps1`: the real, single PowerShell bring-up command this Windows host
+needs -- builds+starts every service, waits for real health checks, applies real
+migrations, seeds real TEST tenants, prints every real service's URL.
+
+`scripts/seed_test_tenants.py`: two real TEST tenants, one real user per real role
+each, real argon2id-hashed passwords, idempotent (verified directly -- a second run
+updates rather than duplicates). Used for a full real end-to-end verification:
+login through the real containerized web+api stack with a real seeded
+`tenant_admin`, returning a real session cookie + CSRF token + identity.
+
+`.env.example` updated for every new real setting this phase added
+(`LEDGERLIGHT_ENVIRONMENT`, `APP_DB_USER`/`PASSWORD`, `SESSION_SECRET_KEY`,
+`WEBHOOK_SECRET_ENCRYPTION_KEY`, `COOKIE_SECURE`, `API_ORIGIN`).
+
+**Both Docker images were built AND run** against the real local Postgres/Garage
+stack (not just `docker build` succeeding) -- real health checks, a real DB
+round-trip, a real cross-container login. Test images/containers removed after
+verification; nothing left running beyond the project's own persistent
+postgres/garage containers (which crashed along with Docker Desktop itself under
+this session's own earlier memory pressure and were restarted -- a real environment
+hiccup, not a product bug; confirmed healthy again before proceeding).
+
+406 default + 268 integration tests pass. Commits: `ef2ca9a` (fail-fast weak-secret
+check), `ca7be95` (Dockerfile/compose/dev.ps1/seed), `72cdac2` (frontend Dockerfile +
+the real runtime-correct proxy fix).
+
 ## Not yet started
 
-- §4 polish: real accessibility audit, a real browser visual/interaction pass
-  (blocked this session on the Chrome extension not being connected).
-- §5: Docker Compose, config, secrets, seed command.
 - §6: production deployment config (AWS architecture doc, Terraform -- not applied).
 - §7: CI/CD workflows (validated locally only -- no GitHub remote).
 - §8: observability, backup/restore, runbooks.
@@ -222,12 +275,13 @@ admin pages).
 
 ## Exact next step
 
-§4's core page set is complete and committed. Move to §5: Docker Compose additions
-(api/worker/web services, healthchecks, localhost-only ports, non-root containers,
-pinned images, a single PowerShell bring-up command), Pydantic settings fail-fast
-weak-secret check outside dev mode, `.env.example` update, the seed command for TEST
-tenants/users. Revisit the §4 accessibility/browser-verification gap above if the
-Chrome extension becomes available.
+§5 is complete and committed. Move to §6: production deployment config --
+`docs/deploy/aws-architecture.md` (ECS Fargate api/web/worker, RDS Postgres+pgvector,
+S3, Secrets Manager, ALB+ACM TLS, CloudWatch, private subnets, least-privilege IAM,
+cost notes) and Terraform under `infra/aws/`, validated via `terraform fmt`/
+`validate` (+ `tflint` if feasible) but NOT applied (no AWS credentials) -- state
+this plainly in the final report. Revisit the §4 accessibility/browser-verification
+gap above if the Chrome extension becomes available.
 
 ## Pending items carried over from the end of Phase 4 (not part of this brief, flagged
 so they are not lost)
