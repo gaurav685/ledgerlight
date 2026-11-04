@@ -509,15 +509,35 @@ Every other §9 line item (authz matrix, cross-tenant IDOR, auth, signed
 URLs, webhook SSRF/signature, rate limiting, input validation/error model,
 prompt-injection separation, security headers) is done and committed.
 
+## §10 complete (2026-11-05)
+
+README phase status corrected (Phase 4 was stale "in progress"/"(once
+written)" even though `docs/phase-4/phase-4-report.md` already existed --
+fixed while touching this section) and a real Phase 5 status paragraph
+added. `docs/release/release-gates.md` gained the brief's two required
+standing gates ("GitHub Actions runs verified green after the first push",
+tightened onto the existing gap; "Terraform plan reviewed before any apply",
+a new gap) plus the ZAP/Playwright e2e deferral as its own named gap.
+`docs/adr/0009-frontend.md` (5 real decisions: Client-Component-only pages,
+the Route Handler proxy, CSRF-in-sessionStorage, duplicated security
+headers, corepack-to-a-user-writable-path). `docs/frontend/architecture.md`
+(request path, auth flow, every real page's backend calls, what's
+deliberately not built yet). `docs/deploy/local-setup-windows.md`
+(first-time setup, distinct from `docs/ops/startup-shutdown.md`'s
+day-to-day; 3 real Windows-specific gotchas this project actually hit).
+Commits: `183b6f7`, `54b460f`.
+
 ## Exact next step
 
-Move to §10: remaining documentation --
-`docs/frontend/architecture.md`, `docs/deploy/local-setup-windows.md`,
-`docs/adr/0009-frontend.md`, README phase-status update, plus the
-`docs/release/release-gates.md` additions this phase still owes (the §9
-deferral above should become a real, named gate there too). API/security/ops
-docs are already done (§3/§9/§8). `docs/phase-5/phase-5-report.md` (the final
-report itself) is §14, not here.
+Move to §11: run and verify, recording raw output for each -- backend lint/
+typecheck/tests; frontend lint/tsc/tests; migrations from empty; RLS tests;
+the authorisation matrix; the security tests; pip-audit/pnpm audit/trivy;
+actionlint plus per-job local runs; terraform fmt/validate; the restore
+drill; `pre-commit run --all-files`; a full-history gitleaks scan. Playwright
+e2e and the ZAP baseline stay deferred (see the release-gates.md entry
+above) unless real memory headroom improves. Screenshots/traces of key pages
+under `docs/phase-5/evidence/` depend on the deferred Playwright run, so
+also deferred with it.
 
 Revisit the §4 accessibility/browser-verification gap above if the Chrome
 extension becomes available.
