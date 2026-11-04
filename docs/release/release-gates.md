@@ -208,3 +208,62 @@ provides a remote URL and confirms the policy override (tracked separately in
 confirming the GIT POLICY override, a real push, and then a real, green run of every one
 of these five workflows observed directly in GitHub's own Actions tab -- not assumed from
 local validation alone.
+
+**Standing gate:** GitHub Actions runs must be verified green, directly in GitHub's own
+Actions tab, after the first real push -- never assumed from `actionlint` or a local
+command run, however thorough. This gate stays open until that first push happens.
+
+## Gap: Terraform for the real AWS deployment has never been applied
+
+**Status:** open, by design. **Reason:** no AWS credentials exist in this environment,
+and applying infrastructure against a real AWS account was explicitly out of this
+phase's own scope (`docs/phase-5/brief.md` §6: "not applied"). `infra/aws/` was
+validated the only way possible without credentials: `terraform fmt`/`init
+-backend=false`/`validate` (via the real, official `hashicorp/terraform:1.9` Docker
+image -- all clean) and `tflint` (via `ghcr.io/terraform-linters/tflint:latest` --
+found and fixed one real deprecated-interpolation-only-expression issue). Evidence in
+`docs/phase-5/evidence/terraform-validate.log`.
+
+**What's missing:** a real `terraform plan` against a real AWS account. `validate`
+confirms the configuration is internally consistent (types, references, required
+arguments); it proves nothing about what a real plan would actually propose against
+real existing AWS state, real IAM permissions, or real provider-API behaviour at apply
+time.
+
+**What this blocks:** calling this Terraform "deployment-ready" in the sense of "will
+apply cleanly" -- that has never been checked, and cannot be, without real AWS
+credentials.
+
+**Standing gate:** a real `terraform plan` must be generated and reviewed by a human,
+line by line, BEFORE any `terraform apply` is ever run against a real AWS account --
+never apply directly from `validate`-clean configuration alone, and never apply a plan
+nobody has actually read. This gate stays open until a real account, credentials, and a
+reviewed plan all exist together.
+
+**Closing this gap requires:** real AWS credentials, a real `terraform plan` run against
+them, a human reviewing that plan's full real diff, and only then a real `terraform
+apply` -- each step distinct, none skipped.
+
+## Gap: an optional OWASP ZAP baseline scan and the full Playwright e2e suite were not run this phase
+
+**Status:** open, deferred by explicit user choice. **Reason:** both require the full
+real stack (postgres/garage/api/worker/web) up via `docker compose`, which means
+rebuilding the `api`/`web` images from scratch (removed after §5/§7's own verification)
+plus running ZAP's own container and a real Playwright browser at the same time. This
+session hit repeated, real host memory-pressure kills (confirmed via
+`Get-CimInstance Win32_OperatingSystem`, as low as ~0.8-2.2GB free) from unrelated
+running applications on this machine, not from the Docker stack itself. Asked the user
+directly via `AskUserQuestion` rather than attempting a build likely to crash again;
+the user chose to defer. Every other §9 security-test requirement (authorisation
+matrix, cross-tenant IDOR, auth/session fixation, rate limiting, signed-URL expiry,
+webhook SSRF/DNS-rebinding, prompt-injection separation, security headers) is done.
+
+**What's missing:** a real ZAP baseline scan against the live local stack, and the full
+Playwright e2e suite (login, search, overview with `as_of`, timeline, evidence view,
+investigation creation, dossier view, review decision, watchlist/alert, and a denied
+cross-tenant attempt) against a live backend -- `frontend/e2e/smoke.spec.ts` (§7) only
+covers a minimal production-build smoke test, not this full flow.
+
+**Closing this gap requires:** real host memory headroom (confirmed before attempting),
+then rebuilding the `api`/`web` images, bringing up the full stack, and running both
+tools against it.
