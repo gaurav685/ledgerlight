@@ -565,16 +565,22 @@ in §8/§9), on top of everything already recorded. Pausing further
 Docker/pytest-heavy work here rather than continuing to push against a
 worsening resource constraint; flagged to the user directly.
 
+## §12 complete (2026-11-05)
+
+`git log -n 10 --format='%H%n%an <%ae>%n%B---'` re-verified: every commit
+`gaurav685 <gaurav685@gmail.com>`, zero AI attribution. 57 real commits total
+this phase (`d1daf12..HEAD`). `git bundle create
+../ledgerlight-backups/ledgerlight-phase-5.bundle --all` refreshed and
+`git bundle verify`'d clean (8 refs, "the bundle records a complete
+history").
+
 ## Exact next step
 
 Screenshots/traces of key pages under `docs/phase-5/evidence/` depend on the
 deferred Playwright e2e run against a live backend, so stay deferred with
-it (see release-gates.md). Once real memory headroom is confirmed better:
-finish §11's remaining re-runs if desired (not strictly required -- the
-existing §6/§7/§8 evidence for actionlint/terraform/restore-drill is still
-valid), then move to §12 (final commit -- already effectively continuous
-this phase; §12 is really about confirming the backup bundle is refreshed)
-§13 (exit-gate checklist) and §14 (final report).
+it (see release-gates.md). Move to §13 (exit-gate checklist) and §14 (final
+report, `docs/phase-5/phase-5-report.md`) -- both doc-writing, low memory
+risk.
 
 Revisit the §4 accessibility/browser-verification gap above if the Chrome
 extension becomes available.
