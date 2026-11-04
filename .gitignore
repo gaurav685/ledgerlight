@@ -69,6 +69,15 @@ node_modules/
 data/indexes/
 data/models/
 
+# --- Phase 5 §6: Terraform local state/provider cache (infra/aws/ is
+#     validate-only in this phase -- never applied; .terraform.lock.hcl
+#     IS committed, per Terraform's own convention, everything else
+#     under .terraform/ and every real *.tfstate* file are not) ---
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+
 # --- OS / editor ---
 .DS_Store
 Thumbs.db
