@@ -257,9 +257,36 @@ hiccup, not a product bug; confirmed healthy again before proceeding).
 check), `ca7be95` (Dockerfile/compose/dev.ps1/seed), `72cdac2` (frontend Dockerfile +
 the real runtime-correct proxy fix).
 
+## §6 complete (2026-11-04)
+
+`docs/deploy/aws-architecture.md`: the real AWS architecture -- ECS Fargate for
+api/worker/web, RDS Postgres+pgvector (a real parameter group, no custom image),
+S3 (replacing the local Garage container -- a real config change, not a code
+change, since `ledgerlight.storage.s3_store.ObjectStore` already speaks plain
+S3-compatible API), Secrets Manager, ALB+ACM TLS, CloudWatch, private subnets,
+least-privilege IAM, rough cost notes, disclosed limitations.
+
+`infra/aws/`: real Terraform modeling every piece of it -- network, security
+groups, RDS, S3, Secrets Manager (every secret created EMPTY, populated
+out-of-band -- writing a real value via Terraform would just move the plaintext
+into `.tfstate`), IAM (least-privilege; `web`'s own task role gets zero AWS
+permissions), ECS, ALB.
+
+No `terraform` binary is installed on this host -- ran the real, official
+`hashicorp/terraform:1.9` Docker image directly. `fmt`/`init`/`validate` all ran
+clean; `tflint` (also via its own official Docker image, since the brief allowed
+it "if feasible") found and this phase fixed one real issue (a deprecated
+interpolation-only expression). Full raw output in
+`docs/phase-5/evidence/terraform-validate.log`. **`terraform plan`/`apply` were
+never run** -- no AWS credentials in this environment, explicitly out of scope;
+stated plainly in `infra/aws/README.md`.
+
+`docs/adr/0011-aws-deployment.md` records the real design decisions.
+
+406 default tests still pass (no Python/TS code touched). Commit: `b73343a`.
+
 ## Not yet started
 
-- §6: production deployment config (AWS architecture doc, Terraform -- not applied).
 - §7: CI/CD workflows (validated locally only -- no GitHub remote).
 - §8: observability, backup/restore, runbooks.
 - §9: security tests (authz matrix, cross-tenant isolation, auth, signed URLs,
@@ -275,13 +302,14 @@ the real runtime-correct proxy fix).
 
 ## Exact next step
 
-§5 is complete and committed. Move to §6: production deployment config --
-`docs/deploy/aws-architecture.md` (ECS Fargate api/web/worker, RDS Postgres+pgvector,
-S3, Secrets Manager, ALB+ACM TLS, CloudWatch, private subnets, least-privilege IAM,
-cost notes) and Terraform under `infra/aws/`, validated via `terraform fmt`/
-`validate` (+ `tflint` if feasible) but NOT applied (no AWS credentials) -- state
-this plainly in the final report. Revisit the §4 accessibility/browser-verification
-gap above if the Chrome extension becomes available.
+§6 is complete and committed. Move to §7: GitHub Actions workflows (backend
+ruff/mypy/pytest+service containers; frontend eslint/tsc/unit/Playwright smoke;
+security pip-audit/pnpm audit/gitleaks/trivy; build images; deploy smoke-test gated
+behind AWS creds, disabled) -- validate with `actionlint`, run every job's own
+commands locally, try `act` if feasible without sudo, state GitHub-hosted execution
+UNVERIFIED until a first real push (no remote exists -- GIT POLICY is local-only).
+Revisit the §4 accessibility/browser-verification gap above if the Chrome extension
+becomes available.
 
 ## Pending items carried over from the end of Phase 4 (not part of this brief, flagged
 so they are not lost)
