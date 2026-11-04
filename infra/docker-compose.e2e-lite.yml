@@ -1,0 +1,76 @@
+# Phase 6A §2: the real "e2e-lite" low-memory override profile.
+# Apply ON TOP of the base compose file (never standalone -- it only
+# overrides/adds, it doesn't redefine ports/volumes/healthchecks).
+#
+# Usage (PowerShell), from the repo root:
+#   docker compose --env-file .env `
+#     -f infra/docker-compose.yml -f infra/docker-compose.e2e-lite.yml `
+#     up -d --build postgres garage api web
+#
+# `worker` is deliberately NOT started above -- it carries the real
+# Dagster webserver, which this profile keeps off by default (the
+# brief's own §2.2 requirement). Start it ONLY when a specific test
+# actually needs a real background job (e.g. the alert-generation ->
+# webhook-delivery leg of §3's end-to-end test):
+#   docker compose --env-file .env `
+#     -f infra/docker-compose.yml -f infra/docker-compose.e2e-lite.yml `
+#     up -d --build worker
+#
+# Real per-service memory budget (mem_limit/mem_reservation -- the
+# plain Compose keys that apply outside Swarm mode, unlike
+# deploy.resources.limits which `docker compose up` ignores without
+# --compatibility): postgres 512MB, garage 128MB, api 512MB, worker
+# 768MB (when started), web 512MB -- a real ~1.7GB ceiling for the
+# four-service e2e-lite stack (postgres+garage+api+web), well under
+# this host's own observed idle Postgres footprint today (2.3GB,
+# accumulated cache after 8+ hours uptime across this whole
+# multi-phase session -- `docker stats`, docs/phase-6/evidence/
+# sec02-idle-memory.log) -- the real reason this override exists.
+
+services:
+  postgres:
+    mem_limit: 512m
+    mem_reservation: 256m
+    # A real, small-host-tuned config -- the defaults assume a
+    # dedicated server with gigabytes of shared_buffers headroom this
+    # host does not have.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=128MB
+      - -c
+      - work_mem=4MB
+      - -c
+      - max_connections=50
+      - -c
+      - effective_cache_size=256MB
+
+  garage:
+    mem_limit: 128m
+    mem_reservation: 64m
+
+  api:
+    mem_limit: 512m
+    mem_reservation: 256m
+    # Real ML models (ledgerlight.knowledge.embedding._get_model,
+    # ledgerlight.agent.nli's entailment pipeline,
+    # ledgerlight.knowledge.classifier's zero-shot pipeline) are
+    # already lazy-singleton (module-level `global _model = None`,
+    # loaded on first real call, not at import time) -- confirmed by
+    # direct code inspection, nothing new needed here for that half of
+    # this requirement.
+
+  worker:
+    mem_limit: 768m
+    mem_reservation: 384m
+    # Real Dagster run-worker concurrency, not the webserver's own
+    # request concurrency -- caps how many real ops this container
+    # executes in parallel during a real materialization.
+    environment:
+      DAGSTER_MAX_CONCURRENT_RUNS: "1"
+    profiles:
+      - with-worker
+
+  web:
+    mem_limit: 512m
+    mem_reservation: 256m

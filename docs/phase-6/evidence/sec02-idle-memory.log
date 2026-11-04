@@ -1,0 +1,42 @@
+Phase 6A §2.1: real per-service memory at idle.
+
+$ docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.MemPerc}}"
+NAME                            MEM USAGE / LIMIT     MEM %
+ledgerlight-phase0-postgres-1   2.339GiB / 7.355GiB   31.80%
+ledgerlight-phase0-garage-1     94.77MiB / 7.355GiB   1.26%
+
+Context: these two containers had been running continuously for 8+
+hours at the time of this measurement, spanning the whole multi-phase
+session (Phase 5 §8 through Phase 6A §1) -- postgres's 2.339GiB figure
+is real accumulated shared_buffers/page-cache usage over that uptime,
+not a fresh-start baseline. A fresh `docker compose up` would start
+measurably lower; this is the real number this long-lived dev instance
+actually shows right now, which is the figure that matters for
+deciding whether this host has real headroom for the heavier e2e-lite
+run.
+
+api/worker/web were not running at measurement time (no built images
+exist locally -- removed after Phase 5's own §5/§7 verification,
+confirmed via `docker images`) -- no idle figures to report for them
+yet; they will be measured on first real build+start under the
+e2e-lite profile.
+
+Real host memory at the time of this measurement (`Get-CimInstance
+Win32_OperatingSystem`): 0.46GB free out of 15.2GB total -- critically
+low, from the user's own other running applications (Firefox's many
+processes alone measured ~4.3GB; vmmemWSL, this project's own Docker
+VM, measured 1.14GB real total, consistent with the two containers
+above, not the source of the pressure). Flagged directly to the user
+via AskUserQuestion rather than attempting a build under this
+constraint; the user chose to pause the heavy steps (build, Playwright,
+ZAP) until memory headroom improves, and to proceed with the safe,
+execution-free parts of §2 in the meantime (this measurement, and the
+e2e-lite compose override file itself).
+
+PENDING, once real memory headroom allows:
+- api/worker/web idle memory, right after a fresh `docker compose
+  ... up -d --build postgres garage api web` under the e2e-lite
+  profile.
+- Memory under real e2e load (the full Playwright suite running
+  against the e2e-lite stack).
+- The ZAP baseline run and its own container's memory footprint.
