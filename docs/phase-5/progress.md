@@ -408,17 +408,52 @@ green after. Commit: `2875029`.
 - §13: exit gates.
 - §14: final report, `docs/phase-5/phase-5-report.md`.
 
+## §9 in progress (2026-11-05)
+
+`tests/test_authz_matrix.py`: the brief's own required authorisation-matrix test
+-- every real permission-gated endpoint (40 of them) × every real role, with the
+expected allow/deny derived LIVE from `rbac.ROLE_PERMISSIONS` (never a second,
+hand-copied table that could drift from it). Every case targets a real,
+nonexistent resource id deliberately -- the point is the permission gate itself
+(`Depends(require_permission(...))`, which always runs before any resource
+lookup), never full business-logic correctness (already covered elsewhere); a
+denied role must get exactly 403, an allowed role falls through to a real 404 for
+the made-up id. A second test fails loudly if `rbac.ALL_PERMISSIONS` ever gains a
+permission with no matching matrix entry (or documented carve-out).
+
+**Found a real, previously-undiscovered gap while building this matrix**:
+`MANAGE_REVIEW_ASSIGNMENTS` is defined in `rbac.py` and granted to
+`tenant_admin`, and the real `review_assignments` table/`ReviewAssignment` model
+exist (migration `4dad2cd00443`) -- but no router, endpoint, or script anywhere
+in this codebase ever checks this permission or touches that table (confirmed:
+`grep -rln "review_assignments"` returns only the model, the permission
+constant, and the migration itself). Review-task assignment to a specific
+reviewer was apparently planned -- schema and permission both built -- but the
+actual feature never was. Documented as a known limitation (both in the test
+file and here), not silently worked around; building the missing feature is out
+of scope for a security-test pass and is flagged for a future phase.
+`MANAGE_ALL_WATCHLISTS` is real and enforced but never as a route-level gate (it
+widens an already-allowed request's own visibility, own-only vs. every row in
+the tenant) -- a dedicated test
+(`test_manage_all_watchlists_widens_visibility_not_access`) proves this directly
+instead of forcing it into the gate-shaped matrix.
+
+406 default + 314 integration tests pass (42 new, all in
+`tests/test_authz_matrix.py`). ruff/mypy clean.
+
 ## Exact next step
 
-§8 is now fully complete and committed (`24dba64`, `936a9bd`, `2875029`). Move to
-§9: the full security test
-suite (authz matrix, cross-tenant isolation via IDOR attempts, auth tests, signed-
-URL expiry, webhook SSRF/signature tests, rate-limit 429 tests, input-
-validation/error-model tests, prompt-injection-separation proof reusing Phase 4's
-adversarial documents, security-headers presence, optional ZAP baseline, full
-Playwright e2e suite against a live backend).
-Revisit the §4 accessibility/browser-verification gap above if the Chrome extension
-becomes available.
+§9 authorisation matrix is done. Continue §9 with the remaining required security
+tests: cross-tenant isolation/IDOR attempts (watchlists, alerts, dossiers, review
+tasks, API keys, webhooks), auth (session fixation/rotation, CSRF rejection,
+lockout/backoff, API key hash-only storage/revocation, scope enforcement),
+signed-URL expiry, webhook signature-verification/SSRF vectors, rate-limit
+429/Retry-After, input-validation/error-model checks, prompt-injection separation
+(reuse Phase 4 adversarial documents), security-headers presence, an optional ZAP
+baseline, and the full Playwright e2e suite against the live stack.
+
+Revisit the §4 accessibility/browser-verification gap above if the Chrome
+extension becomes available.
 
 ## Pending items carried over from the end of Phase 4 (not part of this brief, flagged
 so they are not lost)
