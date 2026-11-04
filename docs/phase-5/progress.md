@@ -490,21 +490,34 @@ repo-wide grep confirms the frontend never uses `dangerouslySetInnerHTML`.
 406 default + 24 of these new/affected tests individually confirmed pass.
 Commit: `29ffcb7`.
 
+## §9 deferred items (2026-11-05): ZAP baseline + Playwright e2e
+
+Both need the full real stack (postgres/garage/api/worker/web) up via `docker
+compose`, which means rebuilding the `api`/`web` images from scratch (removed
+after §5/§7's own verification -- confirmed via `docker images`, neither
+exists locally right now) plus running ZAP's own container and a real
+Playwright browser simultaneously. Real free host memory checked at the
+decision point: 2.22GB, after this session's own repeated real OOM kills
+(even plain `pytest -m integration` runs) from unrelated running applications
+(Firefox/Brave/Antigravity IDE) -- not a Docker-caused shortage this time
+(`vmmemWSL` itself was only ~185MB). User explicitly chose to defer rather
+than risk another crash; decision made via `AskUserQuestion`, not
+unilaterally. Revisit once real memory headroom is confirmed better --
+`scripts/backup.py` first if anything destructive is risked once resumed.
+
+Every other §9 line item (authz matrix, cross-tenant IDOR, auth, signed
+URLs, webhook SSRF/signature, rate limiting, input validation/error model,
+prompt-injection separation, security headers) is done and committed.
+
 ## Exact next step
 
-Remaining §9 items: an optional ZAP baseline against the local stack, and the
-full Playwright e2e suite against the live backend (distinct from §7's
-minimal build-smoke suite): login, search, overview with as_of, timeline,
-evidence view with highlighted span, start an investigation, view the
-dossier, review a task, create a watchlist and receive an alert, plus a
-cross-tenant attempt that is denied. Both need the full real stack
-(postgres/garage/api/worker/web) up via `docker compose` -- check real host
-memory headroom before attempting either, given this session's own repeated
-real memory-pressure kills from unrelated running applications; `scripts/
-backup.py` first if anything destructive is risked. Every other §9 line item
-(authz matrix, cross-tenant IDOR, auth, signed URLs, webhook SSRF/signature,
-rate limiting, input validation/error model, prompt-injection separation,
-security headers) is now done.
+Move to §10: remaining documentation --
+`docs/frontend/architecture.md`, `docs/deploy/local-setup-windows.md`,
+`docs/adr/0009-frontend.md`, README phase-status update, plus the
+`docs/release/release-gates.md` additions this phase still owes (the §9
+deferral above should become a real, named gate there too). API/security/ops
+docs are already done (§3/§9/§8). `docs/phase-5/phase-5-report.md` (the final
+report itself) is §14, not here.
 
 Revisit the §4 accessibility/browser-verification gap above if the Chrome
 extension becomes available.
