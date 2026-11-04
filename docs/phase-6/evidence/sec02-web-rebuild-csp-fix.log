@@ -1,0 +1,175 @@
+ Image ledgerlight-phase0-web Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 908B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 2.31kB 0.0s done
+#2 DONE 0.1s
+
+#3 [internal] load metadata for docker.io/library/node:24.14.0-bookworm-slim@sha256:d8e448a56fc63242f70026718378bd4b00f8c82e78d20eefb199224a4d8e33d8
+#3 DONE 0.2s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 DONE 0.0s
+
+#6 [base 1/2] FROM docker.io/library/node:24.14.0-bookworm-slim@sha256:d8e448a56fc63242f70026718378bd4b00f8c82e78d20eefb199224a4d8e33d8
+#6 resolve docker.io/library/node:24.14.0-bookworm-slim@sha256:d8e448a56fc63242f70026718378bd4b00f8c82e78d20eefb199224a4d8e33d8 0.0s done
+#6 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 3.20MB 5.0s
+#5 transferring context: 5.33MB 7.6s done
+#5 DONE 8.5s
+
+#7 [deps 1/4] WORKDIR /app
+#7 CACHED
+
+#8 [deps 2/4] RUN corepack enable
+#8 CACHED
+
+#9 [deps 3/4] COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+#9 CACHED
+
+#10 [deps 4/4] RUN pnpm install --frozen-lockfile
+#10 CACHED
+
+#11 [base 2/2] RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*     && npm install -g npm@11.21.1
+#11 CACHED
+
+#12 [build 3/5] COPY --from=deps /app/node_modules ./node_modules
+#12 CACHED
+
+#13 [build 4/5] COPY . .
+#13 DONE 47.8s
+
+#14 [build 5/5] RUN pnpm build
+#14 3.535 ! Corepack is about to download https://registry.npmjs.org/pnpm/-/pnpm-12.16.1.tgz
+#14 6.132 Downloading the pnpm 12.16.1 binary for linux-x64...
+#14 20.75 ? Verifying lockfile against supply-chain policies (401 entries)...
+#14 21.75 Progress: resolved 343, reused 0, downloaded 45, added 38
+#14 21.97 Downloading next@16.4.3: 0.00 B/43.60 MB
+#14 23.19 Downloading next@16.4.3: 197.76 kB/43.60 MB
+#14 24.12 Downloading @img/sharp-libvips-linux-x64@1.3.4: 0.00 B/8.21 MB
+#14 25.04 Downloading @next/swc-linux-x64-gnu@16.4.3: 0.00 B/35.23 MB
+#14 26.35 Downloading @next/swc-linux-x64-gnu@16.4.3: 1.28 MB/35.23 MB
+#14 27.35 Downloading @img/sharp-libvips-linux-x64@1.3.4: 7.36 MB/8.21 MB
+#14 28.23 ✓ Lockfile passes supply-chain policies (401 entries in 7.5s)
+#14 28.23 Lockfile is up to date, resolution step is skipped
+#14 29.36 Downloading @next/swc-linux-x64-gnu@16.4.3: 16.25 MB/35.23 MB
+#14 30.37 Downloading @next/swc-linux-x64-gnu@16.4.3: 26.21 MB/35.23 MB
+#14 31.42 Downloading next@16.4.3: 33.90 MB/43.60 MB
+#14 32.54 Downloading next@16.4.3: 36.34 MB/43.60 MB
+#14 33.84 Progress: resolved 343, reused 0, downloaded 343, added 343
+#14 33.87 Packages: +343
+#14 33.87 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#14 33.99 Progress: resolved 343, reused 0, downloaded 343, added 343, done
+#14 34.04 
+#14 34.04 dependencies:
+#14 34.04 + next 16.4.3
+#14 34.04 + react 19.3.0
+#14 34.04 + react-dom 19.3.0
+#14 34.04 
+#14 34.04 devDependencies:
+#14 34.04 + @playwright/test 1.64.1
+#14 34.04 + @types/node 20.19.43
+#14 34.04 + @types/react 19.3.0
+#14 34.04 + @types/react-dom 19.3.0
+#14 34.04 + eslint 9.39.5
+#14 34.04 + eslint-config-next 16.4.3
+#14 34.04 + typescript 5.9.3
+#14 34.04 
+#14 34.27 Done in 24s using pnpm v12.16.1
+#14 34.32 $ next build
+#14 35.01 ▲ Next.js 16.4.3 (Turbopack)
+#14 35.09 ✓ Running next.config.ts took 70ms
+#14 35.10 Attention: Next.js now collects completely anonymous telemetry regarding usage.
+#14 35.10 This information is used to shape Next.js' roadmap and prioritize features.
+#14 35.10 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+#14 35.10 https://nextjs.org/telemetry
+#14 35.10 
+#14 35.28 
+#14 35.29 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead.
+#14 35.29 
+#14 35.29   To migrate automatically, run:
+#14 35.29   npx @next/codemod@canary middleware-to-proxy .
+#14 35.29 
+#14 35.29   Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+#14 35.37   Creating an optimized production build ...
+#14 46.41 ✓ Compiled successfully in 11.0s
+#14 46.42   Running TypeScript ...
+#14 54.39   Finished TypeScript in 8.0s ...
+#14 54.40   Collecting page data using 15 workers ...
+#14 58.05   Generating static pages using 15 workers (0/10) ...
+#14 58.56   Generating static pages using 15 workers (2/10) 
+#14 58.58   Generating static pages using 15 workers (4/10) 
+#14 58.58   Generating static pages using 15 workers (7/10) 
+#14 58.64 ✓ Generating static pages using 15 workers (10/10) in 587ms
+#14 58.65   Finalizing page optimization ...
+#14 58.67 
+#14 58.68 Route (app)
+#14 58.68 ┌ ○ /
+#14 58.68 ├ ○ /_not-found
+#14 58.68 ├ ○ /admin
+#14 58.68 ├ ƒ /api/[...path]
+#14 58.68 ├ ○ /companies
+#14 58.68 ├ ƒ /companies/[id]
+#14 58.68 ├ ƒ /companies/[id]/timeline
+#14 58.68 ├ ƒ /documents/[versionId]
+#14 58.68 ├ ○ /dossiers
+#14 58.68 ├ ƒ /dossiers/[investigationId]
+#14 58.68 ├ ○ /login
+#14 58.68 ├ ○ /review
+#14 58.68 ├ ƒ /review/[taskId]
+#14 58.68 └ ○ /watchlists
+#14 58.68 
+#14 58.68 
+#14 58.68 ƒ Proxy (Middleware)
+#14 58.68 
+#14 58.68 ○  (Static)   prerendered as static content
+#14 58.68 ƒ  (Dynamic)  server-rendered on demand
+#14 58.68 
+#14 DONE 59.6s
+
+#10 [deps 4/4] RUN pnpm install --frozen-lockfile
+#10 CACHED
+
+#7 [deps 1/4] WORKDIR /app
+#7 CACHED
+
+#15 [stage-3 2/6] COPY --from=build --chown=node:node /app/.next ./.next
+#15 DONE 0.8s
+
+#16 [stage-3 3/6] COPY --from=build --chown=node:node /app/public ./public
+#16 DONE 0.1s
+
+#17 [stage-3 4/6] COPY --from=build --chown=node:node /app/package.json ./package.json
+#17 DONE 0.1s
+
+#18 [stage-3 5/6] COPY --from=build --chown=node:node /app/next.config.ts ./next.config.ts
+#18 DONE 0.1s
+
+#19 [stage-3 6/6] COPY --from=deps --chown=node:node /app/node_modules ./node_modules
+#19 DONE 20.6s
+
+#20 exporting to image
+#20 exporting layers
+#20 exporting layers 26.7s done
+#20 exporting manifest sha256:05c3ad41ed9437a8353d40abc77cd9dfc939dad99b4acc853fd6966535c9b310 0.0s done
+#20 exporting config sha256:c765690f903712aecda6340b89af60d05674718bed109aafa411ec4303a5f765 0.0s done
+#20 exporting attestation manifest sha256:24ee948d754a11edde6ce2100e10db63ef2e4e426eb651fc8bea7ea9947e6789 0.0s done
+#20 exporting manifest list sha256:a0a6f96f89fa84fbacdc3ccb3baf639136332c81b1eb4f9d81f3a9675e3ad105
+#20 exporting manifest list sha256:a0a6f96f89fa84fbacdc3ccb3baf639136332c81b1eb4f9d81f3a9675e3ad105 0.0s done
+#20 naming to docker.io/library/ledgerlight-phase0-web:latest done
+#20 unpacking to docker.io/library/ledgerlight-phase0-web:latest
+#20 unpacking to docker.io/library/ledgerlight-phase0-web:latest 21.9s done
+#20 DONE 48.9s
+
+#21 resolving provenance for metadata file
+#21 DONE 0.1s
+ Image ledgerlight-phase0-web Built 
+build exit: 0

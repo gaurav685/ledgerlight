@@ -63,14 +63,35 @@ with file-level pointers.
 
 ## Known, disclosed gaps (not yet mitigated -- tracked for later phases)
 
-- No OWASP ZAP baseline scan has been run yet (§9, planned).
-- No Playwright e2e security suite yet (§9, planned) -- the
-  authorization-matrix/cross-tenant/CSRF/SSRF proofs above are all
-  unit/integration-level (`pytest -m integration`) against the real
-  API, not yet driven through a real browser against the real
-  frontend (§4, not yet built).
 - Rate limiting has no IP-reputation or CAPTCHA layer; it is a real,
   working backstop, not a complete anti-abuse system.
 - No WAF or network-layer DDoS protection is modeled -- out of scope
   for a local-dev/self-hosted deployment; `docs/deploy/aws-architecture.md`
-  (§6, planned) will note where that would sit in a real AWS deployment.
+  notes where that would sit in a real AWS deployment.
+
+## Residual risks (Phase 6A §9)
+
+- **Frontend CSP `script-src` includes `'unsafe-inline'`.** A real,
+  significant bug was found while building the first real
+  interactive Playwright e2e test (Phase 6A §2): a strict
+  `script-src 'self'` with no exception blocks Next.js's own required
+  inline hydration scripts outright, so React never hydrated on any
+  page in any real CSP-enforcing browser -- confirmed directly (every
+  form, login included, silently fell back to a native, unintercepted
+  HTML GET submission with real credentials in the URL). The
+  documented Next.js per-request-nonce fix was implemented and tested
+  directly; it did not work in this exact Next.js 16.4.3 App Router
+  setup (the CSP header correctly carried a nonce, but Next's own
+  inline scripts never received the matching `nonce` attribute,
+  confirmed by inspecting the raw response HTML). The real,
+  pragmatic fix deployed instead is `'unsafe-inline'` with no nonce
+  source present. **Residual risk**: any future XSS injection point
+  elsewhere in this app could execute an injected inline script under
+  this policy. Mitigating factors already in place: no
+  `dangerouslySetInnerHTML` anywhere in this codebase (confirmed by
+  `tests/test_prompt_injection_separation.py`'s own repo-wide check,
+  re-confirmed this phase), and no raw HTML from any ingested
+  document is ever rendered as markup, only as auto-escaped JSX text.
+  Full writeup: `docs/phase-6/evidence/sec02-csp-hydration-bug.md`.
+  Getting the strict, nonce-based policy actually working is real,
+  disclosed future work (`docs/release/release-gates.md`).

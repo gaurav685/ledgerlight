@@ -1,0 +1,8 @@
+
+Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › e2e\full-e2e-lite.spec.ts:43:7 › Phase 6A full e2e-lite journey › part 1: login, search, overview, timeline, evidence, investigation, dossier, review, watchlist+rule+webhook (13.2s)
+  ✓  2 [chromium] › e2e\full-e2e-lite.spec.ts:172:7 › Phase 6A full e2e-lite journey › part 1b: register a webhook and send a real test delivery (5.2s)
+
+  2 passed (20.3s)
+exit: 0

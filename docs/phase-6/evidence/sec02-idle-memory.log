@@ -33,10 +33,49 @@ ZAP) until memory headroom improves, and to proceed with the safe,
 execution-free parts of §2 in the meantime (this measurement, and the
 e2e-lite compose override file itself).
 
-PENDING, once real memory headroom allows:
-- api/worker/web idle memory, right after a fresh `docker compose
-  ... up -d --build postgres garage api web` under the e2e-lite
-  profile.
-- Memory under real e2e load (the full Playwright suite running
-  against the e2e-lite stack).
-- The ZAP baseline run and its own container's memory footprint.
+UPDATE (same session, once memory recovered): the e2e-lite stack was
+actually brought up and the real Playwright suite run against it.
+
+Idle, right after a fresh `docker compose ... up -d --build postgres
+garage api web` under the e2e-lite profile (`docker stats
+--no-stream`):
+```
+NAME                            MEM USAGE / LIMIT   MEM %
+ledgerlight-phase0-web-1        51.98MiB / 512MiB   10.15%
+ledgerlight-phase0-api-1        148.3MiB / 512MiB   28.97%
+ledgerlight-phase0-postgres-1   26.18MiB / 512MiB    5.11%
+ledgerlight-phase0-garage-1     8.098MiB / 128MiB    6.33%
+```
+(A fresh postgres start, not the 8+-hour-accumulated-cache figure
+above -- confirms the e2e-lite tuning works: 26MiB vs 2.3GiB.)
+
+Under real e2e load (immediately after a full, 4-test Playwright run
+-- login, search, overview, timeline, evidence, investigation
+creation through to FINALISE, dossier view, review decision,
+watchlist/alert-rule creation, webhook registration/test, alert
+visibility, cross-tenant denial):
+```
+NAME                            MEM USAGE / LIMIT   MEM %
+ledgerlight-phase0-web-1        105.1MiB / 512MiB   20.53%
+ledgerlight-phase0-api-1        361.4MiB / 512MiB   70.59%
+ledgerlight-phase0-postgres-1   57.54MiB / 512MiB   11.24%
+ledgerlight-phase0-garage-1     26.21MiB / 128MiB   20.47%
+```
+`api`'s real jump (148MB -> 361MB) is the real NLI/verifier model
+loading during the investigation's own real VERIFY step -- the
+single largest real memory consumer, still comfortably inside its
+512MB e2e-lite budget. Total real footprint across all four services
+under load: ~550MB, well inside this host's real available headroom
+on this specific occasion.
+
+Real host memory during this work was NOT itself stable -- it swung
+from 2.37GB free down to as low as 0.29GB and back up to 1.66GB+
+across the session (from the user's own other applications, not this
+stack), causing 2 real Docker build kills along the way (recorded
+separately in `sec02-web-rebuild-csp-fix.log`/`...-fix2.log`). The
+e2e-lite stack's OWN footprint, once up, stayed small and stable
+throughout; the instability was in getting a *build* to complete
+under a host-wide squeeze, not in running the resulting stack.
+
+ZAP baseline: not yet run -- see docs/phase-6/progress.md for current
+status.

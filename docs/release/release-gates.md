@@ -268,6 +268,14 @@ covers a minimal production-build smoke test, not this full flow.
 then rebuilding the `api`/`web` images, bringing up the full stack, and running both
 tools against it.
 
+**PARTIALLY CLOSED (2026-11-05, Phase 6A §2):** the full Playwright e2e suite now
+exists and passes (`frontend/e2e/full-e2e-lite.spec.ts`, 4/4 real tests: login
+through dossier/review/watchlist/alert/webhook, plus cross-tenant denial) against
+the real `e2e-lite` Docker Compose profile (`docs/phase-6/evidence/
+sec02-playwright-full-run.log`). Finding this test also surfaced a real, significant
+CSP bug, fixed the same session -- see the dedicated gap below. The ZAP baseline
+remains open; see `docs/phase-6/progress.md` for current status.
+
 ## Gap: a real, single-batch full integration-test run was not captured for §11's final evidence pass
 
 **Status:** open, same real cause as the gap above. **Reason:** `pytest -q -m
@@ -285,3 +293,37 @@ integration suite together, as one batch, with its raw output captured.
 **Closing this gap requires:** real host memory headroom, then re-running `pytest -q
 -m integration` as one batch and replacing the substitute evidence log with its real
 output.
+
+**CLOSED (2026-11-05, Phase 6A §1):** a real memory window opened up and the full
+batch ran clean in one sequential pass -- 322 passed, 0 failed
+(`docs/phase-6/evidence/sec01-green-baseline.log`). This gate is resolved.
+
+## Gap: frontend CSP uses `'unsafe-inline'` for `script-src`, not a working nonce
+
+**Status:** open, by design (a real, disclosed trade-off, not an oversight).
+**Reason:** found while building Phase 6A §2's own first real interactive
+Playwright e2e test -- the original strict `script-src 'self'` blocked Next.js's
+own required inline hydration scripts outright, so the entire frontend was
+non-interactive in any real CSP-enforcing browser (every form, login included,
+silently fell back to a native HTML GET submission with credentials in the URL).
+The documented Next.js per-request-nonce fix was implemented and tested directly;
+it did not actually thread the nonce onto Next's own inline scripts in this exact
+Next.js 16.4.3 App Router setup (confirmed by inspecting the raw response HTML --
+no `nonce` attribute present on any inline script, even with the CSP header
+itself correctly carrying one). Full writeup:
+`docs/phase-6/evidence/sec02-csp-hydration-bug.md`.
+
+**What's missing:** a working nonce-based (or hash-based) `script-src` policy that
+does not require `'unsafe-inline'`.
+
+**What this blocks:** calling this frontend's CSP "strict" -- it is not, by a real,
+disclosed margin. The residual risk (an XSS injection point elsewhere executing an
+injected inline script) is recorded in `docs/security/threat-model.md`; mitigating
+factors already in place (no `dangerouslySetInnerHTML` anywhere, confirmed by
+`tests/test_prompt_injection_separation.py`) reduce but do not eliminate this risk.
+
+**Closing this gap requires:** real engineering time to diagnose why Next.js
+16.4.3's documented nonce-propagation mechanism isn't firing in this exact
+configuration (a Next.js version/config-specific investigation, not a quick fix),
+or an equivalent hash-based policy with a build step that computes real per-build
+script hashes.

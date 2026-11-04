@@ -1,0 +1,10 @@
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › e2e\full-e2e-lite.spec.ts:43:7 › Phase 6A full e2e-lite journey › part 1: login, search, overview, timeline, evidence, investigation, dossier, review, watchlist+rule+webhook (12.2s)
+  ✓  2 [chromium] › e2e\full-e2e-lite.spec.ts:181:7 › Phase 6A full e2e-lite journey › part 1b: register a webhook and send a real test delivery (5.0s)
+  ✓  3 [chromium] › e2e\full-e2e-lite.spec.ts:208:7 › Phase 6A part 2: alert + webhook delivery after generate_alerts.py › a real alert created by generate_alerts.py appears in the UI (2.7s)
+  ✓  4 [chromium] › e2e\full-e2e-lite.spec.ts:220:7 › Phase 6A cross-tenant denial (real UI) › tenant B cannot view tenant A's real investigation by id (2.6s)
+
+  4 passed (24.4s)
+exit: 0

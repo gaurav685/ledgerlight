@@ -1,0 +1,8 @@
+
+Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › e2e\full-e2e-lite.spec.ts:199:7 › Phase 6A part 2: alert + webhook delivery after generate_alerts.py › a real alert created by generate_alerts.py appears in the UI (2.8s)
+  ✓  2 [chromium] › e2e\full-e2e-lite.spec.ts:211:7 › Phase 6A cross-tenant denial (real UI) › tenant B cannot view tenant A's real investigation by id (2.6s)
+
+  2 passed (6.7s)
+exit: 0

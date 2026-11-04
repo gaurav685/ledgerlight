@@ -1,0 +1,82 @@
+ Image ledgerlight-phase0-web Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 908B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 2.31kB 0.0s done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/node:24.14.0-bookworm-slim@sha256:d8e448a56fc63242f70026718378bd4b00f8c82e78d20eefb199224a4d8e33d8
+#3 DONE 0.1s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 DONE 0.0s
+
+#6 [base 1/2] FROM docker.io/library/node:24.14.0-bookworm-slim@sha256:d8e448a56fc63242f70026718378bd4b00f8c82e78d20eefb199224a4d8e33d8
+#6 resolve docker.io/library/node:24.14.0-bookworm-slim@sha256:d8e448a56fc63242f70026718378bd4b00f8c82e78d20eefb199224a4d8e33d8 0.0s done
+#6 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 5.15MB 5.1s done
+#5 DONE 5.9s
+
+#7 [build 4/5] COPY . .
+#7 CACHED
+
+#8 [stage-3 3/6] COPY --from=build --chown=node:node /app/public ./public
+#8 CACHED
+
+#9 [stage-3 4/6] COPY --from=build --chown=node:node /app/package.json ./package.json
+#9 CACHED
+
+#10 [stage-3 5/6] COPY --from=build --chown=node:node /app/next.config.ts ./next.config.ts
+#10 CACHED
+
+#11 [base 2/2] RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*     && npm install -g npm@11.21.1
+#11 CACHED
+
+#12 [deps 3/4] COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+#12 CACHED
+
+#13 [stage-3 2/6] COPY --from=build --chown=node:node /app/.next ./.next
+#13 CACHED
+
+#14 [build 3/5] COPY --from=deps /app/node_modules ./node_modules
+#14 CACHED
+
+#15 [deps 1/4] WORKDIR /app
+#15 CACHED
+
+#16 [deps 2/4] RUN corepack enable
+#16 CACHED
+
+#17 [deps 4/4] RUN pnpm install --frozen-lockfile
+#17 CACHED
+
+#18 [build 5/5] RUN pnpm build
+#18 CACHED
+
+#19 [stage-3 6/6] COPY --from=deps --chown=node:node /app/node_modules ./node_modules
+#19 CACHED
+
+#20 exporting to image
+#20 exporting layers
+#20 exporting layers 0.0s done
+#20 exporting manifest sha256:71809c818340ddb387290e390bb4cb163ee284262e05eca5923d3de71435adaa done
+#20 exporting config sha256:2dd871b681da2f7415ca9edb7de0d48999d2db9cebfab2e6c226e2937ab399c1 done
+#20 exporting attestation manifest sha256:45b2dee877628b382f7c1e0738ec658d2609443759b2ebf0dfc3fdfb87d4aa26 0.0s done
+#20 exporting manifest list sha256:d6a4a917b2131b99e1ddb6d6c977dae1b6046af60029f65fb0bb54864a339acf 0.0s done
+#20 naming to docker.io/library/ledgerlight-phase0-web:latest
+#20 naming to docker.io/library/ledgerlight-phase0-web:latest done
+#20 unpacking to docker.io/library/ledgerlight-phase0-web:latest 0.0s done
+#20 DONE 0.2s
+
+#21 resolving provenance for metadata file
+#21 DONE 0.0s
+ Image ledgerlight-phase0-web Built 
+exit: 0

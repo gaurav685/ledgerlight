@@ -7,6 +7,15 @@ import type { NextConfig } from "next";
 // app/api/[...path]/route.ts's own docstring for why `rewrites()`
 // (which has the identical build-time-freezing problem) was wrong for
 // that job specifically.
+//
+// Phase 6A §2: Content-Security-Policy moved OUT of this static list
+// into middleware.ts -- a real, found bug: a static `script-src
+// 'self'` with no nonce/hash/'unsafe-inline' blocks Next.js's own
+// required inline hydration scripts outright, so React never
+// hydrates on any page in a real CSP-enforcing browser (confirmed
+// directly: every form silently fell back to an unintercepted native
+// HTML submission). middleware.ts's own per-request nonce is the real
+// fix; see its own docstring.
 const nextConfig: NextConfig = {
   async headers() {
     return [
@@ -16,12 +25,6 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "no-referrer" },
-          {
-            key: "Content-Security-Policy",
-            value:
-              "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
-              "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'",
-          },
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
         ],
       },

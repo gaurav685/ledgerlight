@@ -17,7 +17,8 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   `docs/phase-6/orchestrator-evidence.md` built with verbatim Phase 2-5
   evidence. All 5 stop conditions checked explicitly: none triggered.
   Commit: `66f7020`.
-- §2 Low-memory stack profile + deferred e2e/ZAP runs -- NOT STARTED.
+- §2 Low-memory stack profile + deferred e2e/ZAP runs -- PARTIALLY
+  COMPLETE (see below).
 - §3 End-to-end pipeline test (ingestion -> dossier) -- NOT STARTED.
 - §4 Regression suite -- NOT STARTED.
 - §5 Backtest reproducibility and audits -- NOT STARTED.
@@ -36,14 +37,55 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 - §18 Human checkpoint and 6A exit gates -- NOT STARTED. **STOP here --
   do not begin Phase 6B.**
 
+- §2 Low-memory stack profile + deferred e2e/ZAP runs -- **PARTIALLY
+  COMPLETE** (2026-11-05). `infra/docker-compose.e2e-lite.yml` built
+  (per-service mem_limit/mem_reservation, tuned Postgres, worker gated
+  behind a `with-worker` profile, DAGSTER_MAX_CONCURRENT_RUNS=1). Real idle
+  memory measured (postgres 26MiB fresh vs 2.3GiB accumulated-cache;
+  garage/api/web all under 150MiB). The full Playwright e2e suite
+  (`frontend/e2e/full-e2e-lite.spec.ts`) built and run against the real
+  stack -- **4/4 passed**: login, search, overview+as_of, timeline+tiers,
+  evidence+highlighted span (direct nav -- see the real UI gap noted
+  below), investigation creation through FINALISE, dossier view, review
+  decision (as reviewer), watchlist+alert-rule creation, webhook
+  registration+test delivery, alert visibility after `generate_alerts.py`,
+  cross-tenant denial. Real memory under load measured (~550MB total across
+  all 4 services, comfortably inside budget).
+
+  **Found and fixed a real, significant bug** while building this: the
+  frontend's CSP (`script-src 'self'`, no exception) blocked Next.js's own
+  inline hydration scripts outright -- React never hydrated in any real
+  browser, so every form (login included) silently fell back to a native,
+  unintercepted HTML GET submission with credentials in the URL. The
+  documented Next.js nonce-based fix was implemented and tested directly;
+  it did not work in this exact Next.js 16.4.3 setup (confirmed: no `nonce`
+  attribute ever appeared on Next's own inline scripts). Deployed the
+  pragmatic, honestly-disclosed fix instead (`'unsafe-inline'`, no nonce
+  source present) -- full writeup `docs/phase-6/evidence/
+  sec02-csp-hydration-bug.md`; residual risk recorded in
+  `docs/security/threat-model.md`; both gaps (the nonce fix not working,
+  and the ZAP baseline still not run) tracked in `docs/release/
+  release-gates.md`.
+
+  **Found a second real gap** (documented, not fixed -- a real missing UI
+  affordance, not a defect in anything that exists): no page in this
+  frontend ever links a dossier/timeline entry to a document URL carrying
+  `char_start`/`char_end` -- the document viewer supports rendering the
+  highlighted span (reads them from its own `searchParams`), but nothing
+  navigates there with them. Proven directly in the e2e test via direct
+  navigation with a real evidence span pulled from the database.
+
+  ZAP baseline: not yet run. Real host memory was highly unstable
+  throughout this work (swung 0.29GB-2.37GB free from the user's own other
+  applications), causing 2 real Docker build kills along the way -- all
+  recorded in `docs/phase-6/evidence/`.
+
 ## Exact next step
 
-§2: measure real per-service memory use (idle + under e2e load), build the
-`e2e-lite` Compose profile/override, run the full Playwright e2e suite
-against it, then the ZAP baseline. Check real memory headroom before each
-heavy step given this session's own established, repeated OOM-kill history
-(not from this project's Docker stack -- from the user's other running
-applications).
+§2's ZAP baseline is the one remaining item (deferred pending memory
+headroom -- the e2e-lite stack itself is still up and healthy). Move to
+§3: the automated end-to-end pipeline test (ingestion -> dossier), run
+twice to prove idempotency, asserting the full provenance/known_at chain.
 
 ## Known starting context (from Phase 5)
 

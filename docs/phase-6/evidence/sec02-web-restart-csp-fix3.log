@@ -1,0 +1,14 @@
+ Container ledgerlight-phase0-postgres-1 Running 
+ Container ledgerlight-phase0-garage-1 Running 
+ Container ledgerlight-phase0-api-1 Running 
+ Container ledgerlight-phase0-web-1 Recreate 
+ Container ledgerlight-phase0-web-1 Recreated 
+ Container ledgerlight-phase0-garage-1 Waiting 
+ Container ledgerlight-phase0-postgres-1 Waiting 
+ Container ledgerlight-phase0-garage-1 Healthy 
+ Container ledgerlight-phase0-postgres-1 Healthy 
+ Container ledgerlight-phase0-api-1 Waiting 
+ Container ledgerlight-phase0-api-1 Healthy 
+ Container ledgerlight-phase0-web-1 Starting 
+ Container ledgerlight-phase0-web-1 Started 
+exit: 0
