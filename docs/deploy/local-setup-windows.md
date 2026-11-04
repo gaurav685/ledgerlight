@@ -59,11 +59,16 @@ directly: `tests/test_ocr_engine.py` skips instead of running without
 it).
 
 ```powershell
+New-Item -ItemType Directory -Force "$env:LOCALAPPDATA\corepack-shims" | Out-Null
+corepack enable --install-directory "$env:LOCALAPPDATA\corepack-shims"
+$env:PATH = "$env:LOCALAPPDATA\corepack-shims;$env:PATH"   # add to your real profile to persist
 cd frontend
-corepack enable
 pnpm install
 cd ..
 ```
+A bare `corepack enable` (no `--install-directory`) does not reliably
+put a real, resolvable `pnpm` on `PATH` in every shell -- see the
+real gotcha below.
 
 ## Bringing up the full stack
 
@@ -112,3 +117,20 @@ python -m uv run --extra ocr pytest -q -m integration     # needs the real local
   1000** -- `frontend/Dockerfile` reuses it rather than creating a
   second identity at the same uid/gid, which fails
   (`groupadd: GID '1000' already exists`).
+- **A bare `pnpm` may not resolve at all**, even after `corepack
+  enable` -- confirmed directly: `corepack pnpm <cmd>` always works,
+  but a plain `pnpm <cmd>` can fail with `command not found` in a
+  shell that never got corepack's own shims on its `PATH`. This
+  matters for anything that itself spawns a bare `pnpm` as a *child*
+  process and can't be prefixed externally -- e.g. Playwright's own
+  `webServer` config runs `pnpm start` internally, and that spawn
+  failed with `'pnpm' is not recognized...` even though `corepack
+  pnpm test:e2e` was the very command running it. Fix: materialize
+  real shims onto a real directory and put that directory on `PATH`
+  for the session:
+  ```powershell
+  corepack enable --install-directory "$env:LOCALAPPDATA\corepack-shims"
+  $env:PATH = "$env:LOCALAPPDATA\corepack-shims;$env:PATH"
+  ```
+  (the `--install-directory` target must already exist -- `corepack
+  enable` does not create it).

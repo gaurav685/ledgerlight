@@ -1,0 +1,44 @@
+Phase 5 §11: backend integration test evidence.
+
+A full single-batch `pytest -q -m integration` run was attempted 3
+times during this §11 verification pass and was killed each time by
+the harness ("system is running low on memory") -- real, confirmed
+host memory pressure from unrelated applications already running on
+this machine (Firefox/Brave/Antigravity IDE), not from the Docker
+stack (`vmmemWSL` itself measured ~180MB at the time, not the
+bottleneck). Free memory checked immediately before each attempt:
+2.22GB, then (after this session's own earlier §9 work) as low as
+1.72GB.
+
+Rather than keep retrying the identical full-batch command against a
+resource constraint that was not clearing, this is the real, honest
+state of integration-test verification as of this §11 pass:
+
+1. The full integration suite (272 tests, before this session's own
+   §9 additions) ran clean earlier in this same phase -- see
+   `docs/phase-5/progress.md`'s own §9 entries for the exact point.
+
+2. Every test file touched or added since then was run individually
+   against the real local stack, this session, and passed:
+   - tests/test_authz_matrix.py -- 42 passed
+   - tests/test_cross_tenant_idor.py -- 1 passed
+   - tests/test_security_controls.py -- 4 passed
+   - tests/test_api_documents.py -- 6 passed (full file, including 1
+     new test)
+   - tests/test_api_webhooks.py -- 16 passed (full file, including 2
+     new tests; 1 real-DNS test deselected by its own `network`
+     marker, same as every other run)
+   - tests/test_prompt_injection_separation.py -- 2 passed
+
+3. No production code in `ledgerlight/` changed between any of these
+   individual runs and now, other than the §8 metrics/logging fixes
+   (`24dba64`, `2875029`) and the §9 security fixes -- none of which
+   touch RLS, tenancy, or any other shared code path these tests
+   exercise -- so there is no real mechanism by which running them
+   together, rather than individually, would produce a different
+   result.
+
+A real, full-batch confirmation remains open until real memory
+headroom is confirmed better -- tracked in
+`docs/release/release-gates.md` alongside the ZAP/Playwright e2e
+deferral.

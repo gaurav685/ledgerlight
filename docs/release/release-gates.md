@@ -267,3 +267,21 @@ covers a minimal production-build smoke test, not this full flow.
 **Closing this gap requires:** real host memory headroom (confirmed before attempting),
 then rebuilding the `api`/`web` images, bringing up the full stack, and running both
 tools against it.
+
+## Gap: a real, single-batch full integration-test run was not captured for §11's final evidence pass
+
+**Status:** open, same real cause as the gap above. **Reason:** `pytest -q -m
+integration` (272+ real tests against the real local stack) was attempted 3 times
+during the §11 verification pass and killed each time by real host memory pressure
+(as low as 1.72GB free) from the same unrelated running applications, not from the
+Docker stack itself. See `docs/phase-5/evidence/sec11-backend-integration-tests.log`
+for the real, honest substitute evidence: the full 272-test suite ran clean earlier
+in this same phase, and every test file touched since then passed individually
+against the real stack this session.
+
+**What's missing:** one single, uninterrupted run of the complete, current
+integration suite together, as one batch, with its raw output captured.
+
+**Closing this gap requires:** real host memory headroom, then re-running `pytest -q
+-m integration` as one batch and replacing the substitute evidence log with its real
+output.
