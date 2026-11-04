@@ -380,7 +380,20 @@ session row otherwise lives until its own 12-hour expiry -- the runbook document
 the direct manual-delete remediation for an urgent case).
 
 406 default + 272 integration tests pass (4 new, all in `tests/test_api_app.py`).
-ruff/mypy clean. Commits: `24dba64` (observability).
+ruff/mypy clean. Commits: `24dba64` (observability), `936a9bd` (backup/restore
+drill/runbooks).
+
+**Found and fixed one more real gap against the brief's own verbatim §8 line**
+("request counts, latency histograms, error rates, job outcomes"): job outcomes
+had no metric at all. Added `ledgerlight_job_outcomes_total` (labelled
+job/outcome) to `ledgerlight/api/metrics.py`, incremented around the real
+background investigation job in `routers/dossiers.py`; regression-tested via
+`/metrics` before/after a real investigation run
+(`tests/test_api_dossiers.py`). `scripts/generate_alerts.py` (a separate,
+short-lived batch process, not the long-running API process -- a Prometheus
+counter there would never be scraped before the process exits) gets a real
+structured-JSON job-outcome log line instead. 406 default tests re-confirmed
+green after. Commit: `2875029`.
 
 ## Not yet started
 
@@ -397,8 +410,8 @@ ruff/mypy clean. Commits: `24dba64` (observability).
 
 ## Exact next step
 
-§8 is complete; its backup/restore-drill/runbooks commit is still pending (the
-observability piece is committed as `24dba64`). Move to §9: the full security test
+§8 is now fully complete and committed (`24dba64`, `936a9bd`, `2875029`). Move to
+§9: the full security test
 suite (authz matrix, cross-tenant isolation via IDOR attempts, auth tests, signed-
 URL expiry, webhook SSRF/signature tests, rate-limit 429 tests, input-
 validation/error-model tests, prompt-injection-separation proof reusing Phase 4's
