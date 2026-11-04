@@ -441,16 +441,60 @@ instead of forcing it into the gate-shaped matrix.
 406 default + 314 integration tests pass (42 new, all in
 `tests/test_authz_matrix.py`). ruff/mypy clean.
 
+`tests/test_cross_tenant_idor.py`: real API-level IDOR attempts for the
+resource types not already covered by a more specific file (dossiers/
+investigations and review tasks already had their own cross-tenant tests) --
+watchlists, alert rules, alerts, API keys, webhooks. Tenant B tries 8 real
+read/write operations against tenant A's real ids; every one gets a clean 404,
+never a 403 (which would itself leak that the id exists). Passed clean on the
+first real run -- the RLS/ownership boundary genuinely holds.
+
+`tests/test_security_controls.py`: security headers on a normal (non-error)
+response (the existing regression test only covered the unhandled-exception
+path), rate-limit 429+Retry-After through the real HTTP login endpoint
+(previously only unit-tested directly against `rate_limit.py`), a real
+session-fixation probe (an attacker-chosen cookie sent on the login request is
+never adopted -- the server always issues a brand-new real token), and a
+malformed-body-returns-422-with-no-stack-trace check.
+
+**Found two more real things while writing these**: (1) `auth.rotate_session`
+(session rotation, unit-tested since §2) has no real call site anywhere in the
+API -- built but never wired into any actual flow; documented as a known gap.
+(2) The fixation test's first draft produced a false positive from an httpx
+`TestClient` cookie-jar domain-scoping quirk (a manually-set cookie with no
+domain and the server's own `Set-Cookie` response coexisted as two distinct
+jar entries, so a naive jar-scan read the stale one) -- confirmed via a
+standalone debug script that the real `Set-Cookie` header was always a
+genuinely fresh token, never a real vulnerability; fixed by reading
+`response.cookies` directly instead of the shared jar.
+
+406 default + 47 of these new tests individually confirmed pass against the
+real stack (42 authz-matrix + 1 IDOR + 4 security-controls). The other 272
+pre-existing integration tests were not re-run as one batch after this round
+(real host memory pressure from unrelated running applications on this
+machine) -- this round touched zero production code, only new test files, so
+the risk is low and they were green earlier this same phase. Commits:
+`58273a2` (authz matrix), `013d852` (IDOR + security controls).
+
 ## Exact next step
 
-§9 authorisation matrix is done. Continue §9 with the remaining required security
-tests: cross-tenant isolation/IDOR attempts (watchlists, alerts, dossiers, review
-tasks, API keys, webhooks), auth (session fixation/rotation, CSRF rejection,
-lockout/backoff, API key hash-only storage/revocation, scope enforcement),
-signed-URL expiry, webhook signature-verification/SSRF vectors, rate-limit
-429/Retry-After, input-validation/error-model checks, prompt-injection separation
-(reuse Phase 4 adversarial documents), security-headers presence, an optional ZAP
-baseline, and the full Playwright e2e suite against the live stack.
+Continue §9 with the remaining required security tests: auth (API key
+hash-only storage/revocation/scope enforcement already covered by
+`test_api_api_keys.py`; CSRF rejection and lockout/backoff already covered by
+`test_api_app.py`/`test_api_auth.py` -- nothing further needed there), signed-
+URL expiry (confirm an ACTUALLY-expired presigned URL is rejected, not just
+that the issued TTL is capped at 300s -- not yet proven), webhook signature-
+verification vector and the DNS-rebinding re-resolution-at-send-time case
+specifically (loopback/private/metadata already covered;
+`deliver_webhook`'s own re-validation-per-attempt exists but has no dedicated
+rebinding-scenario test), prompt-injection separation (reuse Phase 4's
+adversarial documents -- proves rendering escapes script/HTML and an
+investigation over such a document changes no agent behaviour), an optional
+ZAP baseline against the local stack, and the full Playwright e2e suite
+against the live backend (distinct from §7's minimal build-smoke suite):
+login, search, overview with as_of, timeline, evidence view with highlighted
+span, start an investigation, view the dossier, review a task, create a
+watchlist and receive an alert, plus a cross-tenant attempt that is denied.
 
 Revisit the §4 accessibility/browser-verification gap above if the Chrome
 extension becomes available.
