@@ -51,6 +51,91 @@ services:
       timeout: 5s
       retries: 10
 
+  # Phase 5 §5. api/worker share the real root Dockerfile (same real
+  # dependency set as the host .venv); web is the real Next.js
+  # production build in frontend/Dockerfile. All three connect to
+  # postgres/garage via their real Compose service names -- never
+  # 127.0.0.1, which only reaches the HOST's own loopback from inside
+  # a container, not the other services.
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: "no"
+    environment:
+      LEDGERLIGHT_CONTACT_EMAIL: ${LEDGERLIGHT_CONTACT_EMAIL:?set LEDGERLIGHT_CONTACT_EMAIL in .env}
+      LEDGERLIGHT_POSTGRES_HOST: postgres
+      LEDGERLIGHT_POSTGRES_PORT: "5432"
+      LEDGERLIGHT_POSTGRES_USER: ${LEDGERLIGHT_POSTGRES_USER:-ledgerlight}
+      LEDGERLIGHT_POSTGRES_PASSWORD: ${LEDGERLIGHT_POSTGRES_PASSWORD:-changeme-local-only}
+      LEDGERLIGHT_POSTGRES_DB: ${LEDGERLIGHT_POSTGRES_DB:-ledgerlight}
+      LEDGERLIGHT_APP_DB_USER: ${LEDGERLIGHT_APP_DB_USER:-ledgerlight_app}
+      LEDGERLIGHT_APP_DB_PASSWORD: ${LEDGERLIGHT_APP_DB_PASSWORD:-changeme-local-only-app}
+      LEDGERLIGHT_S3_ENDPOINT: garage:3900
+      LEDGERLIGHT_S3_REGION: ${LEDGERLIGHT_S3_REGION:-garage}
+      LEDGERLIGHT_S3_BUCKET: ${LEDGERLIGHT_S3_BUCKET:-ledgerlight-raw}
+      LEDGERLIGHT_S3_ACCESS_KEY_ID: ${LEDGERLIGHT_S3_ACCESS_KEY_ID:-}
+      LEDGERLIGHT_S3_SECRET_ACCESS_KEY: ${LEDGERLIGHT_S3_SECRET_ACCESS_KEY:-}
+      LEDGERLIGHT_SESSION_SECRET_KEY: ${LEDGERLIGHT_SESSION_SECRET_KEY:-dev-only-session-secret-change-me}
+      LEDGERLIGHT_WEBHOOK_SECRET_ENCRYPTION_KEY: ${LEDGERLIGHT_WEBHOOK_SECRET_ENCRYPTION_KEY:-UWhA93WPMUQ7e0aYCYjBP_nKSse4xZ0Bf6qC1TxZDyw=}
+      LEDGERLIGHT_COOKIE_SECURE: ${LEDGERLIGHT_COOKIE_SECURE:-false}
+      LEDGERLIGHT_ENVIRONMENT: ${LEDGERLIGHT_ENVIRONMENT:-dev}
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      garage:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: "no"
+    command: ["dagster", "dev", "-m", "ledgerlight.orchestration.definitions", "-h", "0.0.0.0", "-p", "3001"]
+    environment:
+      LEDGERLIGHT_CONTACT_EMAIL: ${LEDGERLIGHT_CONTACT_EMAIL:?set LEDGERLIGHT_CONTACT_EMAIL in .env}
+      LEDGERLIGHT_POSTGRES_HOST: postgres
+      LEDGERLIGHT_POSTGRES_PORT: "5432"
+      LEDGERLIGHT_POSTGRES_USER: ${LEDGERLIGHT_POSTGRES_USER:-ledgerlight}
+      LEDGERLIGHT_POSTGRES_PASSWORD: ${LEDGERLIGHT_POSTGRES_PASSWORD:-changeme-local-only}
+      LEDGERLIGHT_POSTGRES_DB: ${LEDGERLIGHT_POSTGRES_DB:-ledgerlight}
+      LEDGERLIGHT_POSTGRES_DAGSTER_DB: ${LEDGERLIGHT_POSTGRES_DAGSTER_DB:-ledgerlight_dagster}
+      LEDGERLIGHT_APP_DB_USER: ${LEDGERLIGHT_APP_DB_USER:-ledgerlight_app}
+      LEDGERLIGHT_APP_DB_PASSWORD: ${LEDGERLIGHT_APP_DB_PASSWORD:-changeme-local-only-app}
+      LEDGERLIGHT_S3_ENDPOINT: garage:3900
+      LEDGERLIGHT_S3_REGION: ${LEDGERLIGHT_S3_REGION:-garage}
+      LEDGERLIGHT_S3_BUCKET: ${LEDGERLIGHT_S3_BUCKET:-ledgerlight-raw}
+      LEDGERLIGHT_S3_ACCESS_KEY_ID: ${LEDGERLIGHT_S3_ACCESS_KEY_ID:-}
+      LEDGERLIGHT_S3_SECRET_ACCESS_KEY: ${LEDGERLIGHT_S3_SECRET_ACCESS_KEY:-}
+      LEDGERLIGHT_ENVIRONMENT: ${LEDGERLIGHT_ENVIRONMENT:-dev}
+    ports:
+      - "127.0.0.1:3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      garage:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    restart: "no"
+    environment:
+      LEDGERLIGHT_API_ORIGIN: http://api:8000
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   pgdata:
   garagedata:
