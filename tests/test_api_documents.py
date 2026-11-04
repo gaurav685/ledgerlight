@@ -6,6 +6,7 @@ end to end against the real local S3-compatible stack."""
 from __future__ import annotations
 
 import datetime as dt
+import time
 import uuid
 from collections.abc import Iterator
 
@@ -202,6 +203,50 @@ def test_signed_url_for_a_real_document_version_is_capped_at_300_seconds(
     body = response.json()
     assert body["expires_in_seconds"] <= 300
     assert version.object_key in body["url"]
+
+
+def test_signed_url_actually_expires(
+    real_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Phase 5 §9: not just that the issued TTL is capped at 300s
+    (the test above) -- that a real, already-expired presigned URL is
+    genuinely refused by the real object store when actually used.
+    Uploads one real object, issues a real 1-second-TTL signed URL
+    directly via `issue_signed_url` (bypassing the router's own fixed
+    300s default, which would make this test wait 5 real minutes),
+    waits past it, then makes a real HTTP GET against the real,
+    now-expired URL."""
+    import httpx
+
+    from ledgerlight.api.documents import issue_signed_url
+    from ledgerlight.storage.s3_store import ObjectStore
+
+    _restore_real_s3_env(monkeypatch)
+    from pathlib import Path
+
+    settings = Settings(_env_file=str(Path(__file__).resolve().parent.parent / ".env"))  # type: ignore[call-arg]
+
+    version = _make_document_version(real_session)
+    store = ObjectStore(settings)
+    store._client.put_object(  # noqa: SLF001 -- this test owns real direct object-store access
+        Bucket=settings.s3_bucket, Key=version.object_key, Body=b"real test document bytes"
+    )
+
+    url, expires_in = issue_signed_url(settings, real_session, version.id, expires_in_seconds=1)
+    assert expires_in == 1
+
+    # Confirm the URL is genuinely valid NOW, before it expires.
+    fresh_response = httpx.get(url)
+    assert fresh_response.status_code == 200, fresh_response.text
+    assert fresh_response.content == b"real test document bytes"
+
+    time.sleep(2)
+
+    expired_response = httpx.get(url)
+    assert expired_response.status_code != 200, (
+        f"a real, already-expired presigned URL was still accepted: "
+        f"{expired_response.status_code} {expired_response.text}"
+    )
 
 
 def test_signed_url_404s_for_an_unknown_document_version(

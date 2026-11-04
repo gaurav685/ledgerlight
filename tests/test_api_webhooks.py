@@ -8,6 +8,8 @@ outbound HTTP call.
 
 from __future__ import annotations
 
+import socket
+
 import pytest
 import respx
 from httpx import Response
@@ -84,6 +86,67 @@ def test_validate_webhook_url_rejects_no_hostname() -> None:
 @pytest.mark.network
 def test_validate_webhook_url_accepts_a_real_public_https_host() -> None:
     webhooks.validate_webhook_url("https://www.google.com/hook")
+
+
+def test_validate_webhook_url_catches_dns_rebinding_between_calls(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Phase 5 §9's own named DNS-rebinding case: a host resolves to a
+    real, safe public address the FIRST time it's checked (e.g. at
+    registration), then an attacker repoints its DNS to a private
+    address before the real send happens. Re-resolution at send time
+    -- never a cached result -- must catch this."""
+    calls = {"n": 0}
+
+    def fake_getaddrinfo(host: str, port: int | None) -> list[tuple[object, ...]]:
+        calls["n"] += 1
+        addr = "93.184.216.34" if calls["n"] == 1 else "10.0.0.5"
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (addr, 0))]
+
+    monkeypatch.setattr(socket, "getaddrinfo", fake_getaddrinfo)
+
+    webhooks.validate_webhook_url(
+        "https://rebinding-test.example.com/hook"
+    )  # registration-time: safe
+    with pytest.raises(webhooks.UnsafeWebhookUrlError):
+        webhooks.validate_webhook_url(
+            "https://rebinding-test.example.com/hook"
+        )  # send-time: rebound
+
+
+@respx.mock
+def test_deliver_webhook_blocks_a_retry_rebound_mid_sequence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The same DNS-rebinding scenario, but through the real
+    `deliver_webhook` retry loop: attempt 1 resolves safely and a real
+    (mocked) HTTP call goes out; the host rebinds to a private address
+    before attempt 2, which must be blocked WITHOUT a second real HTTP
+    call ever being attempted -- proving the re-check runs fresh on
+    every single attempt, not once per `deliver_webhook` call."""
+    route = respx.post("https://rebinding-retry-test.example.com/hook").mock(
+        return_value=Response(500)
+    )
+    calls = {"n": 0}
+
+    def fake_getaddrinfo(host: str, port: int | None) -> list[tuple[object, ...]]:
+        calls["n"] += 1
+        addr = "93.184.216.34" if calls["n"] == 1 else "10.0.0.5"
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (addr, 0))]
+
+    monkeypatch.setattr(socket, "getaddrinfo", fake_getaddrinfo)
+
+    result = webhooks.deliver_webhook(
+        "https://rebinding-retry-test.example.com/hook",
+        "secret",
+        b"{}",
+        max_attempts=3,
+        sleep=False,
+    )
+    assert not result.success
+    assert result.attempt == 2
+    assert result.error is not None and "blocked address" in result.error
+    assert route.call_count == 1  # only the first, pre-rebinding attempt ever sent
 
 
 # --- delivery (mocked HTTP via respx, never a real outbound call) -------------
