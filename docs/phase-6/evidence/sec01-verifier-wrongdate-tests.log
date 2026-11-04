@@ -1,0 +1,17 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.15, pytest-8.4.2, pluggy-1.7.0
+rootdir: C:\ledger light
+configfile: pyproject.toml
+plugins: anyio-4.15.1, platformdirs-4.13.5, cov-5.0.0, respx-0.21.1
+collected 4 items
+
+tests\test_agent_verifier.py ....                                        [100%]
+
+============================== warnings summary ===============================
+tests/test_agent_verifier.py::test_verify_claim_fails_a_metric_claim_with_a_wrong_known_at
+  C:\ledger light\.venv\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 4 passed, 1 warning in 34.41s ========================
+exit: 0
