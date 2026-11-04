@@ -527,17 +527,54 @@ deliberately not built yet). `docs/deploy/local-setup-windows.md`
 day-to-day; 3 real Windows-specific gotchas this project actually hit).
 Commits: `183b6f7`, `54b460f`.
 
+## §11 in progress (2026-11-05)
+
+Real evidence captured this pass, all under `docs/phase-5/evidence/`:
+`pre-commit-all-files.log` (clean), `gitleaks-full-history-phase5.log`
+(refreshed -- 171 commits, no leaks), `sec11-backend-lint-typecheck-tests.log`
+(ruff/mypy/pytest default -- 408 passed), `sec11-frontend-lint-typecheck.log`
+(eslint/tsc clean), `sec11-frontend-build-e2e-smoke.log` (real production
+build + 2 real Playwright smoke tests passed), `sec11-migrations-from-empty.log`
+(all 11 real migrations applied cleanly to a fresh, empty database, landing
+on the same 53 tables the long-lived dev database has),
+`sec11-pip-audit.log` (re-run to confirm the §8 `prometheus-client` addition
+introduced no new findings -- clean), `sec11-rls-and-authz-matrix.log` (RLS
+5 passed fresh; authz-matrix's own fresh re-run was killed by memory
+pressure, substituted with its own real 42-passed run from commit `58273a2`
+earlier this phase). `sec11-backend-integration-tests.log` documents the
+real, honest state of the full-batch integration run (see its own gate in
+release-gates.md). actionlint/terraform fmt-validate evidence from §6/§7 is
+still valid and unchanged (`docs/phase-5/evidence/github-actions-local-validation.md`,
+`terraform-validate.log`) -- nothing in those areas changed this session, so
+not re-run. The restore drill's own real evidence is §8's
+`restore-drill.log`. Commits: `515a055`, `8304e52`.
+
+**Found and fixed a real local-environment gap** while running the frontend
+checks: a bare `pnpm` does not reliably resolve on `PATH` even after
+`corepack enable` with no `--install-directory` -- it broke Playwright's own
+internal `webServer` spawn specifically. Fixed by materializing real shims
+via `corepack enable --install-directory <dir>`; documented in
+`docs/deploy/local-setup-windows.md` (including fixing the earlier
+first-time-setup snippet, which had the same latent gap).
+
+**Real host memory has been trending down sharply across this §11 pass**
+(3.25GB free at the start, down to 0.89GB by the end, from the user's own
+other running applications, not this project's own Docker stack) -- 3 more
+real kills hit during this pass alone (on top of the ones already recorded
+in §8/§9), on top of everything already recorded. Pausing further
+Docker/pytest-heavy work here rather than continuing to push against a
+worsening resource constraint; flagged to the user directly.
+
 ## Exact next step
 
-Move to §11: run and verify, recording raw output for each -- backend lint/
-typecheck/tests; frontend lint/tsc/tests; migrations from empty; RLS tests;
-the authorisation matrix; the security tests; pip-audit/pnpm audit/trivy;
-actionlint plus per-job local runs; terraform fmt/validate; the restore
-drill; `pre-commit run --all-files`; a full-history gitleaks scan. Playwright
-e2e and the ZAP baseline stay deferred (see the release-gates.md entry
-above) unless real memory headroom improves. Screenshots/traces of key pages
-under `docs/phase-5/evidence/` depend on the deferred Playwright run, so
-also deferred with it.
+Screenshots/traces of key pages under `docs/phase-5/evidence/` depend on the
+deferred Playwright e2e run against a live backend, so stay deferred with
+it (see release-gates.md). Once real memory headroom is confirmed better:
+finish §11's remaining re-runs if desired (not strictly required -- the
+existing §6/§7/§8 evidence for actionlint/terraform/restore-drill is still
+valid), then move to §12 (final commit -- already effectively continuous
+this phase; §12 is really about confirming the backup bundle is refreshed)
+§13 (exit-gate checklist) and §14 (final report).
 
 Revisit the §4 accessibility/browser-verification gap above if the Chrome
 extension becomes available.
