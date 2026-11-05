@@ -17,8 +17,8 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   `docs/phase-6/orchestrator-evidence.md` built with verbatim Phase 2-5
   evidence. All 5 stop conditions checked explicitly: none triggered.
   Commit: `66f7020`.
-- §2 Low-memory stack profile + deferred e2e/ZAP runs -- PARTIALLY
-  COMPLETE (see below).
+- §2 Low-memory stack profile + deferred e2e/ZAP runs -- **COMPLETE** (see
+  below).
 - §3 End-to-end pipeline test (ingestion -> dossier) -- NOT STARTED.
 - §4 Regression suite -- NOT STARTED.
 - §5 Backtest reproducibility and audits -- NOT STARTED.
@@ -37,8 +37,8 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 - §18 Human checkpoint and 6A exit gates -- NOT STARTED. **STOP here --
   do not begin Phase 6B.**
 
-- §2 Low-memory stack profile + deferred e2e/ZAP runs -- **PARTIALLY
-  COMPLETE** (2026-11-05). `infra/docker-compose.e2e-lite.yml` built
+- §2 Low-memory stack profile + deferred e2e/ZAP runs -- **COMPLETE**
+  (2026-11-05). `infra/docker-compose.e2e-lite.yml` built
   (per-service mem_limit/mem_reservation, tuned Postgres, worker gated
   behind a `with-worker` profile, DAGSTER_MAX_CONCURRENT_RUNS=1). Real idle
   memory measured (postgres 26MiB fresh vs 2.3GiB accumulated-cache;
@@ -75,17 +75,29 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   navigates there with them. Proven directly in the e2e test via direct
   navigation with a real evidence span pulled from the database.
 
-  ZAP baseline: not yet run. Real host memory was highly unstable
-  throughout this work (swung 0.29GB-2.37GB free from the user's own other
-  applications), causing 2 real Docker build kills along the way -- all
-  recorded in `docs/phase-6/evidence/`.
+  **ZAP baseline run** against the real e2e-lite stack (own Docker
+  network, no sudo): 0 FAIL in both runs. First run: 6 WARN/62 PASS. Two
+  real, easy findings fixed (`X-Powered-By` header disabled via
+  `poweredByHeader: false`; a real `Permissions-Policy` header added,
+  denying every browser feature this app uses none of) and confirmed
+  gone in a second run: 4 WARN/64 PASS. Remaining 4 triaged as accepted
+  (`docs/phase-6/evidence/sec02-zap-triage.md`) -- the CSP finding is
+  the same already-disclosed `'unsafe-inline'` trade-off; the other 3
+  are informational or real-but-low-value (Cross-Origin-Embedder-Policy,
+  not applicable to an app with no cross-origin embeds). Full Playwright
+  suite re-confirmed 4/4 passing after both header fixes.
+
+  Real host memory was highly unstable throughout this work (swung
+  0.29GB-3.26GB free from the user's own other applications), causing 2
+  real Docker build kills along the way -- all recorded in
+  `docs/phase-6/evidence/`. Commit: `dea2c0c` (main), plus a follow-up
+  for the ZAP work and header fixes.
 
 ## Exact next step
 
-§2's ZAP baseline is the one remaining item (deferred pending memory
-headroom -- the e2e-lite stack itself is still up and healthy). Move to
-§3: the automated end-to-end pipeline test (ingestion -> dossier), run
-twice to prove idempotency, asserting the full provenance/known_at chain.
+§2 is fully done. Move to §3: the automated end-to-end pipeline test
+(ingestion -> dossier), run twice to prove idempotency, asserting the
+full provenance/known_at chain.
 
 ## Known starting context (from Phase 5)
 

@@ -17,6 +17,10 @@ import type { NextConfig } from "next";
 // HTML submission). middleware.ts's own per-request nonce is the real
 // fix; see its own docstring.
 const nextConfig: NextConfig = {
+  // Phase 6A §2: a real ZAP baseline finding -- Next.js's own
+  // "X-Powered-By: Next.js" header (on by default) is a real,
+  // if minor, server-technology information leak. Disabled.
+  poweredByHeader: false,
   async headers() {
     return [
       {
@@ -26,6 +30,16 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "no-referrer" },
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+          // Phase 6A §2: another real ZAP baseline finding -- no
+          // Permissions-Policy header was set at all. This app uses
+          // none of these real browser features anywhere, so every
+          // one is denied outright.
+          {
+            key: "Permissions-Policy",
+            value:
+              "camera=(), microphone=(), geolocation=(), payment=(), usb=(), " +
+              "interest-cohort=()",
+          },
         ],
       },
     ];
