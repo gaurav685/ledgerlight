@@ -78,6 +78,19 @@ data/models/
 *.tfstate.*
 *.tfplan
 
+# --- Phase 6A §7: the dossier-review sample's manifest and answer key
+#     deliberately mix 10 real + ~3 seeded-QC dossiers UNLABELLED to a
+#     real human reviewer -- both files record (or directly reveal)
+#     which review_task_ids are seeded, so committing either one to a
+#     tracked repo would let anyone `git show`/grep the real answer
+#     before reviewing. Unlike other generated manifests in this
+#     project (e.g. data/manifests/label-review-sample-*.jsonl, which
+#     ARE committed), these two stay local-only. The tool that
+#     generates them (scripts/build_dossier_review_sample.py) is
+#     committed and re-runnable. ---
+docs/phase-6/review-pack/dossier-review-manifest.jsonl
+docs/phase-6/review-pack/dossier-review-answer-key.jsonl
+
 # --- OS / editor ---
 .DS_Store
 Thumbs.db

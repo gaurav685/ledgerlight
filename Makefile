@@ -1,6 +1,7 @@
 .PHONY: setup lint typecheck test verify-env verify-manifests acquire-seed import-local infra-up infra-check infra-down \
 	db-upgrade sources-sync store-backfill ingest backfill process reprocess ingest-report dagster-dev test-integration test-corpus \
-	test-regression test-pyramid
+	test-regression test-pyramid field-review entity-pair-review retrieval-review outcome-evidence-review \
+	build-dossier-review-sample dossier-review-blind review-progress
 
 # Dagster's own instance config (dagster_home/dagster.yaml) interpolates
 # LEDGERLIGHT_POSTGRES_* from the process environment, not from .env
@@ -197,3 +198,31 @@ score:
 
 model-card:
 	uv run python scripts/model_card.py
+
+# --- Phase 6A §7: human review pack ---
+
+# usage: make field-review REVIEWER="your name" [LIMIT=5]
+field-review:
+	uv run python scripts/field_review.py --reviewer "$(REVIEWER)" $(if $(LIMIT),--limit $(LIMIT),)
+
+# usage: make entity-pair-review REVIEWER="your name" [LIMIT=5]
+entity-pair-review:
+	uv run python scripts/entity_pair_review.py --reviewer "$(REVIEWER)" $(if $(LIMIT),--limit $(LIMIT),)
+
+# usage: make retrieval-review REVIEWER="your name" [LIMIT=5]
+retrieval-review:
+	uv run python scripts/retrieval_review.py --reviewer "$(REVIEWER)" $(if $(LIMIT),--limit $(LIMIT),)
+
+# usage: make outcome-evidence-review REVIEWER="your name" [LIMIT=5]
+outcome-evidence-review:
+	uv run python scripts/outcome_evidence_review.py --reviewer "$(REVIEWER)" $(if $(LIMIT),--limit $(LIMIT),)
+
+build-dossier-review-sample:
+	uv run python scripts/build_dossier_review_sample.py
+
+# usage: make dossier-review-blind TASK=<task-id>
+dossier-review-blind:
+	uv run python scripts/dossier_review.py show --task-id "$(TASK)" --blind
+
+review-progress:
+	uv run python scripts/review_progress.py

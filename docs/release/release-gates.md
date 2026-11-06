@@ -8,7 +8,29 @@ that gets marked "done" on a promise.
 
 ## Gap: no review infrastructure for field/entity-pair/retrieval-query gold labels
 
-**Status:** open. **Deferred to:** Phase 6.
+**Status: PARTIALLY CLOSED (2026-11-06, Phase 6A §7).** The tools now
+exist: `scripts/field_review.py`, `scripts/entity_pair_review.py`,
+`scripts/retrieval_review.py`, `scripts/outcome_evidence_review.py`
+(file-backed append-only JSONL audits under
+`docs/phase-6/review-pack/`, not the originally-envisioned
+`label_item_fields` DB table -- a deliberate, documented choice to
+avoid a schema/migration change for what the brief treats as this
+phase's own review pack, not a permanent production feature). Each
+resumes after interruption, persists a skip with a note, records the
+reviewer, and samples deterministically test-split-first. See
+`docs/phase-6/human-review-guide.md`.
+
+**Still open:** no human has actually reviewed anything yet through
+these tools -- that is explicitly Phase 6B's job, not this phase's.
+Gold evaluation for extraction/entity-resolution/retrieval therefore
+remains **PENDING_HUMAN_REVIEW** (see
+`docs/evaluation/final-evaluation.md`) until that happens. The entity-
+pair review sample is also honestly smaller than the brief's own ~20
+target (5 real pairs) -- the real corpus is too thin to support more
+without inventing cases (disclosed in both the tool's own docstring
+and the human-review-guide).
+
+**Previous status (superseded):** open. **Deferred to:** Phase 6.
 
 **What's missing:** `label_item_fields` (the table for field-level gold
 review) has a schema but 0 rows -- nothing has ever written to it. There

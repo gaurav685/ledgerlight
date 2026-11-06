@@ -40,9 +40,24 @@ def main() -> int:
 
     list_parser = sub.add_parser("list", help="list the real open review queue")
     list_parser.add_argument("--limit", type=int, default=None)
+    list_parser.add_argument(
+        "--blind",
+        action="store_true",
+        help="suppress the seeded_qc column (see the show subcommand's own --blind help)",
+    )
 
     show_parser = sub.add_parser("show", help="show one real task's dossier")
     show_parser.add_argument("--task-id", required=True)
+    show_parser.add_argument(
+        "--blind",
+        action="store_true",
+        help=(
+            "suppress the seeded_qc warning below -- use this for a genuine human "
+            "review session over a mixed real+seeded-QC sample (Phase 6A §7 item 5), "
+            "where telling the reviewer up front which items are seeded would defeat "
+            "the whole point of measuring their catch rate"
+        ),
+    )
 
     decide_parser = sub.add_parser("decide", help="record a real reviewer decision")
     decide_parser.add_argument("--task-id", required=True)
@@ -71,10 +86,18 @@ def main() -> int:
             tasks = list_open_tasks(session, limit=args.limit)
             print(f"{len(tasks)} open real review task(s)")
             for task in tasks:
+                if args.blind:
+                    # reason_code is itself "seeded_qc" for a seeded item --
+                    # as revealing as the seeded_qc column, so both are
+                    # suppressed together under --blind.
+                    reason_part = "reason=<hidden --blind>"
+                    seeded_part = ""
+                else:
+                    reason_part = f"reason={task.reason_code}"
+                    seeded_part = f"seeded_qc={task.seeded_qc} "
                 print(
-                    f"  id={task.id} reason={task.reason_code} priority={task.priority} "
-                    f"seeded_qc={task.seeded_qc} dossier_id={task.dossier_id} "
-                    f"claim_id={task.claim_id}"
+                    f"  id={task.id} {reason_part} priority={task.priority} "
+                    f"{seeded_part}dossier_id={task.dossier_id} claim_id={task.claim_id}"
                 )
             return 0
 
@@ -84,11 +107,11 @@ def main() -> int:
             if found_task is None:
                 print(f"no real review task with id {task_id}")
                 return 1
-            if found_task.seeded_qc:
+            if found_task.seeded_qc and not args.blind:
                 print(
                     "WARNING: this is a seeded QC item (a deliberately flawed dossier), "
-                    "not a real finding -- the brief's own ground rule is to never review "
-                    "a seeded QC item or a gold item as a real human reviewer."
+                    "not a real finding. Pass --blind to suppress this during a genuine "
+                    "human review session over a mixed real+seeded-QC sample."
                 )
             dossier = get_task_dossier(session, task_id)
             if dossier is None:

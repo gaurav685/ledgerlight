@@ -26,7 +26,8 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   below; one real sub-step blocked by host memory, not code).
 - §6 Consolidated evaluation report (pre-review) -- **COMPLETE** (see
   below).
-- §7 Human review pack (build only, no reviewing) -- NOT STARTED.
+- §7 Human review pack (build only, no reviewing) -- **COMPLETE** (see
+  below).
 - §8 Performance and reliability -- NOT STARTED.
 - §9 Security and tenant re-validation -- NOT STARTED.
 - §10 Cost per filing -- NOT STARTED.
@@ -289,11 +290,70 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   positive events) -- carried forward unchanged from Phase 3.
   Commit: `eabc52f`.
 
+- §7 Human review pack (build only, no reviewing) -- **COMPLETE**
+  (2026-11-06). Built all 5 real review types -- tools only; nothing
+  has actually been reviewed (that is explicitly Phase 6B's job):
+  - **Field review** (`scripts/field_review.py`): ~30 real
+    `EventField` values across event types, with cited span + context,
+    decisions correct/wrong-value/unsupported/skip.
+  - **Entity-pair review** (`scripts/entity_pair_review.py`): real
+    (mention, candidate entity) pairs scored with the production fuzzy
+    matcher. **Honest disclosure**: only 5 real pairs exist (target
+    ~20) -- the real corpus is too thin, matching Phase 2's own
+    already-disclosed finding; not padded with invented pairs.
+  - **Retrieval review** (`scripts/retrieval_review.py`): 10 real
+    silver queries x real top-10 hybrid-search results, relevant/
+    not_relevant/skip.
+  - **Outcome-evidence spot-check** (`scripts/outcome_evidence_review.py`):
+    all 45 real primary-outcome events (IBBI admissions + rating
+    downgrades) -- under the 60 threshold, so no stratification was
+    needed; evidence-supports yes/no/unclear + date-correct yes/no.
+  - **Dossier review** (`scripts/build_dossier_review_sample.py` +
+    the existing `scripts/dossier_review.py`): staged 10 real dossiers
+    (mixed SEED/UNIVERSE track, mixed real score where one exists) +
+    3 seeded-QC flawed dossiers, unlabelled, into a manifest +
+    separate answer-key file. Found and fixed a real gap: a plain
+    FINALISED dossier has no `ReviewTask` by default, so the existing
+    flow couldn't address it by `--task-id` -- now opens one
+    (`reason_code="phase6a_sample_review"`) for each real sample item.
+    Found and fixed a second real gap: `dossier_review.py show` always
+    printed a `seeded_qc` warning, AND `list` always printed the raw
+    `seeded_qc` field plus a `reason_code` that is itself literally
+    the string `"seeded_qc"` for a seeded item -- either one alone
+    would spoil the blind mix for a genuine human reviewer. Added
+    `--blind` to both subcommands; verified by direct comparison that
+    with `--blind`, `list`'s output no longer distinguishes the 3
+    seeded items from the 10 real ones. Also found and closed 1 stray
+    `ReviewTask` left open from an earlier exploratory seeding attempt
+    (not part of the final 13-item sample) -- the real open queue now
+    has exactly 10 + 3 = 13 tasks, matching the manifest precisely.
+    The generated manifest and answer-key files are gitignored,
+    local-only (unlike this project's other generated manifests,
+    which are normally committed) -- either file's content is itself
+    the answer to which items are seeded, so committing it would let
+    anyone reading the repo see the answer before reviewing.
+
+  All 4 file-backed types share `ledgerlight/review_pack/` (an
+  append-only JSONL audit log with resume/skip/reviewer-name support,
+  and a test-split-first deterministic sampler). Every type has both
+  a `make` target and the equivalent `.venv\Scripts\python.exe`
+  PowerShell command; `make review-progress` reports counts per type
+  and per reviewer. `docs/phase-6/human-review-guide.md` has the
+  order, time estimates (~4 hours total), decision rules with
+  examples, and a one-page summary. `docs/release/release-gates.md`'s
+  own long-standing gap on this is marked PARTIALLY CLOSED (tools
+  exist; actual human review still pending, by design).
+
+  Re-ran the full default suite (408 passed) plus the real
+  review/qc_seed/review_queue/label_review integration tests (46
+  passed) after this work -- no regression. Commit: (pending --
+  committing next).
+
 ## Exact next step
 
-§6 is fully done. Move to §7: build the human review pack (field
-review, entity-pair review, retrieval review, outcome-evidence
-spot-check, dossier review) -- build the tools only, do NOT review.
+§7 is fully done. Move to §8: performance and reliability (API load
+test, ingestion/processing throughput, agent runtime p50/p95, and 5
+failure-recovery drills with before/after evidence).
 
 ## Superseded: original §5 next-step note (kept for history)
 
