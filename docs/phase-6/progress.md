@@ -37,7 +37,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 - §12 Final documentation -- **COMPLETE** (see below).
 - §13 Clean-install and reproducible-setup test -- **COMPLETE** (see
   below).
-- §14 Production-readiness checklist -- NOT STARTED.
+- §14 Production-readiness checklist -- **COMPLETE** (see below).
 - §15 Release-gate status -- NOT STARTED.
 - §16 Run and verify -- NOT STARTED.
 - §17 Commit (local only) and backup -- ongoing throughout.
@@ -733,11 +733,36 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 
   Commit: `0e7a202`.
 
+- §14 Production-readiness checklist -- **COMPLETE** (2026-11-06).
+
+  Wrote `docs/release/production-readiness.md`. No separate "master
+  requirements" document exists in this repo, so the checklist
+  reconstructs the full real scope from every phase report plus
+  `docs/release/release-gates.md`, organized into 11 real capability
+  areas (acquisition, document processing, knowledge extraction,
+  risk modelling, the agent, human review, API/security, frontend/
+  ops, testing, documentation, CI/deployment, legal/licensing, git
+  policy), each row COMPLETE/PARTIAL/BLOCKED with a cited evidence
+  path and the real reason. Every brief-mandated minimum item is
+  covered explicitly: BSE/NSE blocked, gold review PENDING_HUMAN_REVIEW,
+  predictive validity inconclusive, financial features excluded,
+  guidance blocked for lack of data, GitHub CI unverified (no remote),
+  AWS not deployed, and the real `pymupdf` AGPL legal/licensing
+  question. Spot-checked the more load-bearing cited figures (740
+  claims / 14/14 adversarial / 4,759 pages / point-in-time integrity)
+  directly against their real source docs before writing them down --
+  all confirmed accurate. Closes with an explicit 3-item severity
+  ranking of what most constrains real-world use today (inconclusive
+  model, no gold review yet, `pymupdf` licensing), ahead of the
+  individually-scoped, non-blocking limitations.
+
+  Commit: _(pending)_.
+
 ## Exact next step
 
-§13 is fully done. Move to §14: production-readiness checklist
-(`docs/release/production-readiness.md`, every master-requirements
-capability marked COMPLETE/PARTIAL/BLOCKED with evidence links).
+§14 is fully done. Move to §15: release-gate status (evaluate every
+gate in `docs/release/release-gates.md` as PASS/PENDING_HUMAN_REVIEW/
+PENDING_PUSH/BLOCKED, with evidence).
 
 ## Superseded: original §5 next-step note (kept for history)
 
