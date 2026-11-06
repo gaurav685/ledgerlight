@@ -1,0 +1,60 @@
+﻿restoring from C:\ledgerlight-backups\db\ledgerlight-20261104T184350Z.dump
+Restoring C:\ledgerlight-backups\db\ledgerlight-20261104T184350Z.dump into a fresh database 'ledgerlight_restore_drill'...
+
+table                                   source   restored
+---------------------------------------------------------
+alembic_version                              1          1
+alert_rules                                  4          1  <-- MISMATCH
+alerts                                      54          0  <-- MISMATCH
+api_keys                                     1          0  <-- MISMATCH
+audit_logs                                 145         47  <-- MISMATCH
+chunks                                    2593       2591  <-- MISMATCH
+claims                                    2105       1736  <-- MISMATCH
+companies                                 6296       6287  <-- MISMATCH
+company_identifiers                      14638      14638
+dead_letters                                 1          0  <-- MISMATCH
+document_pages                            6194       6131  <-- MISMATCH
+document_versions                         2871       2807  <-- MISMATCH
+documents                                 3170       3044  <-- MISMATCH
+dossiers                                   171        131  <-- MISMATCH
+entities                                    13         13
+entity_identifiers                           0          0
+entity_links                                 3          3
+entity_merges                                0          0
+event_fields                               134        127  <-- MISMATCH
+event_types                                 15         15
+event_versions                               0          0
+events                                    8475       8470  <-- MISMATCH
+experiments                                  5          5
+feature_definitions                         35         35
+feature_snapshots                       236427     236427
+filings                                    369        364  <-- MISMATCH
+identifier_window_corrections             2861       2861
+ingestion_runs                              32         32
+investigation_steps                        909        735  <-- MISMATCH
+investigations                             164        131  <-- MISMATCH
+label_item_fields                            0          0
+label_items                                433        433
+memberships                                 33         21  <-- MISMATCH
+mentions                                     5          3  <-- MISMATCH
+model_registry                               2          2
+outcomes                                  8463       8463
+price_bars                             3063934    3063934
+processing_attempts                          4          0  <-- MISMATCH
+rate_limit_counters                          0          0
+review_assignments                           0          0
+review_decisions_audit                       0          0
+review_queue                                 1          1
+review_tasks                                19          0  <-- MISMATCH
+scores                                       5          5
+sessions                                    64         20  <-- MISMATCH
+sources                                     30         29  <-- MISMATCH
+taxonomy_versions                            2          2
+tenants                                     18         15  <-- MISMATCH
+users                                       33         21  <-- MISMATCH
+watchlist_items                              4          1  <-- MISMATCH
+watchlists                                   5          1  <-- MISMATCH
+webhook_deliveries                           0          0
+webhooks                                     0          0
+row-count mismatches: [('alert_rules', 4, 1), ('alerts', 54, 0), ('api_keys', 1, 0), ('audit_logs', 145, 47), ('chunks', 2593, 2591), ('claims', 2105, 1736), ('companies', 6296, 6287), ('dead_letters', 1, 0), ('document_pages', 6194, 6131), ('document_versions', 2871, 2807), ('documents', 3170, 3044), ('dossiers', 171, 131), ('event_fields', 134, 127), ('events', 8475, 8470), ('filings', 369, 364), ('investigation_steps', 909, 735), ('investigations', 164, 131), ('memberships', 33, 21), ('mentions', 5, 3), ('processing_attempts', 4, 0), ('review_tasks', 19, 0), ('sessions', 64, 20), ('sources', 30, 29), ('tenants', 18, 15), ('users', 33, 21), ('watchlist_items', 4, 1), ('watchlists', 5, 1)]
+drill DB ready: ledgerlight_restore_drill

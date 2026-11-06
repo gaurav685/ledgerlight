@@ -1,0 +1,20 @@
+﻿coverage window: 2017-08-17 2026-07-21
+companies: ['DHFL', 'FRETAIL', 'GENSOL', 'JETAIRWAYS', 'SPICEJET']
+  year train_cutoff test_start   test_end  train_n  train_co train_pos  test_n  test_co test_pos
+  2017   2015-01-01 2017-01-01 2018-01-01        0         0         0      15        3        0
+  2018   2016-01-01 2018-01-01 2019-01-01        0         0         0      32        3        9
+  2019   2017-01-01 2019-01-01 2020-01-01        0         0         0      29        3       12
+  2020   2018-01-01 2020-01-01 2021-01-01       15         3         0      32        3        3
+  2021   2019-01-01 2021-01-01 2022-01-01       47         3         9      21        2        9
+  2022   2020-01-01 2022-01-01 2023-01-01       76         4        21       6        1        0
+  2023   2021-01-01 2023-01-01 2024-01-01      108         4        24       5        1        0
+  2024   2022-01-01 2024-01-01 2025-01-01      129         4        33       4        1        3
+pooled: company-month rows=36 distinct positive companies=4 distinct positive events=5 INCONCLUSIVE (< 30 distinct events)
+B0_base_rate: {'pr_auc': 0.275, 'roc_auc': 0.5459104938271605, 'brier_skill_score': -0.2131525424258307, 'n': 144}
+B1_rating_rule: {'pr_auc': 0.3544238683127572, 'roc_auc': 0.6342592592592593, 'brier_skill_score': -0.2962962962962963, 'n': 144}
+B2_price_liquidity: {'pr_auc': 0.44444444444444453, 'roc_auc': 0.5744598765432098, 'brier_skill_score': -0.20931426699668898, 'n': 144}
+B3_structured_rule_verified: {'pr_auc': 0.23727513864839656, 'roc_auc': 0.5230195473251028, 'brier_skill_score': -0.8668747758610034, 'n': 144}
+LightGBM: {'pr_auc': 0.26666666666666666, 'roc_auc': 0.5420524691358024, 'brier_skill_score': -0.22073794369268818, 'n': 144}
+positive_counts: {'company_month_rows': 36, 'distinct_positive_companies': 4, 'distinct_positive_events': 5, 'is_inconclusive': True}
+wrote C:\ledger light\docs\experiments\1f56f9c5-8699-4304-b56f-aee9c66f5d4c.md
+backtest reproducibility: IDENTICAL to the previous run on this snapshot (0 diffs)

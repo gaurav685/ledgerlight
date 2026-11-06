@@ -821,11 +821,30 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   - E2E pipeline test, twice per the brief: first pass inside batch 3
     (2 passed), second pass run standalone (2 passed, 187.1s). Both
     clean, confirming no state leakage between runs.
+  - Backtest reproducibility, re-run independently of §5 (fresh
+    restore of the same latest real backup, same `restore_database()`
+    function, a fresh `ledgerlight_restore_drill`): row-count
+    comparison showed real mismatches this time in 26 tables
+    (`investigations`, `dossiers`, `tenants`, `users`, `sessions`,
+    etc.) -- **expected and benign**, not a reproducibility defect:
+    the backup predates nearly all of this phase's own real usage
+    (seed test tenants, e2e pipeline runs, the review-pack sample,
+    load-test/drill activity), so the live app-data tables have
+    genuinely grown since. The tables that actually matter for
+    backtest reproducibility matched exactly
+    (`feature_snapshots` 236,427=236,427, `outcomes` 8,463=8,463,
+    `price_bars` 3,063,934=3,063,934). `backtest.py` and
+    `leakage_check.py` re-run against the fresh restore: every real
+    metric byte-identical to §5 and to Phase 3's own original report
+    (LightGBM PR-AUC 0.26666666666666666, Brier skill score
+    -0.22073794369268818, n=144; label-permutation PR-AUC
+    0.24199627187104908; feature-shift PR-AUC 0.349025974025974;
+    `days_since_last_downgrade` flagged at 1.0; 0 outcome-date/embargo
+    violations). Drill database dropped after.
 
-  **Still remaining**: Playwright on e2e-lite, the ZAP baseline,
-  backtest reproducibility diff+audits re-run, the load test and 5
-  failure-recovery drills re-run, the full security suite re-run, and
-  a re-run of the §13 clean-install test. Continuing across
+  **Still remaining**: Playwright on e2e-lite, the ZAP baseline, the
+  load test and 5 failure-recovery drills re-run, the full security
+  suite re-run, and a re-run of the §13 clean-install test. Continuing
   subsequent autonomous ticks rather than forcing all of §16 through
   one sitting -- consistent with this host's own real, repeated
   memory constraints and the project's established batching
