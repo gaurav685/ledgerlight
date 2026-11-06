@@ -80,24 +80,25 @@ this section is a short pointer, not a substitute.
 
 Requires [uv](https://docs.astral.sh/uv/) (Python 3.12 is fetched
 automatically by `uv` via `.python-version`; no system Python install is
-required). **`docs/deploy/local-setup-windows.md` is the full, real,
-step-by-step guide this project was actually set up and run from** --
-read it first on a fresh machine; the quick version below skips the
-real memory/Docker caveats it documents.
+required). **On Windows, `docs/deploy/local-setup-windows.md` is the
+full, real, step-by-step guide this project was actually set up and
+run from -- follow that one, not the sketch below.** It covers two
+real gotchas this sketch can't: `uv` is not reliably on `PATH` even
+after a real pip install (use `python -m uv ...`, never a bare `uv
+...`), and `--extra ocr` is required on every `sync` (a plain `uv
+sync` silently uninstalls this project's real OCR dependencies).
 
 ```sh
-uv sync                # create .venv and install locked dependencies
+uv sync --extra ocr     # create .venv and install locked dependencies
 uv run pre-commit install --hook-type pre-commit --hook-type pre-push
-cp .env.example .env   # edit values as needed; .env is gitignored
-# Required before `infra-up`: generate local-only secrets (object store,
-# session cookies, webhook-secret encryption -- .env.example lists every
-# real required variable; LEDGERLIGHT_ENVIRONMENT=development fails fast
-# on any default/weak secret value, so these must be real random values)
-echo "LEDGERLIGHT_GARAGE_RPC_SECRET=$(openssl rand -hex 32)" >> .env
-echo "LEDGERLIGHT_GARAGE_ADMIN_TOKEN=$(openssl rand -hex 16)" >> .env
-echo "LEDGERLIGHT_SESSION_SECRET_KEY=$(openssl rand -hex 32)" >> .env
-# Must be a real Fernet key (url-safe base64, 32 bytes), not arbitrary hex:
-echo "LEDGERLIGHT_WEBHOOK_SECRET_ENCRYPTION_KEY=$(uv run python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')" >> .env
+cp .env.example .env    # LEDGERLIGHT_CONTACT_EMAIL is required; most
+                         # other values already have a real, dev-only
+                         # default -- except the two below, which Garage
+                         # refuses to start without (docker-compose.yml's
+                         # own `:?` checks enforce this)
+uv run python -c "import secrets; print(secrets.token_hex(32))"   # run twice,
+# paste one result as LEDGERLIGHT_GARAGE_RPC_SECRET and the other as
+# LEDGERLIGHT_GARAGE_ADMIN_TOKEN in .env
 ```
 
 ## Commands

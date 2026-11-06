@@ -1,6 +1,17 @@
 """Phase 6A §12: generate docs/data-dictionary.md from the real, live
-SQLAlchemy model metadata -- never hand-written, so it can't drift from
-the actual schema. Run after any model change and recommit the output.
+database schema -- never hand-written, so it can't drift from the
+actual schema. Reflects the live database directly (not just imported
+SQLAlchemy models): a real gap found while verifying this script
+against a truly from-scratch migrated database (Phase 6A §13's
+clean-install test) is that `rate_limit_counters` has no ORM model at
+all -- `ledgerlight.api.rate_limit` only ever touches it via raw SQL
+-- so reading `Base.metadata` alone (this script's first version)
+silently missed it. Reflecting the live database instead covers any
+table, ORM-backed or not.
+
+Requires a running local Postgres with migrations applied (`uv run
+alembic upgrade head`) -- this project already assumes that for
+nearly everything else.
 
 Usage:
     uv run python scripts/generate_data_dictionary.py
@@ -15,15 +26,20 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 OUT_PATH = REPO_ROOT / "docs" / "data-dictionary.md"
 
-# Import every module that defines ORM models so Base.metadata is fully
-# populated before introspecting it -- found by grepping for `class X(Base):`
-# across the codebase.
-from sqlalchemy import CheckConstraint, UniqueConstraint  # noqa: E402
+import pgvector.sqlalchemy  # noqa: F401,E402 - registers the real `vector` type for reflection
+from sqlalchemy import CheckConstraint, MetaData, UniqueConstraint  # noqa: E402
 
-import ledgerlight.agent.models  # noqa: F401,E402
-import ledgerlight.api.models  # noqa: F401,E402
-import ledgerlight.knowledge.models  # noqa: F401,E402
-from ledgerlight.db.models import Base  # noqa: E402
+from ledgerlight.config.settings import load_settings  # noqa: E402
+from ledgerlight.db.session import make_engine  # noqa: E402
+
+# Alembic's own internal bookkeeping table -- not part of this
+# project's real schema, excluded from the dictionary.
+_EXCLUDED_TABLES = {"alembic_version"}
+
+# Real tables with no SQLAlchemy ORM model at all (accessed only via
+# raw SQL) -- reflection still finds their real columns/types/PK from
+# the live database; this set only controls the disclosure note.
+_NO_ORM_MODEL = {"rate_limit_counters"}
 
 
 def _type_str(column) -> str:  # type: ignore[no-untyped-def]
@@ -34,21 +50,37 @@ def _type_str(column) -> str:  # type: ignore[no-untyped-def]
 
 
 def main() -> int:
-    tables = sorted(Base.metadata.tables.values(), key=lambda t: t.name)
+    settings = load_settings()
+    engine = make_engine(settings)
+    metadata = MetaData()
+    metadata.reflect(bind=engine)
+
+    tables = sorted(
+        (t for t in metadata.tables.values() if t.name not in _EXCLUDED_TABLES),
+        key=lambda t: t.name,
+    )
 
     lines: list[str] = [
         "# Data dictionary",
         "",
-        "Generated from the real, live SQLAlchemy model metadata by "
-        "`scripts/generate_data_dictionary.py` -- never hand-written. "
-        f"{len(tables)} real tables, as of this run. Regenerate after any "
-        "model change; do not hand-edit this file.",
+        "Generated from the real, live database schema (reflected directly, "
+        "not just imported SQLAlchemy models -- see this script's own "
+        "docstring for why) by `scripts/generate_data_dictionary.py` -- "
+        f"never hand-written. {len(tables)} real tables, as of this run "
+        "(excludes Alembic's own `alembic_version` bookkeeping table). "
+        "Regenerate after any schema change; do not hand-edit this file.",
         "",
     ]
 
     for table in tables:
         lines.append(f"## `{table.name}`")
         lines.append("")
+        if table.name in _NO_ORM_MODEL:
+            lines.append(
+                "*No SQLAlchemy ORM model -- accessed only via raw SQL "
+                "(see the table's own creating migration for why).*"
+            )
+            lines.append("")
         lines.append("| column | type | nullable | default | key |")
         lines.append("|---|---|---|---|---|")
         pk_cols = {c.name for c in table.primary_key.columns}

@@ -45,8 +45,17 @@ was actually set up and run on throughout Phase 0-5, not a generic
 git clone <this repo>
 cd "ledger light"
 cp .env.example .env
-# Fill in real values in .env -- LEDGERLIGHT_CONTACT_EMAIL is required;
-# everything else has a real, dev-only default that already works.
+# Fill in LEDGERLIGHT_CONTACT_EMAIL -- required. Most other values
+# already have a real, dev-only default that works as-is, EXCEPT
+# LEDGERLIGHT_GARAGE_RPC_SECRET / LEDGERLIGHT_GARAGE_ADMIN_TOKEN, which
+# ship blank and MUST be set -- docker-compose.yml's own `:?` checks
+# refuse to start Garage without them (confirmed directly -- a real,
+# previously-undocumented gap this phase's clean-install test found;
+# that `:?` error message itself suggests `openssl`, not available in
+# a plain PowerShell prompt with no WSL/Git-Bash on PATH):
+python -m uv run python -c "import secrets; print(secrets.token_hex(32))"
+# run it twice; paste one result as LEDGERLIGHT_GARAGE_RPC_SECRET and
+# the other as LEDGERLIGHT_GARAGE_ADMIN_TOKEN in .env
 ```
 
 ```powershell

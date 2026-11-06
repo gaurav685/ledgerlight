@@ -35,7 +35,8 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 - §11 Data-source compliance and licence review -- **COMPLETE** (see
   below).
 - §12 Final documentation -- **COMPLETE** (see below).
-- §13 Clean-install and reproducible-setup test -- NOT STARTED.
+- §13 Clean-install and reproducible-setup test -- **COMPLETE** (see
+  below).
 - §14 Production-readiness checklist -- NOT STARTED.
 - §15 Release-gate status -- NOT STARTED.
 - §16 Run and verify -- NOT STARTED.
@@ -589,7 +590,11 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   real bug in the generator itself while building it: a callable
   column default (`uuid.uuid4`) rendered as an unreadable, non-
   deterministic `<function uuid4 at 0x...>` memory address -- fixed to
-  print the function name instead.
+  print the function name instead. **Superseded by a §13 finding**:
+  this model-metadata approach silently missed `rate_limit_counters`
+  (a real table with no ORM model at all); the generator was rewritten
+  to reflect the live database schema directly instead -- see §13
+  below for the full story. 52 real tables as of that fix.
 
   **`docs/api/` reconciled**: found and fixed a real, previously-
   unnoticed drift -- the committed `openapi.json` predated the §9
@@ -636,13 +641,103 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 
   Commit: `cd87b69`.
 
+- §13 Clean-install and reproducible-setup test -- **COMPLETE**
+  (2026-11-06).
+
+  **Interpretation note, disclosed**: the brief's own step 1 says
+  "clone the repository from the latest bundle" -- but §17 (where a
+  Phase 6A bundle actually gets created) comes *after* §13 in the
+  brief's own sequence, so no Phase 6A bundle exists yet at this
+  point (the latest real one, `ledgerlight-phase-5.bundle`, predates
+  every §1-§12 commit this phase made -- cloning from it would test
+  stale docs, not the ones just finished). Cloned directly from the
+  local repo's own `.git` instead (`git clone "C:\ledger light"
+  C:\ledgerlight-clean-test`) -- policy-compliant (no remote), and the
+  real intent (an independent copy of every committed change, with no
+  gitignored/uncommitted cruft) is identical to what a bundle clone
+  would give.
+
+  **Real defects found and fixed** (fix-and-repeat, per the brief):
+  1. README's own Setup section used bash-only syntax (`openssl`,
+     `$(...)`, `>>`) -- confirmed by literally running it in a real
+     PowerShell prompt: `openssl` is not a recognized command (no
+     Git Bash/WSL on `PATH`). Fixed to a working PowerShell-compatible
+     command (`python -m uv run python -c "import secrets; ..."`),
+     deferring to `docs/deploy/local-setup-windows.md` for the rest.
+  2. README's bare `uv sync`/`uv run ...` would fail outright --
+     confirmed directly (`uv` genuinely not on `PATH` in a fresh
+     shell, same real gotcha `local-setup-windows.md` already
+     documented). Fixed to `python -m uv ...`, and added the required
+     `--extra ocr` flag (a plain `uv sync` silently uninstalls the
+     real OCR dependencies -- also confirmed directly: ran a bare
+     `uv sync` first, then checked `rapidocr-onnxruntime`/`opencv-
+     python`/`pyclipper`/`shapely` were genuinely gone from the venv).
+  3. README's own §12 edit had added
+     `LEDGERLIGHT_SESSION_SECRET_KEY`/`LEDGERLIGHT_WEBHOOK_SECRET_ENCRYPTION_KEY`
+     regeneration as if required -- `.env.example` already ships
+     real, working dev-only defaults for both (confirmed by reading
+     the fail-fast check in `ledgerlight/config/settings.py`: it only
+     fires outside `LEDGERLIGHT_ENVIRONMENT=dev`). Removed; kept only
+     the two secrets that genuinely ship blank and are genuinely
+     required (`LEDGERLIGHT_GARAGE_RPC_SECRET`/`_ADMIN_TOKEN`).
+  4. **`docs/deploy/local-setup-windows.md`'s own claim** ("everything
+     else has a real, dev-only default that already works") was
+     *also* wrong for those same two Garage secrets -- confirmed
+     directly: `docker-compose.yml`'s `:?` checks refuse to start
+     Garage with them blank. Fixed with the same working, openssl-
+     free PowerShell command.
+  5. **`scripts/generate_data_dictionary.py` (a §12 deliverable)
+     silently missed a real table.** `rate_limit_counters` has no
+     SQLAlchemy ORM model at all (`ledgerlight.api.rate_limit` only
+     ever touches it via raw SQL) -- reading `Base.metadata` alone
+     (needs every model module explicitly imported) can never see
+     it. Found by cross-checking the generated dictionary's table
+     count against a real `information_schema.tables` count on a
+     freshly-migrated database (53 vs 51 -- the other 1 is
+     `alembic_version`, correctly excluded). Rewrote the generator to
+     reflect the live database schema directly instead -- more
+     complete, and no longer dependent on a hand-maintained import
+     list that can silently drift. This introduced, then fixed, a
+     second real issue: raw reflection didn't recognize pgvector's
+     `vector` column type until `pgvector.sqlalchemy` was imported
+     first (confirmed via the real `SAWarning` this produced, and the
+     `embedding` column rendering as type `NULL` until fixed). 52
+     real tables now (was 51).
+  6. **Real, disclosed test-infrastructure constraint, not a doc
+     defect**: `infra/docker-compose.yml` hardcodes both its Compose
+     project name (`name: ledgerlight-phase0`) and its host port
+     literals for `api`/`web` (8000/3001/3000) -- a second, isolated
+     instance of the full stack cannot safely run alongside the real
+     one already active on this machine. Worked around for this test
+     by reusing the already-running shared Postgres server with a
+     fresh, isolated database (created and dropped cleanly,
+     confirmed via direct `psql`) rather than starting a second,
+     colliding set of containers while the real stack was in active
+     use -- consistent with this phase's own standing instruction to
+     never take disruptive shared-state actions without need.
+
+  **Verified clean, for real, after the fixes above**: `uv sync
+  --extra ocr` (52.5s cold); migrations build the complete 52-table
+  schema from nothing (5.3s); the default test suite passes
+  **408/408** from a truly fresh clone + venv + database (87s); the
+  real API starts from the fresh clone and `/healthz` returns `200`;
+  `pnpm install` (16s) and `pnpm dev` both work via the documented
+  corepack-shim workaround, and `/login` returns `200`.
+
+  **One minor, non-blocking finding, not fixed (cosmetic/future-
+  facing)**: Next.js 16.4.3 prints a real deprecation warning for this
+  project's `middleware.ts` ("use `proxy.ts` instead").
+
+  Test directory and isolated test database both deleted after the
+  run, per the brief's own step 4.
+
+  Commit: _(pending)_.
+
 ## Exact next step
 
-§12 is fully done. Move to §13: clean-install and reproducible-setup
-test (clone from the latest bundle into `../ledgerlight-clean-test`,
-follow ONLY the README/docs via PowerShell, record every step+time+doc
-defect, fix docs and repeat until clean, then delete the test
-directory).
+§13 is fully done. Move to §14: production-readiness checklist
+(`docs/release/production-readiness.md`, every master-requirements
+capability marked COMPLETE/PARTIAL/BLOCKED with evidence links).
 
 ## Superseded: original §5 next-step note (kept for history)
 
