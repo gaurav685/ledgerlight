@@ -1,0 +1,9 @@
+﻿=== Revoked API key ===
+login: 200
+create api key: 201 {"id":"1bee0efd-688b-4916-9ab8-28d9616047c7","name":"sec16-drill5-key","key_prefix":"llk_1d039232","scopes":[],"expires_at":null,"raw_key":"<redacted -- key_prefix llk_1d039232, revoked below, never a real secret risk but gitleaks correctly flags the format>"}
+BEFORE revoke, GET with key: 200
+revoke key: 204
+AFTER revoke, GET with same key: 401 {"error":"http_error","detail":"invalid or expired API key","request_id":"b8f2a6fa-4c51-4d48-aaea-e62e7f3ee570"}
+
+=== Expired session ===
+BEFORE expiry, GET with session cookie: 200

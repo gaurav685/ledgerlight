@@ -1,0 +1,9 @@
+﻿login: 200
+BEFORE expiry, GET with session cookie: 200
+expire session SQL: id                  
+--------------------------------------
+ 368404a3-13dc-422a-851e-121dec245a4a
+(1 row)
+
+UPDATE 1
+AFTER expiry, GET with same cookie: 401 {"error":"http_error","detail":"invalid or expired session","request_id":"1452da9d-147b-4c58-b5bf-8ff59129c333"}
