@@ -40,7 +40,8 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 - §14 Production-readiness checklist -- **COMPLETE** (see below).
 - §15 Release-gate status -- **COMPLETE** (see below).
 - §16 Run and verify -- **COMPLETE (PARTIAL)** (see below).
-- §17 Commit (local only) and backup -- ongoing throughout.
+- §17 Commit (local only) and backup -- **COMPLETE** (2026-11-07; see
+  below for the final bundle).
 - §18 Human checkpoint and 6A exit gates -- NOT STARTED. **STOP here --
   do not begin Phase 6B.**
 
@@ -912,12 +913,34 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 
   Commit: `25a8f07`.
 
+- §17 Commit (local only) and backup -- **COMPLETE** (2026-11-07).
+
+  Every commit this phase used the existing real identity
+  (`gaurav685 <gaurav685@gmail.com>`), the `phase-6:` prefix, no git
+  config changes, no AI attribution of any kind -- spot-verified
+  throughout (after essentially every commit this whole phase) and
+  re-verified here across the last 10:
+  ```
+  git log -n 10 --format='%H%n%an <%ae>%n%B---'
+  ```
+  all 10 clean.
+
+  Backup: `git bundle create ../ledgerlight-backups/ledgerlight-phase-6a.bundle
+  --all`, then `git bundle verify` on it -- **okay, complete history**,
+  9 real refs (every phase branch 0-6, `HEAD`, and a pre-existing,
+  unrelated worktree ref this session didn't create), HEAD at
+  `449614d` (this phase's own latest commit at bundle time). No
+  remote, no push, no tags -- GIT POLICY unchanged.
+
+  Commit: _(this section itself, N/A -- a backup step, not a code
+  change)_.
+
 ## Exact next step
 
-§16 is fully done (COMPLETE PARTIAL, real reasons disclosed above).
-Move to §17: commit (local only) and backup (`git bundle create
-../ledgerlight-backups/ledgerlight-phase-6a.bundle --all` + `git
-bundle verify`).
+§17 is fully done. Move to §18: the final human checkpoint and 6A
+exit gates (`docs/phase-6/phase-6a-report.md`, the gate checklist,
+limitations, decisions needing approval, git SHAs/identity/trailer-
+check/bundle-verify -- then STOP, do not begin Phase 6B).
 
 ## Superseded: original §5 next-step note (kept for history)
 
