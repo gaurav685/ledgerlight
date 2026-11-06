@@ -401,7 +401,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   Host spec recorded: AMD Ryzen 7 6800H (8c/16t), ~15.2GB RAM, Windows
   11 Home, Docker Desktop/WSL2.
 
-  Commit: (pending -- committing next).
+  Commit: `263c8b4`.
 
 ## Exact next step
 
