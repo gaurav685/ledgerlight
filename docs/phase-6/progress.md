@@ -910,7 +910,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   have complete, real evidence from §2/§8 that nothing in this phase
   has changed or cast doubt on.
 
-  Commit: _(pending -- final)_.
+  Commit: `25a8f07`.
 
 ## Exact next step
 
