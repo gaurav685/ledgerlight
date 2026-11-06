@@ -634,7 +634,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   before committing to the README). Added the §11 BLOCKED-sources and
   `pymupdf` AGPL findings to Data policy.
 
-  Commit: _(pending)_.
+  Commit: `cd87b69`.
 
 ## Exact next step
 
