@@ -1,0 +1,8 @@
+=== Before: using the real session cookie ===
+{"id":"c3f1cd29-fd6b-4c6f-963e-b83710203c9e","name":"GENSOL","cin":null,"nse_symbol":null,"bse_code":null}
+HTTP 200
+=== Expiring the real session row directly (simulating time passing / forced expiry) ===
+rows updated: 3
+=== After: same session cookie, now expired ===
+{"error":"http_error","detail":"invalid or expired session","request_id":"53c5ac08-0dab-4235-8599-c36fc6220dcc"}
+HTTP 401

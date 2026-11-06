@@ -165,8 +165,27 @@ def run_investigation(
     if resume_investigation_id is not None:
         investigation = session.get(Investigation, resume_investigation_id)
         assert investigation is not None, "resume_investigation_id does not exist"
-        budget = BudgetConfig.from_json(investigation.budget_config)
+        # A real, previously-undiscovered bug (found in Phase 6A §8's own
+        # failure-recovery drill): resuming always re-derived the real
+        # PERSISTED budget, silently ignoring any `budget_config` the
+        # caller passed -- so an operator resuming a budget-exhausted
+        # investigation with a larger budget (exactly what
+        # `scripts/investigate.py --resume ... --max-steps N` is for)
+        # had the new budget discarded and immediately hit the same old
+        # exhausted one again. An explicit override now wins, and is
+        # persisted so a later resume sees it too.
+        budget = budget_config or BudgetConfig.from_json(investigation.budget_config)
+        investigation.budget_config = budget.to_json()
         usage = Usage.from_json(investigation.usage)
+        # A second real bug found alongside the first: `final_status`/
+        # `failure_reason` from the PRIOR attempt were never cleared, so
+        # the `if investigation.final_status is None` gate below (which
+        # decides FINALISED vs NEEDS_REVIEW) was always already false on
+        # a resume -- a resumed run that genuinely reached FINALISE this
+        # time would still be permanently mislabelled NEEDS_REVIEW with a
+        # stale failure_reason from the earlier, unrelated failure.
+        investigation.final_status = None
+        investigation.failure_reason = None
     else:
         budget = budget_config or BudgetConfig()
         usage = Usage()

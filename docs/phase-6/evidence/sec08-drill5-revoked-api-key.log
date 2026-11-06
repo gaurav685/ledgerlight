@@ -1,0 +1,9 @@
+=== Before: using the real API key ===
+{"id":"c3f1cd29-fd6b-4c6f-963e-b83710203c9e","name":"GENSOL","cin":null,"nse_symbol":null,"bse_code":null}
+HTTP 200
+=== Revoking the API key (as tenant_admin) ===
+
+HTTP 204
+=== After: same API key, same request ===
+{"error":"http_error","detail":"invalid or expired API key","request_id":"84b9cbc1-7fc3-454e-b0f6-2766fd2b0adb"}
+HTTP 401

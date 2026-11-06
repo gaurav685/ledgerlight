@@ -1,0 +1,14 @@
+C:\ledger light\.venv\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+=== Before: simulate a crash via a tiny budget (max_steps=2) ===
+investigation_id: beb8f772-63ad-44ab-a680-6045e6b8f1cf
+state (checkpoint): GATHER
+final_status: NEEDS_REVIEW
+failure_reason: budget_exceeded: steps 2 >= max_steps 2
+
+=== After: resume with a larger budget (the real fix) ===
+Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]Loading weights:   8%|8         | 17/202 [00:00<00:01, 161.79it/s]Loading weights:  17%|#6        | 34/202 [00:00<00:01, 143.88it/s]Loading weights: 100%|##########| 202/202 [00:00<00:00, 712.52it/s]
+state: FINALISE
+final_status: FINALISED
+failure_reason: None
+same investigation_id: True

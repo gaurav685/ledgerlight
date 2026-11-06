@@ -1,0 +1,13 @@
+=== Before: baseline request ===
+{"id":"c3f1cd29-fd6b-4c6f-963e-b83710203c9e","name":"GENSOL","cin":null,"nse_symbol":null,"bse_code":null}
+HTTP 200
+=== Stopping postgres container ===
+ledgerlight-phase0-postgres-1
+=== During outage: request while postgres is down ===
+{"error":"internal_error","detail":"an unexpected error occurred","request_id":"136556de-fccb-490d-b53c-427ad526065a"}
+HTTP 500
+=== Restarting postgres container ===
+ledgerlight-phase0-postgres-1
+=== After: postgres healthy, verify recovery ===
+{"id":"c3f1cd29-fd6b-4c6f-963e-b83710203c9e","name":"GENSOL","cin":null,"nse_symbol":null,"bse_code":null}
+HTTP 200

@@ -1,0 +1,23 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.15, pytest-8.4.2, pluggy-1.7.0
+rootdir: C:\ledger light
+configfile: pyproject.toml
+plugins: anyio-4.15.1, locust-2.47.0, platformdirs-4.13.5, cov-5.0.0, respx-0.21.1
+collected 102 items / 19 deselected / 83 selected
+
+tests\test_agent_state_machine.py .....                                  [  6%]
+tests\test_agent_adversarial.py ..............                           [ 22%]
+tests\test_agent_eval.py ...........                                     [ 36%]
+tests\test_agent_qc_seed.py ..............                               [ 53%]
+tests\test_agent_review.py ..............                                [ 69%]
+tests\test_agent_tools.py ..............                                 [ 86%]
+tests\test_agent_verifier.py ...........                                 [100%]
+
+============================== warnings summary ===============================
+tests/test_agent_adversarial.py::test_verify_claim_metric_fails_when_the_real_span_does_not_contain_the_claimed_rating
+  C:\ledger light\.venv\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========== 83 passed, 19 deselected, 1 warning in 97.58s (0:01:37) ===========
+exit: 0

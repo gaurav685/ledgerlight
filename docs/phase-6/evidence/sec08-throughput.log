@@ -1,0 +1,14 @@
+pdf extraction: 20 real PDFs, 209 real pages, 2.39s
+  documents/minute: 501.9
+  pages/minute: 5244.7
+
+
+import-local: 5 real documents in 0.14s
+  documents/minute: 2142.9
+storage (backfill): 5 real documents in 0.55s
+  documents/minute: 548.4
+page extraction: 5 real documents in 25.59s
+  documents/minute: 11.7
+chunking: 5 real documents, 20 real chunks, 0.12s
+  documents/minute: 2400.0
+exit: 0

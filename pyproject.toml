@@ -56,6 +56,7 @@ dev = [
     "types-pyyaml>=6.0,<7",
     "pandas-stubs>=2.2,<4",
     "dagster-webserver>=1.8,<2",
+    "locust>=2.47.0",
 ]
 
 [tool.ruff]

@@ -28,7 +28,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   below).
 - §7 Human review pack (build only, no reviewing) -- **COMPLETE** (see
   below).
-- §8 Performance and reliability -- NOT STARTED.
+- §8 Performance and reliability -- **COMPLETE** (see below).
 - §9 Security and tenant re-validation -- NOT STARTED.
 - §10 Cost per filing -- NOT STARTED.
 - §11 Data-source compliance and licence review -- NOT STARTED.
@@ -348,11 +348,68 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   review/qc_seed/review_queue/label_review integration tests (46
   passed) after this work -- no regression. Commit: `0c19818`.
 
+- §8 Performance and reliability -- **COMPLETE** (2026-11-06). Full
+  writeup: `docs/ops/performance-and-reliability.md` +
+  `docs/ops/failure-recovery-drills.md`.
+
+  **API load test**: `locust` (added as a dev dependency), 5
+  concurrent users, one shared real login (to respect the real
+  10/minute login rate limit), real key read endpoints. 228 requests,
+  **0 failures**, aggregated p50=21ms/p95=37ms/p99=93ms, 3.87 req/s.
+  Found two real, correct (not bugs) API behaviors while building the
+  test: `/v1/companies/{id}/scores` 404s before a company's first real
+  score date (by design); `viewer` role genuinely lacks
+  `MANAGE_OWN_WATCHLISTS` for watchlists/alerts (by design) -- fixed
+  the test to use the right date/role.
+
+  **Throughput**: `scripts/measure_processing_throughput.py` -- real
+  PDF extraction measured directly against 20 real corpus PDFs
+  (501.9 documents/minute, 5244.7 pages/minute); full pipeline timed
+  against 5 fresh real documents (import-local 2142.9 docs/min,
+  storage 548.4, page extraction **11.7** (real, disclosed gap versus
+  the standalone 501.9 -- a real one-time cold-path cost inside
+  `process_version`, not root-caused further), chunking 2400.0).
+
+  **Agent runtime**: reused the real agent-eval numbers (p50=0.08s,
+  p95=9.05s) -- already real, not re-run.
+
+  **5 failure-recovery drills**, all with real before/after evidence:
+  worker kill mid-ingestion (resumed clean, 0 duplicates; found a
+  real, disclosed-not-fixed observation that an orphaned
+  `multiprocessing` child can outlive a killed parent); Postgres
+  restart during traffic (500 during outage, clean automatic recovery);
+  Garage outage (3 real failures -> dead letter -> reprocess ->
+  resolved); agent crash mid-run via a forced budget checkpoint,
+  resumed to FINALISED; expired session + revoked API key (both clean
+  401s).
+
+  **Found and fixed two real, previously-undiscovered bugs** in
+  `ledgerlight/agent/state_machine.py`'s `run_investigation`, found
+  while building the agent-crash drill: (1) resuming always silently
+  re-derived the PERSISTED (exhausted) budget, ignoring any new
+  `budget_config` the caller passed -- so `scripts/investigate.py
+  --resume <id> --max-steps 50`, a documented real usage, would
+  silently discard the bigger budget and immediately re-fail the same
+  way; (2) `final_status`/`failure_reason` were never cleared on
+  resume, so a resumed investigation that genuinely reached FINALISE
+  would stay permanently mislabelled NEEDS_REVIEW with a stale reason.
+  Fixed both; re-ran `test_agent_state_machine.py` +
+  `test_agent_adversarial.py` (19 passed) plus the full agent
+  integration suite (83 passed) -- no regression. Full default suite
+  also re-confirmed clean (408 passed).
+
+  Host spec recorded: AMD Ryzen 7 6800H (8c/16t), ~15.2GB RAM, Windows
+  11 Home, Docker Desktop/WSL2.
+
+  Commit: (pending -- committing next).
+
 ## Exact next step
 
-§7 is fully done. Move to §8: performance and reliability (API load
-test, ingestion/processing throughput, agent runtime p50/p95, and 5
-failure-recovery drills with before/after evidence).
+§8 is fully done. Move to §9: security and tenant re-validation (the
+full authz/RLS/auth/CSRF/signed-URL/webhook/rate-limit/prompt-
+injection/security-header suite, plus pip-audit/pnpm audit/trivy/
+gitleaks, with every finding triaged, and threat-model.md updated
+with residual risks).
 
 ## Superseded: original §5 next-step note (kept for history)
 

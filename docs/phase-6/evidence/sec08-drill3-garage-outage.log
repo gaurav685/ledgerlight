@@ -1,0 +1,16 @@
+=== Before: baseline fetch (Garage up) ===
+garage status: 000
+fetched 77427 bytes OK
+=== Stopping garage container ===
+ledgerlight-phase0-garage-1
+=== Attempt sequence with Garage down (expect 3 failures + dead-letter) ===
+attempt 1: FAILED -- Could not connect to the endpoint URL: "http://127.0.0.1:59000/ledgerlight-raw/raw/86/865d254bba618e66d445e26c8eb1b9a19e6ad5d9030b95f669e3934181170fbb.zip"
+attempt 2: FAILED -- Could not connect to the endpoint URL: "http://127.0.0.1:59000/ledgerlight-raw/raw/86/865d254bba618e66d445e26c8eb1b9a19e6ad5d9030b95f669e3934181170fbb.zip"
+attempt 3: FAILED -- Could not connect to the endpoint URL: "http://127.0.0.1:59000/ledgerlight-raw/raw/86/865d254bba618e66d445e26c8eb1b9a19e6ad5d9030b95f669e3934181170fbb.zip"
+dead_letter row: ('drill3:raw/86/865d254bba618e66d445e26c8eb1b9a19e6ad5d9030b95f669e3934181170fbb.zip:a8c56c9c', 'drill3_garage_fetch', 3, None)
+=== Restarting garage container ===
+ledgerlight-phase0-garage-1
+=== After: garage healthy, reprocess the dead-lettered item ===
+reprocessing dead letter: drill3:raw/86/865d254bba618e66d445e26c8eb1b9a19e6ad5d9030b95f669e3934181170fbb.zip:a8c56c9c
+reprocess SUCCESS, 77427 bytes
+dead_letter after reprocess: (datetime.datetime(2026, 11, 6, 10, 59, 26, 187332, tzinfo=zoneinfo.ZoneInfo(key='Etc/UTC')), 'succeeded on a later attempt (attempt_number=4)')
