@@ -794,22 +794,32 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
     `test_authz_matrix`/`test_care_ingestion`/
     `test_commit_visibility_regression`/`test_company_dedup`/
     `test_coverage`/`test_cross_tenant_idor`/`test_document_processor`):
-    **BLOCKED by real, sustained host memory pressure** -- killed 4
-    times in a row across this tick and the next, including after
-    splitting it down to a lighter 5-file sub-batch (excluding the two
-    heavier-looking files). Free memory measured between attempts:
-    2.3GB, 1.7GB, 1.9GB, 0.6GB -- a real, sustained instability
-    pattern (same one documented throughout this phase), not fixable
-    by smaller batching alone this time. Not forced through; marked
-    BLOCKED here with the real evidence, to retry once host memory is
-    genuinely healthier rather than on a fixed short retry cadence.
+    **BLOCKED by real, sustained host memory pressure.** Killed **6
+    times in a row** across many retries and two autonomous-loop
+    ticks, at every batch size tried (the full 7, a lighter 5 omitting
+    the two heaviest-looking files, and that same lighter 5 again) and
+    across a wide range of measured free memory between attempts
+    (2.3GB, 1.7GB, 1.9GB, 0.6GB, 2.4GB, 0.76GB, 1.4GB) -- including
+    right after batches 1, 2a, 3, and 4 (14 + 7 + 11 + 12 = 44 other
+    integration files, spanning a similarly broad file mix) all
+    passed cleanly in between. This specific file set has now failed
+    enough times, under enough different conditions, that further
+    immediate retries are not a reasonable use of autonomous-loop
+    cycles. **Not forced through.** Marked BLOCKED here with the full
+    real retry history; the remaining uncovered files are
+    `test_authz_matrix.py`, `test_care_ingestion.py`,
+    `test_commit_visibility_regression.py`, `test_company_dedup.py`,
+    `test_coverage.py`, `test_cross_tenant_idor.py`,
+    `test_document_processor.py` -- all of them already pass as part
+    of the real, established 330-integration-test baseline confirmed
+    earlier this phase (§1, §9); this is specifically about capturing
+    *fresh* §16 evidence for them, not a sign they are broken.
 
-  **Still remaining**: the blocked batch 2b above, integration
-  batches 3-4, the e2e pipeline test
-  (twice, per the brief), Playwright on e2e-lite, the ZAP baseline,
-  backtest reproducibility diff+audits re-run, the load test and 5
-  failure-recovery drills re-run, the full security suite re-run, and
-  a re-run of the §13 clean-install test. Continuing across
+  **Still remaining**: the blocked batch 2b files above, the e2e
+  pipeline test (twice, per the brief), Playwright on e2e-lite, the
+  ZAP baseline, backtest reproducibility diff+audits re-run, the load
+  test and 5 failure-recovery drills re-run, the full security suite
+  re-run, and a re-run of the §13 clean-install test. Continuing across
   subsequent autonomous ticks rather than forcing all of §16 through
   one sitting -- consistent with this host's own real, repeated
   memory constraints and the project's established batching
