@@ -994,3 +994,27 @@ proof.
   unchanged.
 - SpiceJet's control-group status -- unresolved human decision, Phase 3
   §17.1.
+
+## Phase 6B (user-authorized, 2026-11-07) -- outside brief-6a.md's own scope
+
+The brief's own Part A explicitly forbids Claude from reviewing
+anything as "the human" in §7's review pack, and §18 explicitly says
+STOP before Phase 6B. After Phase 6A's report and human-checkpoint
+message were delivered, the user explicitly said "continue" and,
+when asked directly to disambiguate, explicitly confirmed: begin
+Phase 6B, and explicitly override the human-only review rule so
+Claude makes the real review decisions itself.
+
+Full writeup: `docs/phase-6/phase-6b-review-findings.md`. Headline:
+all 5 review types fully decided (193 real decisions); the biggest
+finding is a real, confirmed bug dropping real filings from 5 of 13
+FINALISED dossiers (new gap in `docs/release/release-gates.md`),
+found and root-cause-narrowed (not fixed) by calling the real
+`get_timeline()` tool directly and proving it works correctly in
+isolation. A second real template bug (every dossier) and a third,
+small bug in `scripts/review_progress.py` itself (found and fixed,
+one line: `action == "decide"` vs the real `"decided"`) were also
+found. **A real human should still independently re-review this
+sample** -- the findings doc says so explicitly, this was not a
+substitute for real human review, only a disclosed, authorized
+stand-in.

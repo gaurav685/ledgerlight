@@ -506,3 +506,56 @@ fixing a real extraction problem if the spot-check finds one. Not
 investigated further this phase -- outside §11's own scope
 (compliance/licensing), flagged rather than silently fixed or
 silently left for someone to discover by accident again.
+
+## Gap: a real, confirmed bug drops real filings from some FINALISED dossiers
+
+**Status: open.** **First seen:** Phase 6B review pass, 2026-11-07
+(user-authorized AI review of the §7 review pack -- see
+`docs/phase-6/phase-6b-review-findings.md` for the full writeup and
+caveats).
+
+**What's missing:** 5 of 13 real dossiers in the §7 sample (DMART×2,
+VAKRANGEE, PNBHOUSING×2) claim "0 real filings known as of" their own
+`as_of` date, when real filings genuinely exist in the database well
+before that date (confirmed via direct SQL and, independently, by
+calling `ledgerlight.agent.tools.get_timeline()` directly with the
+exact same real arguments -- it correctly returns every real filing
+every time). Ruled out directly: a data problem (the filings are
+real, correctly dated, long pre-dating the investigation's own run);
+a duplicate-company-row problem (each affected company has exactly
+one real row, matching the investigation's own `company_id` exactly);
+a bug in `get_timeline()` itself (proven correct in isolation).
+`JETAIRWAYS`, `SUZLON`, `FRETAIL`, and the 3 genuinely-empty companies
+in the same sample all show correct real counts, so this is not
+universal.
+
+**What this blocks:** trusting any FINALISED dossier's "0 filings/0
+events" claim at face value. This sample is only 13 items; the same
+bug likely affects real investigations elsewhere in the project.
+
+**Why it's not closed:** the bug is narrowed to somewhere between a
+correctly-working `get_timeline()` and the final rendered dossier
+text -- most likely the real investigation's own GATHER step or the
+offline template renderer's consumption of its output -- but not
+root-caused to a specific line. This review pass's own scope was
+reviewing, not re-engineering the agent pipeline.
+
+**Closing this gap requires:** tracing one of the 5 affected
+investigations' real GATHER step (or re-running one with
+instrumentation) to find exactly where the real `get_timeline()`
+result -- proven correct when called directly -- gets lost before
+rendering.
+
+## Gap: dossier template renders the model card's "Intended use" text as a broken nested heading
+
+**Status: open.** **First seen:** Phase 6B review pass, 2026-11-07.
+
+**What's missing:** every one of the 13 real dossiers checked shows
+the model card's "Intended use" paragraph appended to the "Risk
+signals" section as a raw, un-escaped `## Intended use` markdown
+heading nested inside a bullet point -- breaking the document's own
+structure. Cosmetic, not a factual-accuracy problem.
+
+**Closing this gap requires:** fixing the offline template renderer
+to either omit the nested heading syntax or render the disclaimer as
+a proper top-level section.

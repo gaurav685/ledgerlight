@@ -73,7 +73,7 @@ def main() -> int:
     with session_factory() as session:
         audits = session.scalars(
             select(ReviewDecisionAudit)
-            .where(ReviewDecisionAudit.action == "decide")
+            .where(ReviewDecisionAudit.action == "decided")
             .where(ReviewDecisionAudit.review_task_id.in_({uuid.UUID(t) for t in sample_task_ids}))
         ).all()
         by_decision: dict[str, int] = {}
