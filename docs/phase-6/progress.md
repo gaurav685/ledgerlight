@@ -31,7 +31,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 - §8 Performance and reliability -- **COMPLETE** (see below).
 - §9 Security and tenant re-validation -- **COMPLETE (PARTIAL)** (see
   below; one real sub-step blocked by host memory, not code).
-- §10 Cost per filing -- NOT STARTED.
+- §10 Cost per filing -- **COMPLETE** (see below).
 - §11 Data-source compliance and licence review -- NOT STARTED.
 - §12 Final documentation -- NOT STARTED.
 - §13 Clean-install and reproducible-setup test -- NOT STARTED.
@@ -468,13 +468,67 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 
   Commit: `3d5fc22`.
 
+- §10 Cost per filing -- **COMPLETE** (2026-11-06). Full writeup in
+  `docs/ops/cost-per-filing.md`.
+
+  `scripts/measure_cost_per_filing.py` runs N=10 real filings end to
+  end (ingestion through investigation), measuring real wall/CPU/peak-
+  RSS per stage, real storage bytes, and a real 5-call NLI
+  microbenchmark. **LLM tokens/cost: $0** throughout (offline template
+  renderer, already established in Phase 4).
+
+  **Three real bugs found and fixed while building this measurement**
+  (all in the measurement script's own plumbing, not the production
+  pipeline): `import_inbox()` called positionally against a keyword-
+  only signature; the cleanup's `events`/`event_fields` deletes scoped
+  by `company_id` when `Event.company_id` is actually NULL for events
+  this script creates (it bypasses the real linking service); and the
+  significant one -- `run_store_backfill()` is correctly idempotent
+  for its real use (safe to re-run), but re-upserts *every* entry
+  still in whatever manifest file it's given, every call. Pointing
+  every filing at the one shared `manual.jsonl` meant each filing's
+  backfill call silently resurrected every *prior* filing's
+  already-cleaned-up document row -- no exception ever raised; found
+  only by querying the real container directly with `psql` rather
+  than trusting the script's own "done, no errors" output. Fixed with
+  a per-filing manifest file, cleaned up alongside its blob. 24 real
+  orphaned rows and 25 stray manifest/blob entries accumulated during
+  debugging were swept up by hand and verified empty via a fresh DB
+  session afterward -- confirmed zero leftover rows/files after the
+  final clean run.
+
+  **Measured (mean/p95 across N=10 real filings)**: dominant real cost
+  is `page_extraction` (~5.4s wall, isolated in a child process so its
+  CPU time doesn't show up in the parent's measurement -- wall time is
+  the right proxy for Fargate billing anyway, which bills by task
+  duration regardless of CPU utilization) and `embedding` (~5s CPU on
+  the one filing per run that pays the real one-time model-load cost;
+  p95 ~0.4s wall / ~2.6s CPU is the better steady-state estimate, paid
+  once per worker lifetime in a real deployment, not once per filing).
+
+  **AWS cost model**: parameterised formula with every input tagged
+  `[MEASURED]`/`[CITED]` (real, dated AWS Fargate/S3/RDS pricing,
+  `ap-south-1`, accessed 2026-11-06)/`[ASSUMED]` (explicit, called-out
+  parameters, never invented prices). Marginal compute+storage cost
+  per filing is negligible (~$0.00009). The honest headline number:
+  at a 10,000-filings/month example scenario, the already-committed
+  Phase 5 fixed Fargate+RDS baseline (~$45/month,
+  `docs/deploy/aws-architecture.md`) dominates completely --
+  blended ≈ $0.0046/filing, not compute-per-filing-dominated at this
+  volume. Also flagged a real, disclosed sizing gap: this measurement's
+  own peak RSS (~742MB) sits close to that architecture doc's assumed
+  0.5GB worker task size; a real worker (also running Dagster)
+  should likely be sized up.
+
+  Commit: _(pending)_.
+
 ## Exact next step
 
-§9 is fully done (one real sub-step disclosed BLOCKED, not silently
-dropped: rebuilding both Docker images to deploy the already-fixed
-dependencies). Move to §10: cost per filing (measured local resource
-use per stage, plus a parameterised AWS cost model with cited pricing
-or clearly-marked placeholder inputs).
+§10 is fully done. Move to §11: data-source compliance and licence
+review (re-check robots.txt/terms for every enabled source, record
+changes since Phase 0, third-party licence inventory for Python/npm
+deps + model checkpoints + container images, explicit commercial-use/
+CRISIL/BSE-NSE-BLOCKED statement).
 
 ## Superseded: original §5 next-step note (kept for history)
 
