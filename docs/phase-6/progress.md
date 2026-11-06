@@ -227,7 +227,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
     around by issuing the exact same batches as separate tool calls
     instead (zero kills that way); the script's own docstring now
     records this. The real counts above come from that successful run.
-  Commit: (pending -- committing next).
+  Commit: `66469d8`.
 
 ## Exact next step
 
