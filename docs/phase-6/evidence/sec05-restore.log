@@ -1,0 +1,4 @@
+Using backup: C:\ledgerlight-backups\db\ledgerlight-20261104T184350Z.dump
+Restoring C:\ledgerlight-backups\db\ledgerlight-20261104T184350Z.dump into a fresh database 'ledgerlight_restore_drill'...
+Restore complete.
+exit: 0
