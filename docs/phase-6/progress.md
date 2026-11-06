@@ -184,7 +184,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   phase's brief asked to re-architect project-wide, so noted here rather
   than generalised into a framework-level fixture.
 
-  Commit: (pending -- committing next).
+  Commit: `c98ae2e`.
 
 ## Exact next step
 
