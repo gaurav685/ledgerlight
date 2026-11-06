@@ -346,8 +346,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 
   Re-ran the full default suite (408 passed) plus the real
   review/qc_seed/review_queue/label_review integration tests (46
-  passed) after this work -- no regression. Commit: (pending --
-  committing next).
+  passed) after this work -- no regression. Commit: `0c19818`.
 
 ## Exact next step
 
