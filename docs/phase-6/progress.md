@@ -731,7 +731,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   Test directory and isolated test database both deleted after the
   run, per the brief's own step 4.
 
-  Commit: _(pending)_.
+  Commit: `0e7a202`.
 
 ## Exact next step
 
