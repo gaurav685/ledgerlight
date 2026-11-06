@@ -97,6 +97,17 @@ def create_investigation(
     )
     db.add(investigation)
     db.flush()
+    # Must be committed (not just flushed) before scheduling the
+    # background task: that task opens its own, separate real session
+    # and needs to find this row already real and visible. Relying on
+    # `get_db`'s own post-yield commit to happen before Starlette runs
+    # queued background tasks is fragile -- a real regression, found
+    # in Phase 6A §9, surfaced exactly this ordering flipping between
+    # framework versions (the background task ran first and failed
+    # with "resume_investigation_id does not exist"). An explicit
+    # commit here is correct and robust regardless of framework
+    # internals.
+    db.commit()
 
     background_tasks.add_task(
         _run_investigation_in_background,

@@ -95,3 +95,70 @@ with file-level pointers.
   Full writeup: `docs/phase-6/evidence/sec02-csp-hydration-bug.md`.
   Getting the strict, nonce-based policy actually working is real,
   disclosed future work (`docs/release/release-gates.md`).
+
+- **Deployed Docker images lag their own fixed dependencies.**
+  `pip-audit` found 24 real vulnerabilities across `cryptography`,
+  `fastapi`, and `starlette` in this phase's own re-validation.
+  `cryptography`/`fastapi` were bumped straightforwardly; `starlette`
+  needed a deeper investigation -- `fastapi`'s own dependency range
+  caps it below `0.51.0` (no 0.x fix exists for several of these CVEs,
+  only from `starlette` 1.0.1 onward), so `fastapi` itself had to be
+  bumped to its latest release (0.162.0, the first compatible with
+  `starlette` 1.x) to get a real fix. `pytest` was bumped similarly.
+  All three bumps were verified safe: the full default suite (408
+  tests) and the full integration suite (330 tests, run in
+  memory-safe batches) both pass clean after each bump, including a
+  real regression this bump exposed and fixed (see the next entry).
+  `pip-audit --local` now reports **0 known vulnerabilities**. **The
+  residual risk**: the real running Docker images
+  (`ledgerlight-phase0-api`, `ledgerlight-phase0-web`) were built
+  *before* this dependency bump, so a fresh `trivy image` scan against
+  them still shows the old, vulnerable `cryptography`/`starlette`
+  versions (`docs/phase-6/evidence/sec09-trivy-api-before-rebuild.log`)
+  -- the fix exists in `pyproject.toml`/`uv.lock` but has not yet been
+  baked into a rebuilt image. Rebuilding both images was attempted
+  twice and killed both times by this host's own real, severe memory
+  pressure (same documented pattern as Phase 6A §2's CSP-fix rebuild
+  struggles) -- marked **BLOCKED**, not silently skipped; rebuilding
+  and re-scanning is the immediate next step once host memory allows.
+
+- **Found and fixed a real, previously-undiscovered bug while
+  verifying the dependency bump above**: `POST /v1/dossiers/
+  investigations` creates a real `Investigation` row, then schedules a
+  `BackgroundTasks` callback that opens its own separate session to
+  resume and run it. The endpoint only `flush()`ed the row, relying on
+  `get_db`'s own post-`yield` commit happening before Starlette runs
+  queued background tasks -- true on the old `starlette` 0.48.0, but
+  the relative order flipped on the upgraded version, so the
+  background task's own fresh session could no longer find the row
+  ("`resume_investigation_id` does not exist"), reproducibly failing
+  every real investigation created through the API. Fixed with an
+  explicit `db.commit()` before scheduling the task -- correct and
+  robust regardless of framework internals, not a reliance on
+  undocumented ordering. Confirmed: fails on the old dependency set
+  with the fix removed is moot (the bug only manifests with the new
+  ordering); confirmed fixed and passing (4/4) on the upgraded set
+  with the fix applied, and the full default+integration suites stay
+  green. Full writeup: `docs/phase-6/progress.md` §9.
+
+- **Real, currently un-patchable OS-package findings** (both images,
+  `trivy image --severity HIGH,CRITICAL`): `util-linux`/`ncurses`/
+  `perl-base` CVEs with no Debian fix yet (`status: affected` or
+  `fix_deferred` -- nothing this project can do beyond waiting for an
+  upstream patch and rebuilding when one ships); `zlib1g`
+  CVE-2023-45853 (CRITICAL, `status: will_not_fix` by Debian upstream)
+  -- the same finding already disclosed in Phase 5, unchanged. The
+  `web` image additionally carries a real, currently-unpatched
+  `undici` CVE set (3 HIGH, fixed in `undici` 6.29.1+) -- `undici`
+  here is Node.js's own bundled global-fetch implementation, not an
+  npm dependency this project installs, so fixing it requires a newer
+  Node.js base-image tag, not a `pnpm` bump; tracked alongside the
+  rebuild above.
+
+- **`pnpm audit`: 1 real, accepted, dev-only finding.** `minimatch`
+  (moderate, DoS via glob-amplification) via `eslint-config-next`'s
+  own transitive chain -- a lint-time tool dependency, never shipped
+  to a real user, and already at the newest version resolvable within
+  the current `eslint`/`typescript-eslint` constraint set. Same
+  finding and disposition as Phase 5's own triage, re-confirmed
+  unchanged this phase.

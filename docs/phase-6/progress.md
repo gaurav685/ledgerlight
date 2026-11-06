@@ -29,7 +29,8 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 - §7 Human review pack (build only, no reviewing) -- **COMPLETE** (see
   below).
 - §8 Performance and reliability -- **COMPLETE** (see below).
-- §9 Security and tenant re-validation -- NOT STARTED.
+- §9 Security and tenant re-validation -- **COMPLETE (PARTIAL)** (see
+  below; one real sub-step blocked by host memory, not code).
 - §10 Cost per filing -- NOT STARTED.
 - §11 Data-source compliance and licence review -- NOT STARTED.
 - §12 Final documentation -- NOT STARTED.
@@ -403,13 +404,77 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 
   Commit: `263c8b4`.
 
+- §9 Security and tenant re-validation -- **COMPLETE (PARTIAL)**
+  (2026-11-06). Full writeup in
+  `docs/security/threat-model.md`'s "Residual risks" section and
+  `docs/release/release-gates.md`'s new gap entry.
+
+  **Full security test suite re-run** (authz matrix, RLS, cross-
+  tenant IDOR, auth/CSRF/session, signed URL expiry, webhook SSRF/
+  signature, rate limits, prompt-injection/escaping, security
+  headers): **97 passed, 0 failures**
+  (`docs/phase-6/evidence/sec09-security-suite.log`).
+
+  **pip-audit**: found 24 real vulnerabilities across `cryptography`
+  (44.0.3), `fastapi` (0.116.2), `starlette` (0.48.0 -- pulled in
+  transitively, no direct pin existed), and `pytest` (8.4.2). Fixed by
+  bumping all four; `starlette`'s own fix required bumping `fastapi`
+  all the way to 0.162.0 (the first release compatible with
+  `starlette` 1.x -- 0.x `fastapi` releases cap `starlette` below
+  0.51.0, and several of these CVEs have no 0.x backport).
+  `pip-audit --local` (run against the real project venv -- found and
+  fixed a real methodology gap first: `uv run pip-audit` without
+  `pip-audit` as a declared project dependency silently audits its
+  own ephemeral tool environment, not the real project; added it as
+  a real dev dependency to fix this for good) now reports **0 known
+  vulnerabilities**.
+
+  **Found and fixed a real, previously-undiscovered bug while
+  verifying the bump**: the dependency upgrade flipped the real
+  execution order between a request's own post-`yield` session commit
+  and Starlette running queued `BackgroundTasks` -- `POST /v1/
+  dossiers/investigations` only `flush()`ed its new `Investigation`
+  row, relying on that ordering to make it visible to the background
+  task's own separate session before it tried to resume it. Every
+  real investigation created through the API started failing
+  ("`resume_investigation_id` does not exist"). Fixed with an
+  explicit `db.commit()` before scheduling the task in
+  `ledgerlight/api/routers/dossiers.py` -- correct regardless of
+  framework internals, not a reliance on undocumented ordering.
+  Verified: fails before the fix (direct reproduction), passes after
+  (4/4); re-ran the full default suite (408 passed) and the full
+  integration suite (330 passed, in 4 memory-safe batches) with the
+  fix in place -- no other regression.
+
+  **pnpm audit**: 1 real, moderate, dev-only finding (`minimatch` via
+  `eslint-config-next`'s own chain) -- same finding and disposition
+  as Phase 5 (accepted; lint-tool-only, never shipped, already at the
+  newest resolvable version).
+
+  **trivy** (both images, HIGH/CRITICAL): real OS-package findings
+  with no Debian fix yet (`util-linux`/`ncurses`/`perl-base`) plus the
+  same `zlib1g` CRITICAL `will_not_fix` already disclosed in Phase 5;
+  the `web` image also carries a real `undici` CVE set (Node.js's own
+  bundled fetch implementation, not an npm dependency -- needs a
+  newer Node base image, not a `pnpm` bump). **The images themselves
+  predate the pip-audit dependency fix above** -- rebuilding both to
+  get a truly current scan was attempted twice and killed twice by
+  real, severe host memory pressure (same pattern as §2's rebuild
+  struggles). Marked **BLOCKED**, disclosed in both
+  `docs/security/threat-model.md` and a new
+  `docs/release/release-gates.md` gap entry -- not silently skipped.
+
+  **gitleaks** (full history): 195 commits scanned, **0 leaks found**.
+
+  Commit: (pending -- committing next).
+
 ## Exact next step
 
-§8 is fully done. Move to §9: security and tenant re-validation (the
-full authz/RLS/auth/CSRF/signed-URL/webhook/rate-limit/prompt-
-injection/security-header suite, plus pip-audit/pnpm audit/trivy/
-gitleaks, with every finding triaged, and threat-model.md updated
-with residual risks).
+§9 is fully done (one real sub-step disclosed BLOCKED, not silently
+dropped: rebuilding both Docker images to deploy the already-fixed
+dependencies). Move to §10: cost per filing (measured local resource
+use per stage, plus a parameterised AWS cost model with cited pricing
+or clearly-marked placeholder inputs).
 
 ## Superseded: original §5 next-step note (kept for history)
 

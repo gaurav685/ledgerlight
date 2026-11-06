@@ -349,3 +349,34 @@ factors already in place (no `dangerouslySetInnerHTML` anywhere, confirmed by
 configuration (a Next.js version/config-specific investigation, not a quick fix),
 or an equivalent hash-based policy with a build step that computes real per-build
 script hashes.
+
+## Gap: deployed Docker images predate a real dependency security fix
+
+**Status: open.** **First seen:** Phase 6A §9 (2026-11-06).
+
+**What's missing:** `cryptography`/`fastapi`/`starlette`/`pytest` were bumped in
+`pyproject.toml`/`uv.lock` this phase to close 24 real `pip-audit` findings (now
+0). The host's own Python environment and the full test suite (408 default + 330
+integration, all passing) already reflect the fix. The real `ledgerlight-phase0-api`
+and `ledgerlight-phase0-web` Docker images do not -- they were built before this
+change, so a fresh `trivy image` scan of either still reports the old, vulnerable
+`cryptography 44.0.3`/`starlette 0.48.0`
+(`docs/phase-6/evidence/sec09-trivy-api-before-rebuild.log`,
+`sec09-trivy-web-before-rebuild.log`).
+
+**What this blocks:** calling the *deployed* artifact's dependency set clean --
+only the host dev environment is currently clean, not what `docker compose up`
+actually runs.
+
+**Why it's not closed:** rebuilding `api` (and the shared base image `web` also
+uses) was attempted twice this phase and killed both times by this host's own
+real, severe memory pressure -- the same documented pattern as §2's CSP-fix
+rebuild struggles. Never forced through or silently skipped; marked BLOCKED with
+the real evidence instead.
+
+**Closing this gap requires:** `docker compose build api web` (or equivalent) on
+a host with enough free memory to sustain it, then a fresh `trivy image` scan on
+both images to confirm the Python-level findings are gone (the real, currently
+un-patchable Debian OS-package findings and the `web` image's bundled-Node
+`undici` CVEs will remain regardless -- see `docs/security/threat-model.md`'s
+own residual-risks section for those).
