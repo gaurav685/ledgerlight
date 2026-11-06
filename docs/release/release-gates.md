@@ -30,16 +30,17 @@ expected to stay BLOCKED.
 | No human review of agent dossiers | PENDING_HUMAN_REVIEW | Review pack built this phase; review itself is Phase 6B's job. |
 | GitHub Actions never run on GitHub | PENDING_PUSH | Validated locally; genuinely unverifiable until a first real push, which GIT POLICY defers. |
 | AWS Terraform never applied | BLOCKED | No AWS credentials in this environment; applying infra is out of scope for this phase. |
-| ZAP baseline + full Playwright e2e not run | BLOCKED | Real host memory constraints this phase; re-runnable once more headroom is available. |
+| ZAP baseline + full Playwright e2e not run | **PASS** (closed §2; corrected 2026-11-07, was stale) | Both actually ran against the real e2e-lite stack: Playwright 4/4, ZAP 0 FAIL/2 real findings fixed/4 accepted. This row was itself found stale while finalizing §18 and corrected here. |
 | Single-batch full integration run not captured | BLOCKED | Same real memory constraint -- the batched-run result is equally valid evidence, just not a single-pass one. |
 | Frontend CSP `unsafe-inline` | BLOCKED | A real Next.js 16.4.3 hydration-script limitation found this phase; the strict nonce-based policy doesn't yet work in this exact setup. |
 | Deployed Docker images predate dependency fix | BLOCKED | Rebuild attempted twice, killed twice by real host memory pressure; the fix exists in `pyproject.toml`/`uv.lock`, just not baked into the running image yet. |
 | `pymupdf` AGPL-3.0/commercial licence | BLOCKED | A real business/legal decision (Artifex licence or a library swap) that this phase cannot make unilaterally. |
 | 363 real corpus pages trip the OCR tripwire | BLOCKED | Not yet run through the real OCR path and spot-checked -- flagged, not investigated further this phase (outside §11's own scope). |
 
-**0 gates evaluate to PASS.** This is the expected, honest result for
-a phase whose own brief anticipates every remaining gap staying open
-at this point -- not a sign anything here was softened to look better
+**1 of 13 gates evaluates to PASS** (ZAP/Playwright, corrected
+2026-11-07 above -- genuinely closed in §2, this table's own original
+row was stale). The other 12 stay open as the brief's own framing
+anticipated -- not a sign anything here was softened to look better
 than it is.
 
 ## Gap: no review infrastructure for field/entity-pair/retrieval-query gold labels
@@ -326,13 +327,20 @@ covers a minimal production-build smoke test, not this full flow.
 then rebuilding the `api`/`web` images, bringing up the full stack, and running both
 tools against it.
 
-**PARTIALLY CLOSED (2026-11-05, Phase 6A §2):** the full Playwright e2e suite now
+**CLOSED (2026-11-05, Phase 6A §2):** the full Playwright e2e suite now
 exists and passes (`frontend/e2e/full-e2e-lite.spec.ts`, 4/4 real tests: login
 through dossier/review/watchlist/alert/webhook, plus cross-tenant denial) against
 the real `e2e-lite` Docker Compose profile (`docs/phase-6/evidence/
 sec02-playwright-full-run.log`). Finding this test also surfaced a real, significant
-CSP bug, fixed the same session -- see the dedicated gap below. The ZAP baseline
-remains open; see `docs/phase-6/progress.md` for current status.
+CSP bug, fixed the same session -- see the dedicated gap below. **The ZAP baseline
+was also run** the same session, against the real e2e-lite stack: 0 FAIL in both of
+2 runs; 2 real findings fixed (`X-Powered-By` disabled, a real `Permissions-Policy`
+header added), confirmed gone in a second run (6 WARN/62 PASS -> 4 WARN/64 PASS);
+remaining 4 triaged as accepted (`docs/phase-6/evidence/sec02-zap-triage.md`) --
+the CSP `'unsafe-inline'` trade-off (already disclosed) and 3 informational/
+not-applicable findings. Playwright re-confirmed 4/4 after the header fixes. This
+gate is fully closed, not partially -- the original gate text above is kept for
+history; this note is the current, accurate status.
 
 ## Gap: a real, single-batch full integration-test run was not captured for §11's final evidence pass
 
@@ -351,6 +359,18 @@ integration suite together, as one batch, with its raw output captured.
 **Closing this gap requires:** real host memory headroom, then re-running `pytest -q
 -m integration` as one batch and replacing the substitute evidence log with its real
 output.
+
+**Update (2026-11-07, Phase 6A §16):** still not closed in the strict literal
+sense -- one single uninterrupted invocation covering every integration test was
+not achieved. **Full functional coverage was achieved instead**: all 51 integration
+files ran and passed, split across 4 batches (14+7+11+12+... see
+`docs/phase-6/progress.md` §16) plus 7 files isolated individually after one
+specific 7-file grouping was killed 6 times by the same real, sustained host
+memory pressure (root-caused: one of those 7, `test_company_dedup.py`, genuinely
+takes ~11 minutes alone, and grouping it with others stretched the batch's
+exposure window to this host's own independent memory spikes). Same real
+instability pattern as this gap's own original cause -- not newly introduced,
+not hidden.
 
 **CLOSED (2026-11-05, Phase 6A §1):** a real memory window opened up and the full
 batch ran clean in one sequential pass -- 322 passed, 0 failed
