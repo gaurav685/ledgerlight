@@ -287,7 +287,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   claims; the risk model does **not** beat its own base rate with
   statistical confidence at the real available sample size (5 distinct
   positive events) -- carried forward unchanged from Phase 3.
-  Commit: (pending -- committing next).
+  Commit: `eabc52f`.
 
 ## Exact next step
 
