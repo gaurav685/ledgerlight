@@ -573,7 +573,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   `docs/release/release-gates.md`; not investigated further here
   (outside §11's own scope).
 
-  Commit: _(pending)_.
+  Commit: `aca0d45`.
 
 ## Exact next step
 
