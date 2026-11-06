@@ -24,7 +24,8 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 - §4 Regression suite -- **COMPLETE** (see below).
 - §5 Backtest reproducibility and audits -- **COMPLETE (PARTIAL)** (see
   below; one real sub-step blocked by host memory, not code).
-- §6 Consolidated evaluation report (pre-review) -- NOT STARTED.
+- §6 Consolidated evaluation report (pre-review) -- **COMPLETE** (see
+  below).
 - §7 Human review pack (build only, no reviewing) -- NOT STARTED.
 - §8 Performance and reliability -- NOT STARTED.
 - §9 Security and tenant re-validation -- NOT STARTED.
@@ -272,12 +273,27 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   Drill database dropped at the end -- no second live copy left behind.
   Commit: `75f2387`.
 
+- §6 Consolidated evaluation report (pre-review) -- **COMPLETE**
+  (2026-11-06). `docs/evaluation/final-evaluation.md` built,
+  consolidating every real evaluation result from Phases 2-5 plus this
+  phase's own fresh §4/§5 re-confirmation, one section per the brief's
+  own list, each tagged GOLD / SILVER-UNREVIEWED / PENDING_HUMAN_REVIEW
+  with real support counts and CIs throughout -- nothing invented.
+  Headline, stated plainly, not softened: classification rules
+  macro-F1 0.635 [0.432, 1.000] on a thin n=14 gold test split;
+  extraction/entity-resolution/retrieval remain silver-only, awaiting
+  this phase's own §7 human review pack (PENDING_HUMAN_REVIEW, run in
+  6B); agent-eval found 0 unsupported-claim leakage across 740 real
+  claims; the risk model does **not** beat its own base rate with
+  statistical confidence at the real available sample size (5 distinct
+  positive events) -- carried forward unchanged from Phase 3.
+  Commit: (pending -- committing next).
+
 ## Exact next step
 
-§5 is fully done (one real sub-step disclosed PARTIAL, not silently
-dropped). Move to §6: the consolidated pre-review evaluation report
-(`docs/evaluation/final-evaluation.md`, each section marked GOLD/
-SILVER-UNREVIEWED/SYNTHETIC/PENDING_HUMAN_REVIEW).
+§6 is fully done. Move to §7: build the human review pack (field
+review, entity-pair review, retrieval review, outcome-evidence
+spot-check, dossier review) -- build the tools only, do NOT review.
 
 ## Superseded: original §5 next-step note (kept for history)
 
