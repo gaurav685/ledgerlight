@@ -270,7 +270,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   not reproduce here), not as confirmation the earlier anomaly is gone.
 
   Drill database dropped at the end -- no second live copy left behind.
-  Commit: (pending -- committing next).
+  Commit: `75f2387`.
 
 ## Exact next step
 
