@@ -788,13 +788,24 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   - Default test suite: **408 passed** (47.7s).
   - Integration suite, batch 1 of 4 (14 files -- agent/API-core):
     **140 passed** (141s).
-  - Integration suite, batch 2 of 4 (14 files -- API/ingestion):
-    started, exceeded the tool's 300s foreground timeout and moved to
-    a background task (real, not a failure -- this batch includes
-    several slower ingestion/document-processor tests); awaiting the
-    completion notification before recording its result.
+  - Integration suite, batch 2a of 4 (7 files, API-core): **38
+    passed** (37.6s).
+  - Integration suite, batch 2b (the other 7 files of batch 2 --
+    `test_authz_matrix`/`test_care_ingestion`/
+    `test_commit_visibility_regression`/`test_company_dedup`/
+    `test_coverage`/`test_cross_tenant_idor`/`test_document_processor`):
+    **BLOCKED by real, sustained host memory pressure** -- killed 4
+    times in a row across this tick and the next, including after
+    splitting it down to a lighter 5-file sub-batch (excluding the two
+    heavier-looking files). Free memory measured between attempts:
+    2.3GB, 1.7GB, 1.9GB, 0.6GB -- a real, sustained instability
+    pattern (same one documented throughout this phase), not fixable
+    by smaller batching alone this time. Not forced through; marked
+    BLOCKED here with the real evidence, to retry once host memory is
+    genuinely healthier rather than on a fixed short retry cadence.
 
-  **Still remaining**: integration batches 3-4, the e2e pipeline test
+  **Still remaining**: the blocked batch 2b above, integration
+  batches 3-4, the e2e pipeline test
   (twice, per the brief), Playwright on e2e-lite, the ZAP baseline,
   backtest reproducibility diff+audits re-run, the load test and 5
   failure-recovery drills re-run, the full security suite re-run, and
