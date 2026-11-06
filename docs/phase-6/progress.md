@@ -772,7 +772,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   limitation). **0 gates evaluate to PASS** -- the honest, expected
   result per the brief's own framing, not softened.
 
-  Commit: _(pending)_.
+  Commit: `48374d1`.
 
 ## Exact next step
 
