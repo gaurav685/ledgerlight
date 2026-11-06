@@ -34,7 +34,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 - §10 Cost per filing -- **COMPLETE** (see below).
 - §11 Data-source compliance and licence review -- **COMPLETE** (see
   below).
-- §12 Final documentation -- NOT STARTED.
+- §12 Final documentation -- **COMPLETE** (see below).
 - §13 Clean-install and reproducible-setup test -- NOT STARTED.
 - §14 Production-readiness checklist -- NOT STARTED.
 - §15 Release-gate status -- NOT STARTED.
@@ -575,12 +575,74 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 
   Commit: `aca0d45`.
 
+- §12 Final documentation -- **COMPLETE** (2026-11-06).
+
+  **`docs/architecture.md`** (new, hand-written): real module table,
+  2 Mermaid diagrams (pipeline stage-by-stage, request flow), tenancy
+  model, cross-referenced to the real constraints found this phase
+  (no live LLM anywhere, the `pymupdf` AGPL question).
+
+  **`docs/data-dictionary.md`** (new, generated): `scripts/
+  generate_data_dictionary.py` introspects the real, live SQLAlchemy
+  model metadata (never hand-written) -- 51 real tables, with columns/
+  types/nullability/defaults/PK-FK/unique/check constraints. Fixed one
+  real bug in the generator itself while building it: a callable
+  column default (`uuid.uuid4`) rendered as an unreadable, non-
+  deterministic `<function uuid4 at 0x...>` memory address -- fixed to
+  print the function name instead.
+
+  **`docs/api/` reconciled**: found and fixed a real, previously-
+  unnoticed drift -- the committed `openapi.json` predated the §9
+  `fastapi` 0.162 bump; the live schema's `ValidationError` model now
+  has 2 more fields (`ctx`, `input`, a real Pydantic v2-era addition)
+  that the committed file never picked up. Regenerated from the live
+  app. `usage-guide.md`'s own endpoint references were checked against
+  the real schema and confirmed accurate (generic `{id}` placeholders
+  are deliberate, not stale parameter names).
+
+  **`docs/deploy/` reconciled**: `aws-architecture.md`'s RDS storage
+  cost line annotated with §10's fresher, independently-sourced
+  `ap-south-1` pricing figure (both numbers shown, not silently
+  overwritten). `local-setup-windows.md` already current (Phase 5
+  §10, no changes needed).
+
+  **`docs/modelling/model-card.md` finalised**: re-ran its own
+  generator (`scripts/model_card.py`) against the real backtest
+  results -- byte-identical output, confirming it was already current
+  rather than assuming so.
+
+  **Ops runbooks**: reviewed the existing 10 real runbooks in
+  `docs/ops/` -- all already current; none referenced anything this
+  phase's findings (Thermax block, `pymupdf` AGPL) would change, since
+  those are compliance-level findings, not operational procedure
+  changes. No new runbook was invented where none was missing.
+
+  **README.md rewrite**: compressed the Phase 0-5 narrative to one
+  real paragraph each (pointing to each phase's own report instead of
+  duplicating it) to make room for an accurate Phase 6A summary;
+  rewrote Setup/Commands/Data policy/Repository layout for the current
+  real state. **Caught two real bugs before they shipped as
+  documentation**: a draft `LEDGERLIGHT_WEBHOOK_SECRET_ENCRYPTION_KEY`
+  setup instruction using `openssl rand -hex 32` would have generated
+  an invalid key (the real code requires a Fernet key -- url-safe
+  base64, not hex; `ledgerlight/api/webhooks.py`'s `Fernet(...)` call
+  would reject it) -- fixed to generate a real Fernet key instead,
+  verified by actually constructing a `Fernet` instance with it. A
+  drafted `scripts/investigate.py COMPANY_ID AS_OF` command line was
+  wrong -- the real CLI takes `--company`/`--as-of` flags, not
+  positional args (checked against the script's own `argparse` setup
+  before committing to the README). Added the §11 BLOCKED-sources and
+  `pymupdf` AGPL findings to Data policy.
+
+  Commit: _(pending)_.
+
 ## Exact next step
 
-§11 is fully done. Move to §12: final documentation
-(`docs/architecture.md` with Mermaid diagrams, a generated
-`docs/data-dictionary.md`, reconciled `docs/api/`/`docs/deploy/`,
-final `docs/modelling/model-card.md`, ops runbooks, README rewrite).
+§12 is fully done. Move to §13: clean-install and reproducible-setup
+test (clone from the latest bundle into `../ledgerlight-clean-test`,
+follow ONLY the README/docs via PowerShell, record every step+time+doc
+defect, fix docs and repeat until clean, then delete the test
+directory).
 
 ## Superseded: original §5 next-step note (kept for history)
 

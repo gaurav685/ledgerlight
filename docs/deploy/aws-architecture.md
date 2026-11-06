@@ -38,7 +38,7 @@ worker (Fargate, private subnet) ──► RDS Postgres + S3, same as api -- nev
 
 ## Cost notes (rough, us-east-1, on-demand, not a quote)
 
-- RDS `db.t4g.micro` (single-AZ, dev/staging sizing): ~$15/month compute + ~$0.10/GB-month storage.
+- RDS `db.t4g.micro` (single-AZ, dev/staging sizing): ~$15/month compute + ~$0.10/GB-month storage (Phase 6A §10's own re-check found a fresher `ap-south-1` gp3 figure of ~$0.131/GB-month as of Aug 2026 -- both shown, see `docs/ops/cost-per-filing.md`; the difference is noise at this project's real data volumes).
 - Fargate: 3 services × 0.25 vCPU / 0.5 GB each, running continuously: ~$25-35/month total at these small sizes.
 - ALB: ~$16/month base + a few dollars of LCU usage at low traffic.
 - NAT gateway: ~$33/month base + per-GB data processing -- the single largest fixed cost at this scale; a real cost-reduction option for a low-traffic deployment is a NAT instance or VPC endpoints for S3/Secrets Manager to cut NAT data-processing charges (an S3 gateway endpoint is already free and included above).

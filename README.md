@@ -17,136 +17,87 @@ not a conclusion.
 
 ## Phase status
 
-**Phase 0 — environment, datasets, dependencies and feasibility.** This
-phase establishes the development environment, repository foundation, and a
-verified, legally sourced data inventory and seed dataset. It does **not**
-include the ingestion pipeline, database schema, extraction, models, API or
-frontend. See `docs/phase-0/phase-0-report.md` for the full Phase 0 report.
+Six phases complete, a seventh (Phase 6A, integrated validation and
+hardening) in progress. Each phase's own report has the full detail;
+this section is a short pointer, not a substitute.
 
-**Phase 1 — data ingestion, raw storage and document processing.** This
-phase adds the metadata store (SQLAlchemy/Alembic, Postgres), the
-content-addressed object storage abstraction, real ingestion jobs for
-every AVAILABLE/AVAILABLE_WITH_LIMITS source, PDF/HTML/bhavcopy
-processing (with an OCR fallback and a tested safety-limits layer),
-Dagster orchestration (partitions/jobs/schedules/sensor/retries), and
-observability (structured logs, persisted run metrics, dead-letter
-tracking, an `ingest-report` CLI). It does **not** include event
-classification/extraction, entity resolution, chunking/embeddings,
-features/models, API or frontend. See `docs/phase-1/phase-1-report.md`
-for the full Phase 1 report and `docs/ingestion/architecture.md` /
-`docs/ingestion/runbook.md` for the pipeline design and day-to-day usage.
-
-**Phase 2 — knowledge store, classification, extraction and entity
-resolution.** This phase adds the knowledge schema (companies/filings,
-chunks, taxonomy, events/fields, entities/mentions/links/merges, review
-queue, labels, model registry), a versioned taxonomy (v1.0) with
-boundary-tested rule thresholds, three event classifiers (rules
-baseline, TF-IDF+LR, DeBERTa-v3 zero-shot NLI) compared on a real
-silver-labelled split, one real worked structured extractor (AUD_RESIGN)
-with evidence verification against cited spans, entity resolution
-(deterministic identifiers → normalization → fuzzy matching, with
-conflict detection and reversible merges), and hybrid retrieval (true
-BM25 + a local embedding model + reciprocal rank fusion, point-in-time
-filtered). It does **not** include GUIDANCE_MISS detection, features,
-risk models/scores, the investigation agent, API endpoints or frontend.
-All classification/extraction/entity-resolution/retrieval metrics are
-against SILVER labels — gold review is pending human review (see
-`docs/phase-2/phase-2-report.md` §13). See
-`docs/phase-2/phase-2-report.md` for the full Phase 2 report and
-`docs/knowledge/` / `docs/evaluation/phase-2-evaluation.md` for the
-schema, taxonomy, extraction, entity-resolution and retrieval design.
-
-**Phase 3 — temporal intelligence and quantitative risk modelling.** In
-progress. §1-§2 (preflight, detector hardening, market-wide data
-expansion) and §3 (outcome definitions, frozen and hashed) are
-complete. §4 (point-in-time features) is complete in full: two real
-data-integrity bugs were found and fixed (a stale `company_identifiers`
-window bug, and a duplicate-company bug the fix itself reintroduced,
-both now self-healing); STRUCTURED price/liquidity, RULE-VERIFIED
-rating/auto-link, and SEED-track governance features are built and
-spot-verified against real company history (228,678 + 3,241 + 1,406
-real `feature_snapshots` rows); financial features were excluded with
-real evidence rather than shipped untested. §5 (guidance extraction)
-was assessed and limits stated: 0 real management-issued guidance
-statements exist anywhere in this project's corpus, so no extraction
-machinery was built. Exit gate 4 (point-in-time integrity) is proven:
-100% of feature rows with a real input satisfy `max_input_known_at <=
-as_of`, 0 violations. **§6-§10 (LightGBM training, walk-forward
-evaluation, leakage/survivorship/ablation, scoring and storage, CLI
-commands, tests) are now functionally complete.** The real,
-verified-coverage universe (companies with both real IBBI and real
-CARE Filing coverage) is only 5 companies, giving a pooled distinct
-positive-event count of 5 -- **statistically inconclusive** per the
-brief's own 30-event floor; no model variant beats the training-fold
-base rate. A final LightGBM model is trained and deployed to real
-scores via `scripts/train_risk.py` / `scripts/score.py`, but **makes
-no predictive-skill claim** -- see `docs/modelling/model-card.md`
-(generated) for the full real metrics, intervals, limitations and
-ethical considerations. It does **not** yet include the investigation
-agent, API endpoints, or frontend. See `docs/phase-3/phase-3-report.md`
-for the full report and `docs/modelling/` for outcomes, features,
-guidance, data-quality, evaluation-protocol and model-card design docs.
-
-**Phase 4 — evidence-verified investigation agent and human review.**
-Complete. §1 through §13 of the brief: the checkpointed PLAN/GATHER/
-TIMELINE/DRAFT/VERIFY/REPAIR/FINALISE state machine; 7 read-only tools;
-the dossier data model and the offline deterministic renderer; a full
-per-claim/per-sentence verifier (citation, date, number/unit, name,
-real local-NLI entailment, banned language, contradiction detection);
-real budgets; the human review workflow (automatic routing, the
-append-only decision audit, the immutable event-feedback loop, seeded
-QC with a real catch-rate report); the real SEED+UNIVERSE evaluation
-library; a dedicated adversarial/failure test suite (prompt injection,
-a verifier crash failing closed, REPAIR never substituting a new
-unsupported claim, real end-to-end runs on real SEED companies,
-dossier-hash determinism); and 7 CLI commands
-(`investigate`/`investigate-batch`/`dossier-show`/`dossier-export`/
-`dossier-review`/`qc-seed`/`agent-eval`), built and smoke-tested against
-real companies. No LLM renderer/plan validator is active in this
-environment (no `LLM_PROVIDER`/key in `.env`) -- the default,
-fully-offline path is what every real investigation in this phase
-actually runs. Human review of real dossiers is explicitly deferred to
-Phase 6, per the brief's own instruction
-(`docs/release/release-gates.md`). See `docs/phase-4/phase-4-report.md`
-and `docs/agent/` for the full report and design docs.
-
-**Phase 5 — API, analyst interface, security and production readiness.**
-In progress. §1 through §9 of the brief are complete: Postgres Row-Level
-Security tenancy with argon2id auth/sessions/CSRF/API keys (`docs/adr/
-0008-api-auth-tenancy.md`); the full versioned `/v1` FastAPI surface
-(companies, dossiers, review, watchlists/alerts, API keys, webhooks,
-admin, documents) with real rate limiting and an append-only audit log;
-a Next.js App Router analyst frontend (`docs/frontend/architecture.md`);
-Docker Compose for the full local stack; validated-but-unapplied
-Terraform for a real AWS deployment (`docs/deploy/aws-architecture.md`);
-5 GitHub Actions workflows (validated locally only -- no remote exists
-yet); structured JSON logging/Prometheus metrics wired in for the first
-time, plus a real, verified backup/restore drill and 7 `docs/ops/`
-runbooks; and the required security test suite (an authorisation
-matrix, cross-tenant IDOR attempts, session fixation, rate-limit/
-header checks, signed-URL expiry, webhook SSRF/DNS-rebinding, and
-prompt-injection separation reusing Phase 4's own adversarial
-documents). An optional ZAP baseline and the full Playwright e2e suite
-against a live stack are deferred (real host memory constraints this
-session; see `docs/phase-5/progress.md`). §10 (documentation) is in
-progress; §11 (run and verify), §12 (commit/backup), §13 (exit gates),
-and §14 (final report) remain. See `docs/phase-5/progress.md` for the
-real, session-by-session log (the report itself is written last, at
-§14).
+- **Phase 0** — environment, repository foundation, verified legal data
+  inventory and seed dataset. `docs/phase-0/phase-0-report.md`.
+- **Phase 1** — metadata store, content-addressed object storage, real
+  ingestion jobs, PDF/HTML/bhavcopy processing with OCR fallback,
+  Dagster orchestration, observability. `docs/phase-1/phase-1-report.md`.
+- **Phase 2** — knowledge schema, versioned taxonomy, three event
+  classifiers (rules/TF-IDF+LR/DeBERTa-v3 zero-shot NLI), one worked
+  structured extractor with evidence verification, entity resolution,
+  hybrid BM25+embedding retrieval. `docs/phase-2/phase-2-report.md`.
+- **Phase 3** — temporal features and a LightGBM risk model, trained and
+  deployed. The real, verified-coverage universe is only 5 companies
+  (5 pooled distinct positive events) -- **statistically inconclusive**
+  per the brief's own 30-event floor; no model variant beats the
+  training-fold base rate. See `docs/modelling/model-card.md`
+  (generated, re-verified byte-identical in Phase 6A §12) for the full
+  real metrics and explicit no-predictive-skill-claim.
+  `docs/phase-3/phase-3-report.md`.
+- **Phase 4** — the evidence-verified investigation agent: a
+  checkpointed PLAN/GATHER/TIMELINE/DRAFT/VERIFY/REPAIR/FINALISE state
+  machine, 7 read-only tools, a full per-claim verifier (citation,
+  date, number/unit, name, real local-NLI entailment, banned language,
+  contradiction detection), budgets, human review workflow, and an
+  adversarial/failure test suite. No LLM is ever called -- the default,
+  fully-offline template-rendering path is what every real
+  investigation in this project runs, by design, not by missing
+  configuration. `docs/phase-4/phase-4-report.md`.
+- **Phase 5** — the real `/v1` FastAPI surface with Postgres Row-Level
+  Security tenancy, argon2id auth/sessions/CSRF/API keys, a Next.js
+  analyst frontend, Docker Compose for the full local stack,
+  validated-but-unapplied AWS Terraform, 5 GitHub Actions workflows
+  (never run on GitHub -- no remote configured, by policy), and the
+  required security test suite. `docs/phase-5/phase-5-report.md`.
+- **Phase 6A — integrated validation, hardening, and review (in
+  progress).** §1 through §11 of the brief complete: a green,
+  single-sequential-pass baseline (408 default + 330 integration
+  tests); a real end-to-end pipeline test (ingestion through dossier
+  citation chain); a golden-fixture regression suite; backtest
+  reproducibility audits; a consolidated pre-review evaluation report;
+  a 5-type human review pack (built, not yet reviewed -- that is
+  explicitly Phase 6B's job); a real load test, throughput measurement,
+  and 5 failure-recovery drills; a full security re-validation
+  (`pip-audit` found and fixed 24 real vulnerabilities, including a
+  real background-task regression the dependency bump itself exposed);
+  real per-filing cost measurement plus a parameterised AWS cost model
+  (`docs/ops/cost-per-filing.md`); and a data-source compliance and
+  licence review that found one AI-crawler-blocking site (downgraded
+  to BLOCKED) and one real, unresolved AGPL-3.0/commercial licensing
+  question (`pymupdf`, this project's real PDF-extraction dependency --
+  see `docs/compliance/data-sources.md` and
+  `docs/release/release-gates.md`). §12 (final documentation) is in
+  progress; §13 (clean-install test) through §18 (final report and
+  human checkpoint) remain. See `docs/phase-6/progress.md` for the
+  real, session-by-session log and `docs/release/release-gates.md` for
+  every currently open gap with its real reason.
 
 ## Setup
 
 Requires [uv](https://docs.astral.sh/uv/) (Python 3.12 is fetched
 automatically by `uv` via `.python-version`; no system Python install is
-required).
+required). **`docs/deploy/local-setup-windows.md` is the full, real,
+step-by-step guide this project was actually set up and run from** --
+read it first on a fresh machine; the quick version below skips the
+real memory/Docker caveats it documents.
 
 ```sh
 uv sync                # create .venv and install locked dependencies
 uv run pre-commit install --hook-type pre-commit --hook-type pre-push
 cp .env.example .env   # edit values as needed; .env is gitignored
-# Required before `infra-up`: generate local-only secrets for the object store
+# Required before `infra-up`: generate local-only secrets (object store,
+# session cookies, webhook-secret encryption -- .env.example lists every
+# real required variable; LEDGERLIGHT_ENVIRONMENT=development fails fast
+# on any default/weak secret value, so these must be real random values)
 echo "LEDGERLIGHT_GARAGE_RPC_SECRET=$(openssl rand -hex 32)" >> .env
 echo "LEDGERLIGHT_GARAGE_ADMIN_TOKEN=$(openssl rand -hex 16)" >> .env
+echo "LEDGERLIGHT_SESSION_SECRET_KEY=$(openssl rand -hex 32)" >> .env
+# Must be a real Fernet key (url-safe base64, 32 bytes), not arbitrary hex:
+echo "LEDGERLIGHT_WEBHOOK_SECRET_ENCRYPTION_KEY=$(uv run python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')" >> .env
 ```
 
 ## Commands
@@ -177,8 +128,24 @@ All commands are exposed as `uv run <script>` entry points (see
 | `uv run python scripts/reprocess.py VERSION_ID` | Force reprocessing of one document version |
 | `uv run python scripts/ingest_report.py` | Per-source health / dead-letter / failure-class report |
 | `uv run dagster dev -m ledgerlight.orchestration.definitions` | Dagster webserver (needs `DAGSTER_HOME`, see `docs/ingestion/runbook.md`) |
+| `uv run uvicorn ledgerlight.api.app:create_app --factory --reload` | Run the real API locally |
+| `cd frontend && pnpm dev` | Run the real Next.js analyst frontend locally |
+| `uv run python scripts/investigate.py --company COMPANY_ID --as-of YYYY-MM-DD` | Run one real investigation end to end (Phase 4) |
+| `uv run python scripts/measure_cost_per_filing.py` | Real per-filing cost measurement (Phase 6A §10, `docs/ops/cost-per-filing.md`) |
+| `uv run python scripts/generate_data_dictionary.py` | Regenerate `docs/data-dictionary.md` from the live model metadata |
 
-A `Makefile` wraps these as `make setup|lint|typecheck|test|verify-env|verify-manifests|acquire-seed|infra-up|infra-check|infra-down|db-upgrade|sources-sync|store-backfill|ingest|backfill|process|reprocess|ingest-report|dagster-dev|test-integration|test-corpus`, plus the Phase 2 targets `taxonomy-load|bootstrap-companies|link-filings|chunk-corpus|embed-chunks|build-bm25-index|labels-propose|label-review|labels-split|train-classifier|evaluate|extract|resolve-entities|retrieval-eval|review-queue|knowledge-pipeline` (see `docs/phase-2/phase-2-report.md`), plus the Phase 3 targets `outcomes-taxonomy-load|freeze-eval-data|select-classifiers|backfill-universe|outcomes-build|features-build|outcomes-and-features-build|point-in-time-proof|train-risk|backtest|leakage-check|ablation|score|model-card` (see `docs/phase-3/phase-3-report.md`).
+`make` wraps every script above plus every later phase's own targets --
+read the `Makefile` directly for the full, current list rather than
+trusting a hand-maintained enumeration here to stay in sync; as of
+Phase 6A it includes the Phase 2 knowledge-pipeline targets
+(`taxonomy-load` through `knowledge-pipeline`, see
+`docs/phase-2/phase-2-report.md`), the Phase 3 modelling targets
+(`outcomes-taxonomy-load` through `model-card`, see
+`docs/phase-3/phase-3-report.md`), and the Phase 6A human-review-pack
+targets (`field-review`, `entity-pair-review`, `retrieval-review`,
+`outcome-evidence-review`, `build-dossier-review-sample`,
+`dossier-review-blind`, `review-progress`, `test-regression`,
+`test-pyramid` -- see `docs/phase-6/human-review-guide.md`).
 
 ## Data policy
 
@@ -203,14 +170,44 @@ A `Makefile` wraps these as `make setup|lint|typecheck|test|verify-env|verify-ma
   tool by edge bot-mitigation (not by robots.txt) — but NSE's bhavcopy
   price archive is reachable via a separate, unblocked subdomain; see
   `docs/data/source-inventory.md`.
+- **CRISIL, ICRA, MCA, and (added Phase 6A §11) Thermax IR are also
+  BLOCKED** — CRISIL/Thermax because their robots.txt explicitly names
+  AI-crawler user agents (this tool is operated by an AI agent); ICRA
+  for a browser-fingerprinting challenge; MCA for an unconditional
+  Access Denied. See `docs/compliance/data-sources.md` for the full,
+  dated re-check and the exact reason for each.
+- **`pymupdf` (this project's real PDF-extraction dependency) is
+  dual-licensed GNU AGPL-3.0 / Artifex commercial — unresolved.** Does
+  not block research/internal use; blocks any commercial/SaaS launch
+  of the PDF-extraction functionality until resolved. See
+  `docs/compliance/data-sources.md` and
+  `docs/release/release-gates.md`.
 
 ## Repository layout
 
 ```
-ledgerlight/        Python package (config, acquisition, common)
-scripts/             verify_env, verify_manifests, acquire_seed, import_local, infra_check
-docs/                adr/, data/, knowledge/, evaluation/, phase-0/, phase-1/, phase-2/
-data/                raw/ interim/ processed/ inbox/ (all gitignored) + manifests/ (committed)
-infra/               docker-compose.yml (Postgres+pgvector, Garage S3-compatible storage)
-tests/               unit tests (network tests marked and excluded by default)
+ledgerlight/         acquisition, ingestion, processing, knowledge,
+                      modelling, agent, api, orchestration, db,
+                      storage, review_pack, config, common
+scripts/              one real CLI entry point per pipeline stage --
+                      acquisition/ingestion/processing (Phase 0-1),
+                      knowledge/modelling (Phase 2-3), agent/review
+                      (Phase 4, 6A), API/ops (Phase 5-6A)
+frontend/             Next.js analyst app (dossiers, companies,
+                      watchlists, alerts, review, tenant admin)
+docs/                 adr/, data/, knowledge/, evaluation/, agent/,
+                      api/, frontend/, deploy/, security/, ops/,
+                      compliance/, release/, modelling/,
+                      architecture.md (hand-written), data-dictionary.md
+                      (generated from live model metadata), phase-0/
+                      through phase-6/ (one real per-phase report +
+                      progress log each)
+data/                 raw/ interim/ processed/ inbox/ (all gitignored)
+                      + manifests/ (committed -- metadata only)
+infra/                docker-compose.yml (Postgres+pgvector, Garage
+                      S3-compatible storage), aws/ (validated,
+                      unapplied Terraform)
+tests/                unit + integration + corpus + security + e2e
+                      tests (network/integration/corpus marked and
+                      excluded by default -- see pyproject.toml)
 ```
