@@ -39,7 +39,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   below).
 - §14 Production-readiness checklist -- **COMPLETE** (see below).
 - §15 Release-gate status -- **COMPLETE** (see below).
-- §16 Run and verify -- NOT STARTED.
+- §16 Run and verify -- **IN PROGRESS** (see below).
 - §17 Commit (local only) and backup -- ongoing throughout.
 - §18 Human checkpoint and 6A exit gates -- NOT STARTED. **STOP here --
   do not begin Phase 6B.**
@@ -774,14 +774,42 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 
   Commit: `48374d1`.
 
+- §16 Run and verify -- **IN PROGRESS** (started 2026-11-06).
+
+  Real raw output captured so far, all in `docs/phase-6/evidence/sec16-*`:
+  - `pre-commit run --all-files`: all 6 real hooks passed (17.7s).
+  - Full-history gitleaks: 208 commits scanned (up from §9's 195),
+    0 leaks found (20.5s).
+  - `pip-audit --local`: 0 known vulnerabilities (unchanged from §9).
+  - Python licence inventory (`pip-licenses`): re-confirmed, identical
+    to §11.
+  - npm licence inventory (`license-checker-rseidelsohn`): re-
+    confirmed, identical to §11.
+  - Default test suite: **408 passed** (47.7s).
+  - Integration suite, batch 1 of 4 (14 files -- agent/API-core):
+    **140 passed** (141s).
+  - Integration suite, batch 2 of 4 (14 files -- API/ingestion):
+    started, exceeded the tool's 300s foreground timeout and moved to
+    a background task (real, not a failure -- this batch includes
+    several slower ingestion/document-processor tests); awaiting the
+    completion notification before recording its result.
+
+  **Still remaining**: integration batches 3-4, the e2e pipeline test
+  (twice, per the brief), Playwright on e2e-lite, the ZAP baseline,
+  backtest reproducibility diff+audits re-run, the load test and 5
+  failure-recovery drills re-run, the full security suite re-run, and
+  a re-run of the §13 clean-install test. Continuing across
+  subsequent autonomous ticks rather than forcing all of §16 through
+  one sitting -- consistent with this host's own real, repeated
+  memory constraints and the project's established batching
+  discipline.
+
+  Commit: _(pending -- partial)_.
+
 ## Exact next step
 
-§15 is fully done. Move to §16: run and verify (run every real test
-layer, regression, the e2e pipeline test twice, Playwright on
-e2e-lite, ZAP, backtest reproducibility, load test, failure-recovery
-drills, the security suite, licence inventory, the clean-install run,
-`pre-commit run --all-files`, full-history gitleaks -- recording raw
-output for each).
+§16 is in progress (see above for exactly what's captured and what
+remains). Continue §16 before moving to §17.
 
 ## Superseded: original §5 next-step note (kept for history)
 

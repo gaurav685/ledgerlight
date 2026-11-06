@@ -1,0 +1,11 @@
+﻿uv.exe : No known vulnerabilities found
+At line:1 char:396
++ ... n\Python311\Scripts\uv.exe"; & $uv run pip-audit --local 2>&1 | Tee-O ...
++                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (No known vulnerabilities found:String 
+   ) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Name        Skip Reason
+----------- --------------------------------------------------------------------------
+ledgerlight Dependency not found on PyPI and could not be audited: ledgerlight (0.1.0)
