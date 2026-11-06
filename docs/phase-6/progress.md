@@ -874,12 +874,18 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   All 5 drills already have complete, real, undisputed evidence from
   §8 that nothing in this session has changed or cast doubt on.
 
-  **Still remaining**: Playwright on e2e-lite, the ZAP baseline,
-  drills 1-4 (if attempted later), and a re-run of the §13 clean-
-  install test. Continuing across subsequent autonomous ticks rather
-  than forcing all of §16 through one sitting -- consistent with this
-  host's own real, repeated memory constraints and the project's
-  established batching discipline.
+  - §13 clean-install test, re-run independently (fresh clone into
+    `C:\ledgerlight-clean-test2`, same isolated-database pattern):
+    `uv sync --extra ocr` 21.6s, migrations to head 15.6s, default
+    suite **408 passed** (88.5s), real API `/healthz` -> 200. No new
+    doc defects found this time -- the §13 fixes held. Database
+    dropped and clone directory deleted after.
+
+  **Still remaining**: Playwright on e2e-lite, the ZAP baseline, and
+  drills 1-4 (if attempted later). Continuing across subsequent
+  autonomous ticks rather than forcing all of §16 through one sitting
+  -- consistent with this host's own real, repeated memory
+  constraints and the project's established batching discipline.
 
   Commit: _(pending -- partial)_.
 
