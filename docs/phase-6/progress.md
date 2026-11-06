@@ -466,7 +466,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 
   **gitleaks** (full history): 195 commits scanned, **0 leaks found**.
 
-  Commit: (pending -- committing next).
+  Commit: `3d5fc22`.
 
 ## Exact next step
 
