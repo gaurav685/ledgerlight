@@ -756,7 +756,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   model, no gold review yet, `pymupdf` licensing), ahead of the
   individually-scoped, non-blocking limitations.
 
-  Commit: _(pending)_.
+  Commit: `beabfdb`.
 
 ## Exact next step
 
