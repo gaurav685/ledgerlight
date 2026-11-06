@@ -32,7 +32,8 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 - §9 Security and tenant re-validation -- **COMPLETE (PARTIAL)** (see
   below; one real sub-step blocked by host memory, not code).
 - §10 Cost per filing -- **COMPLETE** (see below).
-- §11 Data-source compliance and licence review -- NOT STARTED.
+- §11 Data-source compliance and licence review -- **COMPLETE** (see
+  below).
 - §12 Final documentation -- NOT STARTED.
 - §13 Clean-install and reproducible-setup test -- NOT STARTED.
 - §14 Production-readiness checklist -- NOT STARTED.
@@ -520,15 +521,66 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   0.5GB worker task size; a real worker (also running Dagster)
   should likely be sized up.
 
+  Commit: `de413b0`.
+
+- §11 Data-source compliance and licence review -- **COMPLETE**
+  (2026-11-06). Full writeup in `docs/compliance/data-sources.md`.
+
+  **Re-checked robots.txt for all 16 currently-enabled sources** (and
+  re-read SEBI's terms page in full). 10 unchanged; 6 real changes
+  found, detailed in `data/manifests/sources.yaml`'s
+  `retest_2026_11_06` block. Five are cosmetic (a added Sitemap line,
+  a robots.txt disappearing from present-but-permissive to 404 -- no
+  verdict change). **One is significant**: Thermax's robots.txt now
+  carries a Cloudflare Content-Signal block naming ~30 AI crawlers by
+  name, `ClaudeBot`/`anthropic-ai`/`Claude-Web` among them. This
+  project already has a standing precedent for exactly this (`crisil`
+  was BLOCKED in Phase 0 for the same reason, even though its own
+  literal UA string didn't match either) -- applied the same judgment
+  for consistency: `thermax_ir` downgraded AVAILABLE -> **BLOCKED**,
+  removed from the live scheduled source list in
+  `ledgerlight/orchestration/definitions.py`. A disclosed, deliberate
+  judgment call, not a technical necessity.
+
+  **Licence inventory**: Python (195 packages via `pip-licenses`,
+  added as a real dev dependency -- same methodology fix §9 already
+  made for `pip-audit`), npm (332 packages via
+  `license-checker-rseidelsohn`), both real model checkpoints
+  (`BAAI/bge-small-en-v1.5`, `MoritzLaurer/DeBERTa-v3-base-mnli-fever-
+  anli` -- both MIT), and the 4 container base images.
+
+  **The one real, significant finding**: `pymupdf` (a real, direct,
+  load-bearing dependency, imported in `ledgerlight/processing/pdf.py`
+  for actual PDF extraction) is dual-licensed GNU AGPL-3.0 or
+  Artifex's commercial licence -- never previously flagged. This
+  project holds neither. Blocks any commercial/SaaS launch of the
+  PDF-extraction functionality until resolved (Artifex licence, or a
+  library swap). New gap in `docs/release/release-gates.md`. (Garage's
+  own AGPL-3.0 licence, by contrast, is low-risk here -- used
+  unmodified, as a separate networked service, never linked into the
+  application process.)
+
+  **Explicit BLOCKED statement**: BSE, NSE (except `nse_archives`),
+  CRISIL, ICRA, MCA, and now Thermax IR -- each with its specific real
+  reason, none retroactive to content already lawfully acquired.
+
+  **Incidental finding while verifying the test run** (not caused by
+  §11, confirmed via `git stash` on the clean pre-§11 commit): 363
+  real corpus pages now trip `test_real_corpus_has_no_genuinely_scanned_pdf_pages`'s
+  "zero scanned pages" tripwire -- its own docstring already
+  anticipated this ("useful to know, not a bug"), almost certainly
+  from Phase 3's large SEBI/IBBI/CARE discovery runs. New gap in
+  `docs/release/release-gates.md`; not investigated further here
+  (outside §11's own scope).
+
   Commit: _(pending)_.
 
 ## Exact next step
 
-§10 is fully done. Move to §11: data-source compliance and licence
-review (re-check robots.txt/terms for every enabled source, record
-changes since Phase 0, third-party licence inventory for Python/npm
-deps + model checkpoints + container images, explicit commercial-use/
-CRISIL/BSE-NSE-BLOCKED statement).
+§11 is fully done. Move to §12: final documentation
+(`docs/architecture.md` with Mermaid diagrams, a generated
+`docs/data-dictionary.md`, reconciled `docs/api/`/`docs/deploy/`,
+final `docs/modelling/model-card.md`, ops runbooks, README rewrite).
 
 ## Superseded: original §5 next-step note (kept for history)
 

@@ -380,3 +380,73 @@ both images to confirm the Python-level findings are gone (the real, currently
 un-patchable Debian OS-package findings and the `web` image's bundled-Node
 `undici` CVEs will remain regardless -- see `docs/security/threat-model.md`'s
 own residual-risks section for those).
+
+## Gap: `pymupdf`'s AGPL-3.0/commercial dual licence is unresolved
+
+**Status: open.** **First seen:** Phase 6A §11 (2026-11-06).
+
+**What's missing:** a real decision on `pymupdf` (`pyproject.toml`:
+`"pymupdf>=2.0,<3"`, imported directly in
+`ledgerlight/processing/pdf.py` for real PDF extraction, part of the
+application's own served code). It is dual-licensed: GNU AGPL-3.0, or
+Artifex's commercial licence. This project holds neither an Artifex
+commercial licence nor a plan to release its own source under AGPL.
+Full detail: `docs/compliance/data-sources.md`.
+
+**What this blocks:** any commercial or SaaS-style launch that serves
+this platform's PDF-extraction functionality to outside users over a
+network (`docs/deploy/aws-architecture.md`'s own intended deployment
+model) -- AGPL-3.0's network-use clause would require releasing the
+entire combined work's source under AGPL-3.0 unless resolved first.
+Does not block continuing to run this platform as a research/internal
+tool today.
+
+**Why it's not closed:** resolving it means either (a) obtaining an
+Artifex commercial PyMuPDF licence, or (b) replacing `pymupdf` with a
+permissively-licensed alternative (`pypdf`/`pdfplumber`/
+`pdfminer.six`, all MIT/BSD-family) -- a real business decision and a
+real extraction-pipeline change respectively, both outside a
+compliance review's own scope to make unilaterally.
+
+**Closing this gap requires:** a human decision on which path to
+take, then (if swapping libraries) re-verifying extraction fidelity
+against the existing PDF-page-integrity checks
+(`docs/phase-2/evidence/preflight-pdf-page-integrity.log`) before
+switching.
+
+## Gap: 363 real corpus pages now trip the "no genuinely scanned PDFs" tripwire test
+
+**Status: open.** **First seen:** incidentally, while verifying §11's
+own test run (2026-11-06) -- not caused by any §11 change, and not a
+code bug.
+
+**What's missing:** `tests/test_corpus_processing.py::test_real_corpus_has_no_genuinely_scanned_pdf_pages`
+is marked `@pytest.mark.corpus` (excluded from the normal default-
+suite `addopts`, so it hadn't actually run in a while) and its own
+docstring already anticipates this exact outcome: *"If this ever
+fails, it means a real scanned page finally showed up, which is
+useful to know, not a bug."* Running it today (`uv run pytest -m "not
+integration" ...`, which incidentally overrides the `corpus`-excluding
+default) found 363 real pages across the grown corpus (almost
+certainly from Phase 3's large SEBI/IBBI/CARE discovery runs, which
+added 300+ new real documents after this test's "zero" baseline was
+established) now genuinely need OCR. Confirmed this is not caused by
+anything in Phase 6A §11: reproduces identically on the clean,
+pre-§11 commit (`git stash` + re-run).
+
+**What this blocks:** nothing by itself -- `tests/test_ocr_engine.py`
+already proves the real OCR path works on a synthetic fixture; this
+finding has not been checked against *that* path to confirm these 363
+specific real pages extract correctly through it rather than silently
+losing content.
+
+**Closing this gap requires:** running these 363 real pages through
+the actual OCR path and spot-checking extracted text quality, then
+either updating this test's hardcoded "zero" expectation to the new,
+verified real count (with a note on why, mirroring how
+`scripts/update_regression_snapshots.py` already handles a
+legitimately-changed real baseline elsewhere in this project) or
+fixing a real extraction problem if the spot-check finds one. Not
+investigated further this phase -- outside §11's own scope
+(compliance/licensing), flagged rather than silently fixed or
+silently left for someone to discover by accident again.

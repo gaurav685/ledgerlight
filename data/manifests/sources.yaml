@@ -486,3 +486,73 @@ sources:
       every time, for the whole life of this project so far. This entry closes that
       gap. AVAILABLE_WITH_LIMITS (not AVAILABLE) because this path is explicitly
       human-driven, not automated -- there is no real "fetch" for a scheduler to run.
+
+# --- Phase 6A §11 retest (2026-11-06) ---------------------------------------
+# Re-checked robots.txt for every currently-enabled (non-BLOCKED, actually-used)
+# source: nse_archives, sebi, ibbi, care, india_ratings, acuite, vakrangee_ir,
+# jetairways_ir, brightcom_ir, lichousing_ir, pnbhousing_ir, spicejet_ir,
+# dmart_ir, thermax_ir, suzlon_ir, mastek_ir (manual has no base_url, N/A).
+# Full writeup: docs/compliance/data-sources.md. Real changes found, summarized
+# here; every entry above is left as the historical record of what was true on
+# its own fetched_at date, not rewritten.
+retest_2026_11_06:
+  unchanged: [nse_archives, sebi, ibbi, vakrangee_ir, jetairways_ir, lichousing_ir,
+    pnbhousing_ir, spicejet_ir, suzlon_ir, mastek_ir]
+  sebi_terms_of_use_recheck: "Re-fetched https://www.sebi.gov.in/website-policy.html -- unchanged from the 2026-10-23 record."
+  care:
+    change: "robots.txt went from fully-open ('User-agent: *\\nDisallow:') to a populated WordPress-template ruleset (Disallow: /admin/, /cgi-bin/, /tmp/, /private/, /logs/, /wp-admin/, /wp-includes/, /wp-content/plugins/, /wp-content/themes/, /wp-login.php, /xmlrpc.php)."
+    impact: "None of the real paths this project fetches from (/upload/CompanyFiles/PR/*.pdf, /header/searchlist, /pryear, /getSearchprdocument) are covered by the new disallow list. Verdict unchanged: AVAILABLE."
+  india_ratings:
+    change: "robots.txt, previously present and permissive (WordPress-template Disallow list, homepage-only reachability test, no document ever fetched), now returns HTTP 404 -- no robots.txt file at all."
+    impact: "Still allow-by-convention. No document was ever fetched from this source in any phase, so no behavioural change to the real pipeline. Verdict unchanged: AVAILABLE_WITH_LIMITS."
+  acuite:
+    change: "robots.txt, previously present but empty, now returns HTTP 404 -- no robots.txt file at all."
+    impact: "Still allow-by-convention. No document was ever fetched from this source in any phase. Verdict unchanged: AVAILABLE_WITH_LIMITS."
+  brightcom_ir:
+    change: "robots.txt gained a Sitemap directive (https://www.brightcomgroup.com/wp-sitemap.xml); the Disallow: /wp-admin/ rule is unchanged."
+    impact: "No restriction change. Verdict unchanged: AVAILABLE."
+  dmart_ir:
+    change: "robots.txt gained a Sitemap directive (https://canary.dmartindia.com/sitemap.xml); the open Disallow: rule is unchanged."
+    impact: "No restriction change. Verdict unchanged: AVAILABLE."
+  thermax_ir:
+    change: >-
+      Real, significant change. robots.txt previously had only a template
+      comment (no rules at all). It now carries a full Cloudflare-managed
+      "Content-Signal" block: the wildcard User-agent gets
+      `Content-Signal: search=yes,ai-train=no,use=reference` plus `Allow: /`
+      (so crawling itself is still permitted), followed by ~30 explicitly
+      named crawlers each given `Disallow: /`, including ClaudeBot,
+      anthropic-ai, and Claude-Web by name (alongside GPTBot,
+      Google-Extended, Bytespider, and others). The file frames this as an
+      "express reservation of rights under Article 4 of EU Directive
+      2019/790".
+    mechanical_impact: >-
+      This project's real acquisition tool identifies as
+      "LedgerlightAcquisition/0.1 (contact: ...)"
+      (ledgerlight/acquisition/fetcher.py) -- it matches none of the ~30
+      named entries, so it falls under the wildcard `Allow: /` and is not
+      mechanically blocked; ledgerlight.acquisition.robots.RobotsCache's
+      own can_fetch() check would still return allowed.
+    policy_impact: >-
+      This project already has a standing, deliberate precedent for
+      exactly this situation -- see the `crisil` entry above, BLOCKED
+      specifically because its robots.txt named AI-crawler user agents
+      (anthropic-ai, claudebot, Claude-Web) even though CRISIL's own literal
+      UA string didn't match either, "out of respect for the site's
+      evident intent toward AI-operated crawling... not merely the letter
+      of the match". Applying that same already-established judgment here:
+      Thermax's robots.txt now names ClaudeBot specifically. This session
+      is operated by Claude Code. Consistent with the CRISIL precedent, this
+      source is downgraded from AVAILABLE to BLOCKED for any future fetch,
+      effective 2026-11-06 -- a deliberate, disclosed judgment call, not a
+      technical block (the wildcard rule's Content-Signal use=reference
+      signal would arguably cover this project's actual use -- structured
+      fact extraction from one company's own regulatory filing, not bulk
+      AI-training-data harvesting -- but this project chooses not to rely
+      on that reading given the explicit named-crawler block).
+    already_acquired_content: >-
+      The one Thermax annual-report PDF already downloaded in Phase 5
+      (2026-10-25, before this robots.txt change existed) is not retroactively
+      affected -- it predates the new restriction and was lawfully fetched
+      under the rules in effect at the time.
+    verdict_override: "BLOCKED (was AVAILABLE) -- effective 2026-11-06, see docs/compliance/data-sources.md."

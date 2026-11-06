@@ -52,7 +52,10 @@ _KNOWN_ITEM_SOURCES = (
     "pnbhousing_ir",
     "spicejet_ir",
     "dmart_ir",
-    "thermax_ir",
+    # thermax_ir removed 2026-11-06 (Phase 6A §11): its robots.txt now
+    # explicitly disallows ClaudeBot by name. Same precedent already
+    # applied to "crisil" above -- see data/manifests/sources.yaml's
+    # retest_2026_11_06.thermax_ir entry.
     "suzlon_ir",
     "mastek_ir",
 )

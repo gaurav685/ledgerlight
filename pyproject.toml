@@ -64,6 +64,7 @@ dev = [
     "dagster-webserver>=1.8,<2",
     "locust>=2.47.0",
     "pip-audit>=2.10.1",
+    "pip-licenses>=5.5.5",
 ]
 
 [tool.ruff]
