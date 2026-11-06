@@ -842,13 +842,44 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
     `days_since_last_downgrade` flagged at 1.0; 0 outcome-date/embargo
     violations). Drill database dropped after.
 
-  **Still remaining**: Playwright on e2e-lite, the ZAP baseline, the
-  load test and 5 failure-recovery drills re-run, the full security
-  suite re-run, and a re-run of the §13 clean-install test. Continuing
-  subsequent autonomous ticks rather than forcing all of §16 through
-  one sitting -- consistent with this host's own real, repeated
-  memory constraints and the project's established batching
-  discipline.
+  - Full security suite re-run (the exact §9 file set --
+    `test_authz_matrix`/`test_api_rls`/`test_cross_tenant_idor`/
+    `test_api_auth`/`test_security_controls`/`test_api_documents`/
+    `test_api_webhooks_router`/`test_api_rate_limit`/
+    `test_prompt_injection_separation`/`test_api_app`): **97 passed**,
+    exact match to §9's own count (184.1s, no kill this time).
+  - Load test re-run (`loadtest/locustfile.py`, same real params as
+    §8): **221 requests, 0 failures** (vs §8's 228 -- normal run-to-
+    run variance at this small scale).
+  - Failure-recovery drill 5 re-run (revoked API key + expired
+    session, against the real live API): both clean 401s with the
+    exact same error messages as §8 (`"invalid or expired API key"`,
+    `"invalid or expired session"`). One real API key's raw value
+    was initially committed in the evidence log and caught by the
+    gitleaks pre-commit hook -- redacted (the key was already revoked
+    by that point, never a real secret risk, but the gate was not
+    weakened to let it through anyway).
+
+  **Deliberate scope decision on drills 1-4**: not re-run this pass.
+  Drills 2 and 3 require `docker stop`/`start` on the real, shared,
+  currently-running `ledgerlight-phase0-postgres-1`/`-garage-1`
+  containers -- safe and already proven once this phase (§8), but
+  repeating it without a clearer signal that's wanted, while a peer
+  session on this machine could depend on that same live stack, was
+  judged not worth the real disruption for a second identical
+  confirmation. Drills 1 and 4 need fresh synthetic seed data plus
+  real multiprocess/subprocess kill timing and their own cleanup
+  (the exact same manifest/blob contamination class of bug found and
+  fixed in this phase's own §10) -- deferred rather than rushed.
+  All 5 drills already have complete, real, undisputed evidence from
+  §8 that nothing in this session has changed or cast doubt on.
+
+  **Still remaining**: Playwright on e2e-lite, the ZAP baseline,
+  drills 1-4 (if attempted later), and a re-run of the §13 clean-
+  install test. Continuing across subsequent autonomous ticks rather
+  than forcing all of §16 through one sitting -- consistent with this
+  host's own real, repeated memory constraints and the project's
+  established batching discipline.
 
   Commit: _(pending -- partial)_.
 
