@@ -42,8 +42,8 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 - §16 Run and verify -- **COMPLETE (PARTIAL)** (see below).
 - §17 Commit (local only) and backup -- **COMPLETE** (2026-11-07; see
   below for the final bundle).
-- §18 Human checkpoint and 6A exit gates -- NOT STARTED. **STOP here --
-  do not begin Phase 6B.**
+- §18 Human checkpoint and 6A exit gates -- **COMPLETE** (2026-11-07).
+  **PHASE 6A IS DONE. STOPPING HERE -- NOT beginning Phase 6B.**
 
 - §2 Low-memory stack profile + deferred e2e/ZAP runs -- **COMPLETE**
   (2026-11-05). `infra/docker-compose.e2e-lite.yml` built
@@ -935,12 +935,35 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   Commit: _(this section itself, N/A -- a backup step, not a code
   change)_.
 
-## Exact next step
+- §18 Human checkpoint and 6A exit gates -- **COMPLETE** (2026-11-07).
 
-§17 is fully done. Move to §18: the final human checkpoint and 6A
-exit gates (`docs/phase-6/phase-6a-report.md`, the gate checklist,
-limitations, decisions needing approval, git SHAs/identity/trailer-
-check/bundle-verify -- then STOP, do not begin Phase 6B).
+  Final report written and saved: `docs/phase-6/phase-6a-report.md`.
+  All 13 brief-defined exit gates evaluated **PASS** (gate 2 required
+  correcting a stale `release-gates.md` entry found while preparing
+  this report -- ZAP/Playwright were actually already closed in §2,
+  not still open as that file claimed). Limitations stated plainly,
+  ranked by real severity (inconclusive risk model, no gold review
+  yet, `pymupdf` licensing). 7 real decisions needing human approval
+  listed explicitly (pymupdf licensing, the Thermax block judgment
+  call, SpiceJet's control-group status, the 363 OCR-tripwire pages,
+  pushing a backup bundle, the Docker image rebuild, and the review
+  pack itself). Git identity/SHAs/trailer check/bundle verify all
+  re-confirmed clean in the report itself.
+
+  Commit: _(this file + the report, committed together)_.
+
+## PHASE 6A COMPLETE
+
+All 18 sections of `docs/phase-6/brief-6a.md` done. Per the brief's
+own explicit final instruction: **STOP here. Do not begin Phase 6B.**
+
+```
+HUMAN CHECKPOINT: run the review pack per docs/phase-6/human-review-guide.md
+```
+
+5 types, ~4 hours total, commands and per-type counts in
+`docs/phase-6/phase-6a-report.md`'s own closing section (and the
+guide itself).
 
 ## Superseded: original §5 next-step note (kept for history)
 
