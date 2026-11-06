@@ -1,0 +1,30 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.15, pytest-8.4.2, pluggy-1.7.0
+rootdir: C:\ledger light
+configfile: pyproject.toml
+plugins: anyio-4.15.1, platformdirs-4.13.5, cov-5.0.0, respx-0.21.1
+collected 2 items
+
+tests\test_e2e_pipeline.py import-local: imported=['phase6a-e2e-9288691b.html'] skipped_duplicate=[]
+storage: documents_created=1 versions_created=1
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights:  37%|###7      | 74/199 [00:00<00:00, 733.26it/s]Loading weights: 100%|##########| 199/199 [00:00<00:00, 1835.02it/s]
+extract: events_created=1 fields_created=2
+entity links: audit_firm_entities_created=0
+.import-local: imported=['phase6a-e2e-idem-2dcb7dcc.html'] skipped_duplicate=[]
+storage: documents_created=1 versions_created=1
+extract: events_created=1 fields_created=2
+entity links: audit_firm_entities_created=0
+import-local: imported=[] skipped_duplicate=['phase6a-e2e-idem-2dcb7dcc.html']
+storage: documents_created=0 versions_created=0
+extract: events_created=0 fields_created=0
+entity links: audit_firm_entities_created=0
+.
+
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:51
+  C:\ledger light\.venv\Lib\site-packages\starlette\testclient.py:51: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=================== 2 passed, 1 warning in 61.97s (0:01:01) ===================
+exit: 0

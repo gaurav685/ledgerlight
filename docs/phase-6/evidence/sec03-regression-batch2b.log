@@ -1,0 +1,69 @@
+...F.........................                                            [100%]
+================================== FAILURES ===================================
+________________ test_cross_tenant_idor_is_blocked_everywhere _________________
+
+two_tenants = ((<starlette.testclient.TestClient object at 0x000002621E3159A0>, 'm9JKujanVj_1p3TG54gbeIRj6OnMiwXRcpTgBzpH8E8', <ledg...E1D1E80>, 'kqrFHeeLbXurn7_w62SfVbldS4leM1ceFOovdi4lb-g', <ledgerlight.api.models.Tenant object at 0x000002621E1D22A0>))
+real_session = <sqlalchemy.orm.session.Session object at 0x000002621E3412E0>
+
+    def test_cross_tenant_idor_is_blocked_everywhere(
+        two_tenants: tuple[tuple[TestClient, str, Tenant], tuple[TestClient, str, Tenant]],
+        real_session: Session,
+    ) -> None:
+        (client_a, csrf_a, tenant_a), (client_b, csrf_b, _tenant_b) = two_tenants
+    
+        # --- tenant A creates one real resource of each kind ---------------
+        watchlist_resp = client_a.post(
+            "/v1/watchlists", json={"name": "A's watchlist"}, headers={"X-CSRF-Token": csrf_a}
+        )
+        assert watchlist_resp.status_code == 201, watchlist_resp.text
+        watchlist_id = watchlist_resp.json()["id"]
+    
+        rule_resp = client_a.post(
+            "/v1/alerts/rules",
+            json={"watchlist_id": watchlist_id, "rule_type": "new_event_type", "config": {}},
+            headers={"X-CSRF-Token": csrf_a},
+        )
+        assert rule_resp.status_code == 201, rule_resp.text
+        rule_id = rule_resp.json()["id"]
+    
+        company = Company(display_name=f"IDOR Target Co {uuid.uuid4().hex[:8]}")
+        real_session.add(company)
+        real_session.flush()
+        real_session.info["created"]["companies"].append(company.id)
+        alert = Alert(
+            tenant_id=tenant_a.id,
+            alert_rule_id=uuid.UUID(rule_id),
+            company_id=company.id,
+            payload={"event_id": "test"},
+        )
+        real_session.add(alert)
+        real_session.commit()
+        alert_id = str(alert.id)
+    
+        key_resp = client_a.post(
+            "/v1/api-keys", json={"name": "A's key"}, headers={"X-CSRF-Token": csrf_a}
+        )
+        assert key_resp.status_code == 201, key_resp.text
+        key_id = key_resp.json()["id"]
+    
+        webhook_resp = client_a.post(
+            "/v1/webhooks",
+            json={"url": "https://example.com/webhook"},
+            headers={"X-CSRF-Token": csrf_a},
+        )
+>       assert webhook_resp.status_code == 201, webhook_resp.text
+E       AssertionError: {"error":"http_error","detail":"could not resolve host 'example.com': [Errno 11001] getaddrinfo failed","request_id":"6ba66060-246d-42c6-af81-63dbccf621bf"}
+E       assert 422 == 201
+E        +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+
+C:\ledger light\tests\test_cross_tenant_idor.py:174: AssertionError
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:51
+  C:\ledger light\.venv\Lib\site-packages\starlette\testclient.py:51: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_cross_tenant_idor.py::test_cross_tenant_idor_is_blocked_everywhere
+1 failed, 28 passed, 1 warning in 751.97s (0:12:31)
+exit: 1

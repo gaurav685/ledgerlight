@@ -1,0 +1,438 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.15, pytest-8.4.2, pluggy-1.7.0
+rootdir: C:\ledger light
+configfile: pyproject.toml
+plugins: anyio-4.15.1, platformdirs-4.13.5, cov-5.0.0, respx-0.21.1
+collected 1 item
+
+tests\test_e2e_pipeline.py import-local: imported=['phase6a-e2e-45411861.html'] skipped_duplicate=[]
+storage: documents_created=1 versions_created=1
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights:  44%|####3     | 87/199 [00:00<00:00, 863.31it/s]Loading weights: 100%|##########| 199/199 [00:00<00:00, 1494.76it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+extract: events_created=1 fields_created=2
+entity links: audit_firm_entities_created=1
+FE
+
+=================================== ERRORS ====================================
+_ ERROR at teardown of test_full_pipeline_ingestion_to_dossier_citation_chain _
+
+    @pytest.fixture
+    def real_session() -> Iterator[Session]:
+        from pathlib import Path as _Path
+    
+        repo_root = _Path(__file__).resolve().parent.parent
+        try:
+            settings = Settings(_env_file=str(repo_root / ".env"))  # type: ignore[call-arg]
+        except Exception as exc:
+            pytest.skip(f"could not load real .env for integration test: {exc}")
+        try:
+            session = make_session_factory(settings)()
+        except Exception as exc:
+            pytest.skip(f"Postgres not reachable (is the Docker stack up?): {exc}")
+    
+        created: dict[str, list[uuid.UUID]] = {"tenants": [], "companies": []}
+        seed_names: list[str] = []
+        session.info["created"] = created
+        session.info["seed_names"] = seed_names
+        try:
+            yield session
+        finally:
+>           session.execute(text("DELETE FROM rate_limit_counters WHERE key LIKE 'login_ip:%'"))
+
+tests\test_e2e_pipeline.py:92: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+.venv\Lib\site-packages\sqlalchemy\orm\session.py:2473: in execute
+    return self._execute_internal(
+.venv\Lib\site-packages\sqlalchemy\orm\session.py:2350: in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\sqlalchemy\orm\session.py:2173: in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<sqlalchemy generated _go() wrapper for sqlalchemy.orm.session.SessionTransaction._connection_for_bind>:2: in _connection_for_bind
+    return target(fn, self, bind, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py:101: in _go
+    self._raise_for_prerequisite_state(fn.__name__, current_state)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <sqlalchemy.orm.session.SessionTransaction object at 0x0000021E23FE6810>
+operation_name = '_connection_for_bind'
+state = <SessionTransactionState.DEACTIVE: 4>
+
+    def _raise_for_prerequisite_state(
+        self, operation_name: str, state: _StateChangeState
+    ) -> NoReturn:
+        if state is SessionTransactionState.DEACTIVE:
+            if self._rollback_exception:
+>               raise sa_exc.PendingRollbackError(
+                    "This Session's transaction has been rolled back "
+                    "due to a previous exception during flush."
+                    " To begin a new transaction with this Session, "
+                    "first issue Session.rollback()."
+                    f" Original exception was: {self._rollback_exception}",
+                    code="7s2a",
+                )
+E               sqlalchemy.exc.PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (psycopg.errors.NotNullViolation) null value in column "created_by" of relation "alert_rules" violates not-null constraint
+E               DETAIL:  Failing row contains (d914d7fb-59b8-472f-a921-4ebfa3e75d30, 1a21cb45-4bfb-4a52-a07d-af38316836cc, edd8cb38-32ab-4628-b4f6-585b465f896f, new_event_type, {}, t, null, 2026-11-05 07:01:48.032596+00).
+E               [SQL: INSERT INTO alert_rules (id, tenant_id, watchlist_id, rule_type, config, is_active, created_by) VALUES (%(id)s::UUID, %(tenant_id)s::UUID, %(watchlist_id)s::UUID, %(rule_type)s::VARCHAR, %(config)s::JSONB, %(is_active)s, %(created_by)s::UUID) RETURNING alert_rules.created_at]
+E               [parameters: {'id': UUID('d914d7fb-59b8-472f-a921-4ebfa3e75d30'), 'tenant_id': UUID('1a21cb45-4bfb-4a52-a07d-af38316836cc'), 'watchlist_id': UUID('edd8cb38-32ab-4628-b4f6-585b465f896f'), 'rule_type': 'new_event_type', 'config': Jsonb({}), 'is_active': True, 'created_by': None}]
+E               (Background on this error at: https://sqlalche.me/e/21/gkpj) (Background on this error at: https://sqlalche.me/e/21/7s2a)
+
+.venv\Lib\site-packages\sqlalchemy\orm\session.py:987: PendingRollbackError
+------------------------------ Captured log call ------------------------------
+WARNING  huggingface_hub.utils._http:_http.py:1023 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+================================== FAILURES ===================================
+___________ test_full_pipeline_ingestion_to_dossier_citation_chain ____________
+
+self = <sqlalchemy.engine.base.Connection object at 0x0000021E70E72C60>
+dialect = <sqlalchemy.dialects.postgresql.psycopg.PGDialect_psycopg object at 0x0000021E4BE24E00>
+context = <sqlalchemy.dialects.postgresql.psycopg.PGExecutionContext_psycopg object at 0x0000021E2CD9D340>
+statement = <sqlalchemy.dialects.postgresql.psycopg.PGCompiler_psycopg object at 0x0000021E2CD9D1F0>
+parameters = [{'config': Jsonb({}), 'created_by': None, 'id': UUID('d914d7fb-59b8-472f-a921-4ebfa3e75d30'), 'is_active': True, ...}]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Unpack[TupleAny]]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        evt_handled: bool = False
+        try:
+            if self._has_events or self.engine._has_events:
+                for fn in self.dispatch.before_cursor_execute:
+                    str_statement, effective_parameters = fn(
+                        self,
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                        context.executemany,
+                    )
+    
+            if self._echo:
+                self._log_info(str_statement)
+    
+                stats = context._get_cache_stats()
+    
+                if not self.engine.hide_parameters:
+                    self._log_info(
+                        "[%s] %r",
+                        stats,
+                        sql_util._repr_params(
+                            effective_parameters,
+                            batches=10,
+                            ismulti=context.executemany,
+                        ),
+                    )
+                else:
+                    self._log_info(
+                        "[%s] [SQL parameters hidden due to "
+                        "hide_parameters=True]",
+                        stats,
+                    )
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\engine\base.py:1958: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\engine\default.py:1192: in do_execute
+    cursor.execute(statement, parameters)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Cursor [closed] [IDLE] (host=127.0.0.1 port=55432 database=ledgerlight) at 0x21e2703fd10>
+query = 'INSERT INTO alert_rules (id, tenant_id, watchlist_id, rule_type, config, is_active, created_by) VALUES (%(id)s::UUID,...UUID, %(rule_type)s::VARCHAR, %(config)s::JSONB, %(is_active)s, %(created_by)s::UUID) RETURNING alert_rules.created_at'
+params = {'config': Jsonb({}), 'created_by': None, 'id': UUID('d914d7fb-59b8-472f-a921-4ebfa3e75d30'), 'is_active': True, ...}
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.NotNullViolation: null value in column "created_by" of relation "alert_rules" violates not-null constraint
+E           DETAIL:  Failing row contains (d914d7fb-59b8-472f-a921-4ebfa3e75d30, 1a21cb45-4bfb-4a52-a07d-af38316836cc, edd8cb38-32ab-4628-b4f6-585b465f896f, new_event_type, {}, t, null, 2026-11-05 07:01:48.032596+00).
+
+C:\ledger light\.venv\Lib\site-packages\psycopg\cursor.py:117: NotNullViolation
+
+The above exception was the direct cause of the following exception:
+
+real_session = <sqlalchemy.orm.session.Session object at 0x0000021E6CBA0E60>
+
+    def test_full_pipeline_ingestion_to_dossier_citation_chain(real_session: Session) -> None:
+        """Steps 1-10, with the real provenance/known_at citation chain
+        asserted end to end: the dossier's own cited excerpt must resolve
+        to the exact stored page span of the real ingested version."""
+        from pathlib import Path as _Path
+    
+        settings = Settings(_env_file=str(_Path(__file__).resolve().parent.parent / ".env"))  # type: ignore[call-arg]
+        seed_name = f"phase6a-e2e-{uuid.uuid4().hex[:8]}"
+        company_id = _make_test_company(real_session, seed_name)
+    
+        outcome = _run_chain(settings, real_session, company_id, seed_name)
+        assert outcome.investigation.state == "FINALISE"
+        assert outcome.investigation.final_status in ("FINALISED", "NEEDS_REVIEW")
+    
+        # The real citation chain: every real claim's evidence must
+        # resolve to the real, immutable document_pages.raw_text span of
+        # the version this test itself just ingested, or to some other
+        # real, pre-existing evidence -- never a dangling reference.
+        claims = real_session.scalars(
+            select(Claim).where(Claim.investigation_id == outcome.investigation.id)
+        ).all()
+        assert claims, "the real investigation produced no real claims at all"
+    
+        for claim in claims:
+            for ev_obj in claim.evidence or []:
+                if not isinstance(ev_obj, dict):
+                    continue
+                ev: dict[str, object] = ev_obj
+                raw_version_id = ev.get("version_id")
+                if not isinstance(raw_version_id, str):
+                    continue
+                version_id = uuid.UUID(raw_version_id)
+                page_number = ev.get("page")
+                page = real_session.scalar(
+                    select(DocumentPage).where(
+                        DocumentPage.version_id == version_id,
+                        DocumentPage.page_number == page_number,
+                    )
+                )
+                assert page is not None, f"claim {claim.id}'s own cited version/page does not exist"
+                char_start, char_end = ev.get("char_start"), ev.get("char_end")
+                if isinstance(char_start, int) and isinstance(char_end, int):
+                    cited_text = page.raw_text[char_start:char_end]
+                    assert cited_text, (
+                        f"claim {claim.id}'s own cited span [{char_start}:{char_end}] "
+                        f"resolves to empty text in the real stored page"
+                    )
+    
+        # --- 8. review task routing --------------------------------------
+        # The real routing logic (ledgerlight.agent.review) only creates a
+        # review_task when final_status is NEEDS_REVIEW -- a cleanly
+        # FINALISED investigation correctly gets none, which is itself the
+        # real, correct behaviour, not a gap in this test.
+        review_task_count: int = real_session.execute(
+            text(
+                "SELECT count(*) FROM review_tasks WHERE dossier_id IN "
+                "(SELECT id FROM dossiers WHERE investigation_id = :inv_id)"
+            ),
+            {"inv_id": outcome.investigation.id},
+        ).scalar_one()
+        if outcome.investigation.final_status == "NEEDS_REVIEW":
+            assert review_task_count >= 1, "NEEDS_REVIEW but no real review_task was created"
+        else:
+            assert review_task_count == 0
+    
+        # --- 9. alert rule firing and the signed webhook delivery --------
+        import sys as _sys
+    
+        sys_path_entry = str(Path(__file__).resolve().parent.parent)
+        if sys_path_entry not in _sys.path:
+            _sys.path.insert(0, sys_path_entry)
+        from ledgerlight.api import webhooks as webhooks_module
+        from ledgerlight.api.models import Alert, AlertRule, Watchlist, WatchlistItem, Webhook
+        from ledgerlight.config.settings import load_settings
+        from scripts.generate_alerts import _deliver_to_tenant_webhooks, _evaluate_new_event_type
+    
+        tenant = Tenant(name="Phase 6A E2E Tenant", slug=f"e2e-{seed_name}")
+        real_session.add(tenant)
+        real_session.flush()
+        real_session.info["created"]["tenants"].append(tenant.id)
+        user = User(
+            tenant_id=tenant.id,
+            email=f"{seed_name}@example.com",
+            password_hash=auth.hash_password("CorrectHorseBatteryStaple"),
+        )
+        real_session.add(user)
+        real_session.flush()
+        real_session.add(
+            Membership(tenant_id=tenant.id, user_id=user.id, role="tenant_admin", status="active")
+        )
+        watchlist = Watchlist(tenant_id=tenant.id, user_id=user.id, name="e2e watchlist")
+        real_session.add(watchlist)
+        real_session.flush()
+        real_session.add(
+            WatchlistItem(tenant_id=tenant.id, watchlist_id=watchlist.id, company_id=company_id)
+        )
+        rule = AlertRule(
+            tenant_id=tenant.id, watchlist_id=watchlist.id, rule_type="new_event_type", config={}
+        )
+        real_session.add(rule)
+>       real_session.flush()
+
+C:\ledger light\tests\test_e2e_pipeline.py:521: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\orm\session.py:4543: in flush
+    self._flush(objects)
+<sqlalchemy generated warned() wrapper for sqlalchemy.orm.session.Session._flush>:2: in _flush
+    return target(fn, self, objects=objects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\util\deprecations.py:281: in warned
+    return fn(*args, **kwargs)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\orm\session.py:4686: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py:166: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\orm\session.py:4647: in _flush
+    flush_context.execute()
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py:467: in execute
+    rec.execute(self)
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py:643: in execute
+    util.preloaded.orm_persistence._save_obj(
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\orm\persistence.py:92: in _save_obj
+    _emit_insert_statements(
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\orm\persistence.py:1237: in _emit_insert_statements
+    result = connection.execute(
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\engine\base.py:1463: in execute
+    return meth(
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\sql\elements.py:533: in _execute_on_connection
+    return connection._execute_clauseelement(
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\engine\base.py:1683: in _execute_clauseelement
+    ret = self._execute_context(
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\engine\base.py:1837: in _execute_context
+    return self._exec_single_context(
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\engine\base.py:1977: in _exec_single_context
+    self._handle_dbapi_exception(
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\engine\base.py:2347: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\engine\base.py:1958: in _exec_single_context
+    self.dialect.do_execute(
+C:\ledger light\.venv\Lib\site-packages\sqlalchemy\engine\default.py:1192: in do_execute
+    cursor.execute(statement, parameters)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Cursor [closed] [IDLE] (host=127.0.0.1 port=55432 database=ledgerlight) at 0x21e2703fd10>
+query = 'INSERT INTO alert_rules (id, tenant_id, watchlist_id, rule_type, config, is_active, created_by) VALUES (%(id)s::UUID,...UUID, %(rule_type)s::VARCHAR, %(config)s::JSONB, %(is_active)s, %(created_by)s::UUID) RETURNING alert_rules.created_at'
+params = {'config': Jsonb({}), 'created_by': None, 'id': UUID('d914d7fb-59b8-472f-a921-4ebfa3e75d30'), 'is_active': True, ...}
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           sqlalchemy.exc.IntegrityError: (psycopg.errors.NotNullViolation) null value in column "created_by" of relation "alert_rules" violates not-null constraint
+E           DETAIL:  Failing row contains (d914d7fb-59b8-472f-a921-4ebfa3e75d30, 1a21cb45-4bfb-4a52-a07d-af38316836cc, edd8cb38-32ab-4628-b4f6-585b465f896f, new_event_type, {}, t, null, 2026-11-05 07:01:48.032596+00).
+E           [SQL: INSERT INTO alert_rules (id, tenant_id, watchlist_id, rule_type, config, is_active, created_by) VALUES (%(id)s::UUID, %(tenant_id)s::UUID, %(watchlist_id)s::UUID, %(rule_type)s::VARCHAR, %(config)s::JSONB, %(is_active)s, %(created_by)s::UUID) RETURNING alert_rules.created_at]
+E           [parameters: {'id': UUID('d914d7fb-59b8-472f-a921-4ebfa3e75d30'), 'tenant_id': UUID('1a21cb45-4bfb-4a52-a07d-af38316836cc'), 'watchlist_id': UUID('edd8cb38-32ab-4628-b4f6-585b465f896f'), 'rule_type': 'new_event_type', 'config': Jsonb({}), 'is_active': True, 'created_by': None}]
+E           (Background on this error at: https://sqlalche.me/e/21/gkpj)
+
+C:\ledger light\.venv\Lib\site-packages\psycopg\cursor.py:117: IntegrityError
+------------------------------ Captured log call ------------------------------
+WARNING  huggingface_hub.utils._http:_http.py:1023 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:51
+  C:\ledger light\.venv\Lib\site-packages\starlette\testclient.py:51: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_e2e_pipeline.py::test_full_pipeline_ingestion_to_dossier_citation_chain
+ERROR tests/test_e2e_pipeline.py::test_full_pipeline_ingestion_to_dossier_citation_chain
+============== 1 failed, 1 warning, 1 error in 100.44s (0:01:40) ==============
+exit: 1

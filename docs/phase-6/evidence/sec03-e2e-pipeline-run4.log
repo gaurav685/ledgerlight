@@ -1,0 +1,306 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.15, pytest-8.4.2, pluggy-1.7.0
+rootdir: C:\ledger light
+configfile: pyproject.toml
+plugins: anyio-4.15.1, platformdirs-4.13.5, cov-5.0.0, respx-0.21.1
+collected 1 item
+
+tests\test_e2e_pipeline.py import-local: imported=['phase6a-e2e-164d9b62.html'] skipped_duplicate=[]
+storage: documents_created=1 versions_created=1
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights:  31%|###       | 61/199 [00:00<00:00, 608.71it/s]Loading weights: 100%|##########| 199/199 [00:00<00:00, 1676.57it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+extract: events_created=1 fields_created=2
+entity links: audit_firm_entities_created=0
+.E
+
+=================================== ERRORS ====================================
+_ ERROR at teardown of test_full_pipeline_ingestion_to_dossier_citation_chain _
+
+self = <sqlalchemy.engine.base.Connection object at 0x000001CE0FA12750>
+dialect = <sqlalchemy.dialects.postgresql.psycopg.PGDialect_psycopg object at 0x000001CE37570560>
+context = <sqlalchemy.dialects.postgresql.psycopg.PGExecutionContext_psycopg object at 0x000001CE184D09B0>
+statement = <sqlalchemy.dialects.postgresql.psycopg.PGCompiler_psycopg object at 0x000001CE184D14C0>
+parameters = [{'ids': [UUID('b682c1b4-f7aa-4540-a3d9-ee0dc2520bfe')]}]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Unpack[TupleAny]]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        evt_handled: bool = False
+        try:
+            if self._has_events or self.engine._has_events:
+                for fn in self.dispatch.before_cursor_execute:
+                    str_statement, effective_parameters = fn(
+                        self,
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                        context.executemany,
+                    )
+    
+            if self._echo:
+                self._log_info(str_statement)
+    
+                stats = context._get_cache_stats()
+    
+                if not self.engine.hide_parameters:
+                    self._log_info(
+                        "[%s] %r",
+                        stats,
+                        sql_util._repr_params(
+                            effective_parameters,
+                            batches=10,
+                            ismulti=context.executemany,
+                        ),
+                    )
+                else:
+                    self._log_info(
+                        "[%s] [SQL parameters hidden due to "
+                        "hide_parameters=True]",
+                        stats,
+                    )
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+.venv\Lib\site-packages\sqlalchemy\engine\base.py:1958: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+.venv\Lib\site-packages\sqlalchemy\engine\default.py:1192: in do_execute
+    cursor.execute(statement, parameters)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Cursor [closed] [INERROR] (host=127.0.0.1 port=55432 database=ledgerlight) at 0x1ce57c7e8d0>
+query = 'DELETE FROM alerts WHERE company_id = ANY(%(ids)s)'
+params = {'ids': [UUID('b682c1b4-f7aa-4540-a3d9-ee0dc2520bfe')]}
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.ForeignKeyViolation: update or delete on table "alerts" violates foreign key constraint "webhook_deliveries_alert_id_fkey" on table "webhook_deliveries"
+E           DETAIL:  Key (id)=(551a027e-eeb7-4f3d-a319-65c90e664272) is still referenced from table "webhook_deliveries".
+
+.venv\Lib\site-packages\psycopg\cursor.py:117: ForeignKeyViolation
+
+The above exception was the direct cause of the following exception:
+
+    @pytest.fixture
+    def real_session() -> Iterator[Session]:
+        from pathlib import Path as _Path
+    
+        repo_root = _Path(__file__).resolve().parent.parent
+        try:
+            settings = Settings(_env_file=str(repo_root / ".env"))  # type: ignore[call-arg]
+        except Exception as exc:
+            pytest.skip(f"could not load real .env for integration test: {exc}")
+        try:
+            session = make_session_factory(settings)()
+        except Exception as exc:
+            pytest.skip(f"Postgres not reachable (is the Docker stack up?): {exc}")
+    
+        created: dict[str, list[uuid.UUID]] = {"tenants": [], "companies": []}
+        seed_names: list[str] = []
+        session.info["created"] = created
+        session.info["seed_names"] = seed_names
+        try:
+            yield session
+        finally:
+            session.execute(text("DELETE FROM rate_limit_counters WHERE key LIKE 'login_ip:%'"))
+            if created["companies"]:
+                session.execute(
+                    text(
+                        "DELETE FROM review_tasks WHERE dossier_id IN "
+                        "(SELECT id FROM dossiers WHERE investigation_id IN "
+                        "(SELECT id FROM investigations WHERE company_id = ANY(:ids)))"
+                    ),
+                    {"ids": created["companies"]},
+                )
+                session.execute(
+                    text(
+                        "DELETE FROM dossiers WHERE investigation_id IN "
+                        "(SELECT id FROM investigations WHERE company_id = ANY(:ids))"
+                    ),
+                    {"ids": created["companies"]},
+                )
+                session.execute(
+                    text(
+                        "DELETE FROM claims WHERE investigation_id IN "
+                        "(SELECT id FROM investigations WHERE company_id = ANY(:ids))"
+                    ),
+                    {"ids": created["companies"]},
+                )
+                session.execute(
+                    text(
+                        "DELETE FROM investigation_steps WHERE investigation_id IN "
+                        "(SELECT id FROM investigations WHERE company_id = ANY(:ids))"
+                    ),
+                    {"ids": created["companies"]},
+                )
+                session.execute(
+                    text("DELETE FROM investigations WHERE company_id = ANY(:ids)"),
+                    {"ids": created["companies"]},
+                )
+>               session.execute(
+                    text("DELETE FROM alerts WHERE company_id = ANY(:ids)"),
+                    {"ids": created["companies"]},
+                )
+
+tests\test_e2e_pipeline.py:127: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+.venv\Lib\site-packages\sqlalchemy\orm\session.py:2473: in execute
+    return self._execute_internal(
+.venv\Lib\site-packages\sqlalchemy\orm\session.py:2373: in _execute_internal
+    result = conn.execute(
+.venv\Lib\site-packages\sqlalchemy\engine\base.py:1463: in execute
+    return meth(
+.venv\Lib\site-packages\sqlalchemy\sql\elements.py:533: in _execute_on_connection
+    return connection._execute_clauseelement(
+.venv\Lib\site-packages\sqlalchemy\engine\base.py:1683: in _execute_clauseelement
+    ret = self._execute_context(
+.venv\Lib\site-packages\sqlalchemy\engine\base.py:1837: in _execute_context
+    return self._exec_single_context(
+.venv\Lib\site-packages\sqlalchemy\engine\base.py:1977: in _exec_single_context
+    self._handle_dbapi_exception(
+.venv\Lib\site-packages\sqlalchemy\engine\base.py:2347: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+.venv\Lib\site-packages\sqlalchemy\engine\base.py:1958: in _exec_single_context
+    self.dialect.do_execute(
+.venv\Lib\site-packages\sqlalchemy\engine\default.py:1192: in do_execute
+    cursor.execute(statement, parameters)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <psycopg.Cursor [closed] [INERROR] (host=127.0.0.1 port=55432 database=ledgerlight) at 0x1ce57c7e8d0>
+query = 'DELETE FROM alerts WHERE company_id = ANY(%(ids)s)'
+params = {'ids': [UUID('b682c1b4-f7aa-4540-a3d9-ee0dc2520bfe')]}
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           sqlalchemy.exc.IntegrityError: (psycopg.errors.ForeignKeyViolation) update or delete on table "alerts" violates foreign key constraint "webhook_deliveries_alert_id_fkey" on table "webhook_deliveries"
+E           DETAIL:  Key (id)=(551a027e-eeb7-4f3d-a319-65c90e664272) is still referenced from table "webhook_deliveries".
+E           [SQL: DELETE FROM alerts WHERE company_id = ANY(%(ids)s)]
+E           [parameters: {'ids': [UUID('b682c1b4-f7aa-4540-a3d9-ee0dc2520bfe')]}]
+E           (Background on this error at: https://sqlalche.me/e/21/gkpj)
+
+.venv\Lib\site-packages\psycopg\cursor.py:117: IntegrityError
+------------------------------ Captured log call ------------------------------
+WARNING  huggingface_hub.utils._http:_http.py:1023 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:51
+  C:\ledger light\.venv\Lib\site-packages\starlette\testclient.py:51: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+ERROR tests/test_e2e_pipeline.py::test_full_pipeline_ingestion_to_dossier_citation_chain
+=================== 1 passed, 1 warning, 1 error in 46.22s ====================
+exit: 1

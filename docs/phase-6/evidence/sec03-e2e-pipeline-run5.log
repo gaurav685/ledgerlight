@@ -1,0 +1,23 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.15, pytest-8.4.2, pluggy-1.7.0
+rootdir: C:\ledger light
+configfile: pyproject.toml
+plugins: anyio-4.15.1, platformdirs-4.13.5, cov-5.0.0, respx-0.21.1
+collected 1 item
+
+tests\test_e2e_pipeline.py import-local: imported=['phase6a-e2e-b76ddfe6.html'] skipped_duplicate=[]
+storage: documents_created=1 versions_created=1
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|##########| 199/199 [00:00<00:00, 2403.90it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+extract: events_created=1 fields_created=2
+entity links: audit_firm_entities_created=0
+.
+
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:51
+  C:\ledger light\.venv\Lib\site-packages\starlette\testclient.py:51: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 1 passed, 1 warning in 57.33s ========================
+exit: 0

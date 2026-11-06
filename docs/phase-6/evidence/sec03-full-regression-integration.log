@@ -1,0 +1,186 @@
+........................................................................ [ 22%]
+........................................................................ [ 44%]
+........................................................................ [ 66%]
+......................................F....F............................ [ 88%]
+....................................                                     [100%]
+================================== FAILURES ===================================
+___ test_a_new_event_produces_one_real_alert_and_a_signed_webhook_delivery ____
+
+real_session = <sqlalchemy.orm.session.Session object at 0x0000028CC4BCE6F0>
+
+    def test_a_new_event_produces_one_real_alert_and_a_signed_webhook_delivery(
+        real_session: Session,
+    ) -> None:
+        tenant = Tenant(name="Alerts Job Test Co", slug=f"alerts-job-{uuid.uuid4().hex[:8]}")
+        real_session.add(tenant)
+        real_session.flush()
+        real_session.info["created"]["tenants"].append(tenant.id)
+    
+        company = Company(display_name=f"Alerts Job Target {uuid.uuid4().hex[:8]}")
+        real_session.add(company)
+        real_session.flush()
+        real_session.info["created"]["companies"].append(company.id)
+    
+        user = User(
+            tenant_id=tenant.id,
+            email=f"{uuid.uuid4().hex[:8]}@example.com",
+            password_hash=auth.hash_password("CorrectHorseBatteryStaple"),
+        )
+        real_session.add(user)
+        real_session.flush()
+    
+        watchlist = Watchlist(tenant_id=tenant.id, user_id=user.id, name="Watch")
+        real_session.add(watchlist)
+        real_session.flush()
+        real_session.add(
+            WatchlistItem(tenant_id=tenant.id, watchlist_id=watchlist.id, company_id=company.id)
+        )
+    
+        settings = Settings(_env_file=str(REPO_ROOT / ".env"))  # type: ignore[call-arg]
+        raw_secret = webhooks_module.generate_webhook_secret()
+        webhook = Webhook(
+            tenant_id=tenant.id,
+            url="https://1.1.1.1/hook",
+            secret_encrypted=webhooks_module.encrypt_secret(settings, raw_secret),
+            created_by=user.id,
+        )
+        real_session.add(webhook)
+    
+        rule = AlertRule(
+            tenant_id=tenant.id,
+            watchlist_id=watchlist.id,
+            rule_type="new_event_type",
+            config={"event_type_code": "ANY"},
+            created_by=user.id,
+        )
+        real_session.add(rule)
+        real_session.flush()
+    
+        event_type = real_session.scalar(select(EventType).where(EventType.code == "AUD_RESIGN"))
+        assert event_type is not None, "real taxonomy event type AUD_RESIGN must already exist"
+        event = Event(
+            event_type_id=event_type.id,
+            company_id=company.id,
+            known_at=dt.datetime.now(dt.UTC),
+            severity="medium",
+            status="verified",
+            detector_name="test",
+            detector_version="1",
+            confidence=0.9,
+        )
+        real_session.add(event)
+        real_session.commit()
+    
+        with respx.mock(assert_all_called=True) as mock:
+            mock.post("https://1.1.1.1/hook").mock(return_value=Response(200))
+>           exit_code = _MODULE.main()
+                        ^^^^^^^^^^^^^^
+
+C:\ledger light\tests\test_generate_alerts.py:167: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\ledger light\scripts\generate_alerts.py:214: in main
+    _deliver_to_tenant_webhooks(settings, session, tenant_id, alert)
+C:\ledger light\scripts\generate_alerts.py:160: in _deliver_to_tenant_webhooks
+    result = webhooks_module.deliver_webhook(cast(str, url), secret, payload_bytes)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\ledger light\ledgerlight\api\webhooks.py:136: in deliver_webhook
+    response = httpx.post(
+C:\ledger light\.venv\Lib\site-packages\httpx\_api.py:331: in post
+    return request(
+C:\ledger light\.venv\Lib\site-packages\httpx\_api.py:118: in request
+    return client.request(
+C:\ledger light\.venv\Lib\site-packages\httpx\_client.py:837: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\ledger light\.venv\Lib\site-packages\httpx\_client.py:926: in send
+    response = self._send_handling_auth(
+C:\ledger light\.venv\Lib\site-packages\httpx\_client.py:954: in _send_handling_auth
+    response = self._send_handling_redirects(
+C:\ledger light\.venv\Lib\site-packages\httpx\_client.py:991: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\ledger light\.venv\Lib\site-packages\httpx\_client.py:1027: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\ledger light\.venv\Lib\site-packages\httpx\_transports\default.py:236: in handle_request
+    resp = self._pool.handle_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\ledger light\.venv\Lib\site-packages\respx\mocks.py:181: in mock
+    response = cls._send_sync_request(
+C:\ledger light\.venv\Lib\site-packages\respx\mocks.py:212: in _send_sync_request
+    httpx_response = cls.handler(httpx_request)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\ledger light\.venv\Lib\site-packages\respx\mocks.py:120: in handler
+    raise assertion_error
+C:\ledger light\.venv\Lib\site-packages\respx\mocks.py:113: in handler
+    httpx_response = router.handler(httpx_request)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\ledger light\.venv\Lib\site-packages\respx\router.py:313: in handler
+    resolved = self.resolve(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+C:\ledger light\.venv\Lib\site-packages\respx\router.py:277: in resolve
+    with self.resolver(request) as resolved:
+         ^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\gmalh\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\contextlib.py:144: in __exit__
+    next(self.gen)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <respx.router.MockRouter object at 0x0000028CBFEB1640>
+request = <Request('POST', 'https://example.com/webhook')>
+
+    @contextmanager
+    def resolver(self, request: httpx.Request) -> Generator[ResolvedRoute, None, None]:
+        resolved = ResolvedRoute()
+    
+        try:
+            yield resolved
+    
+            if resolved.route is None:
+                # Assert we always get a route match, if check is enabled
+                if self._assert_all_mocked:
+>                   raise AllMockedAssertionError(f"RESPX: {request!r} not mocked!")
+E                   respx.models.AllMockedAssertionError: RESPX: <Request('POST', 'https://example.com/webhook')> not mocked!
+
+C:\ledger light\.venv\Lib\site-packages\respx\router.py:250: AllMockedAssertionError
+---------------------------- Captured stdout call -----------------------------
+{"job": "alert_generation", "outcome": "failed", "event": "job_outcome", "timestamp": "2026-11-05T07:24:18.251748Z", "level": "error", "exception": "Traceback (most recent call last):\n  File \"C:\\ledger light\\scripts\\generate_alerts.py\", line 214, in main\n    _deliver_to_tenant_webhooks(settings, session, tenant_id, alert)\n  File \"C:\\ledger light\\scripts\\generate_alerts.py\", line 160, in _deliver_to_tenant_webhooks\n    result = webhooks_module.deliver_webhook(cast(str, url), secret, payload_bytes)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\ledger light\\ledgerlight\\api\\webhooks.py\", line 136, in deliver_webhook\n    response = httpx.post(\n               ^^^^^^^^^^^\n  File \"C:\\ledger light\\.venv\\Lib\\site-packages\\httpx\\_api.py\", line 331, in post\n    return request(\n           ^^^^^^^^\n  File \"C:\\ledger light\\.venv\\Lib\\site-packages\\httpx\\_api.py\", line 118, in request\n    return client.request(\n           ^^^^^^^^^^^^^^^\n  File \"C:\\ledger light\\.venv\\Lib\\site-packages\\httpx\\_client.py\", line 837, in request\n    return self.send(request, auth=auth, follow_redirects=follow_redirects)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\ledger light\\.venv\\Lib\\site-packages\\httpx\\_client.py\", line 926, in send\n    response = self._send_handling_auth(\n               ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\ledger light\\.venv\\Lib\\site-packages\\httpx\\_client.py\", line 954, in _send_handling_auth\n    response = self._send_handling_redirects(\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\ledger light\\.venv\\Lib\\site-packages\\httpx\\_client.py\", line 991, in _send_handling_redirects\n    response = self._send_single_request(request)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\ledger light\\.venv\\Lib\\site-packages\\httpx\\_client.py\", line 1027, in _send_single_request\n    response = transport.handle_request(request)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\ledger light\\.venv\\Lib\\site-packages\\httpx\\_transports\\default.py\", line 236, in handle_request\n    resp = self._pool.handle_request(req)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\ledger light\\.venv\\Lib\\site-packages\\respx\\mocks.py\", line 181, in mock\n    response = cls._send_sync_request(\n               ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\ledger light\\.venv\\Lib\\site-packages\\respx\\mocks.py\", line 212, in _send_sync_request\n    httpx_response = cls.handler(httpx_request)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\ledger light\\.venv\\Lib\\site-packages\\respx\\mocks.py\", line 120, in handler\n    raise assertion_error\n  File \"C:\\ledger light\\.venv\\Lib\\site-packages\\respx\\mocks.py\", line 113, in handler\n    httpx_response = router.handler(httpx_request)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\ledger light\\.venv\\Lib\\site-packages\\respx\\router.py\", line 313, in handler\n    resolved = self.resolve(request)\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\ledger light\\.venv\\Lib\\site-packages\\respx\\router.py\", line 277, in resolve\n    with self.resolver(request) as resolved:\n         ^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\gmalh\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\contextlib.py\", line 144, in __exit__\n    next(self.gen)\n  File \"C:\\ledger light\\.venv\\Lib\\site-packages\\respx\\router.py\", line 250, in resolver\n    raise AllMockedAssertionError(f\"RESPX: {request!r} not mocked!\")\nrespx.models.AllMockedAssertionError: RESPX: <Request('POST', 'https://example.com/webhook')> not mocked!"}
+___ test_full_pipeline_on_small_real_subset_produces_events_fields_entities ___
+
+db_session = <sqlalchemy.orm.session.Session object at 0x0000028CBD4C8D10>
+
+    def test_full_pipeline_on_small_real_subset_produces_events_fields_entities(
+        db_session: Session,
+    ) -> None:
+        _ensure_taxonomy_loaded(db_session)
+        version = _make_document_version(db_session)
+    
+        result = _run_pipeline_once(db_session, version)
+    
+        assert result["chunks_created"] >= 1
+        assert result["events_created"] == 1
+        assert result["fields_created"] == 2
+        assert result["fields_failed_verification"] == 0
+>       assert result["audit_firm_entities_created"] == 1
+E       assert 0 == 1
+
+C:\ledger light\tests\test_knowledge_pipeline_integration.py:150: AssertionError
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:51
+  C:\ledger light\.venv\Lib\site-packages\starlette\testclient.py:51: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+tests/test_agent_adversarial.py::test_verify_claim_metric_fails_when_the_real_span_does_not_contain_the_claimed_rating
+  C:\ledger light\.venv\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+tests/test_security_controls.py::test_login_never_reuses_an_attacker_supplied_session_cookie
+tests/test_security_controls.py::test_login_never_reuses_an_attacker_supplied_session_cookie
+  C:\ledger light\.venv\Lib\site-packages\httpx\_client.py:822: DeprecationWarning: Setting per-request cookies=<...> is being deprecated, because the expected behaviour on cookie persistence is ambiguous. Set cookies directly on the client instance instead.
+    warnings.warn(message, DeprecationWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_generate_alerts.py::test_a_new_event_produces_one_real_alert_and_a_signed_webhook_delivery
+FAILED tests/test_knowledge_pipeline_integration.py::test_full_pipeline_on_small_real_subset_produces_events_fields_entities
+2 failed, 322 passed, 413 deselected, 4 warnings in 1032.54s (0:17:12)
+exit: 1

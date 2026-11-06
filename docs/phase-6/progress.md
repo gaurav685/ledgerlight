@@ -19,7 +19,8 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   Commit: `66f7020`.
 - §2 Low-memory stack profile + deferred e2e/ZAP runs -- **COMPLETE** (see
   below).
-- §3 End-to-end pipeline test (ingestion -> dossier) -- NOT STARTED.
+- §3 End-to-end pipeline test (ingestion -> dossier) -- **COMPLETE** (see
+  below).
 - §4 Regression suite -- NOT STARTED.
 - §5 Backtest reproducibility and audits -- NOT STARTED.
 - §6 Consolidated evaluation report (pre-review) -- NOT STARTED.
@@ -93,11 +94,104 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   `docs/phase-6/evidence/`. Commit: `dea2c0c` (main), plus a follow-up
   for the ZAP work and header fixes.
 
+- §3 End-to-end pipeline test (ingestion -> dossier) -- **COMPLETE**
+  (2026-11-05). `tests/test_e2e_pipeline.py` (automated, 2 tests) and
+  `scripts/e2e_pipeline_demo.py` (standalone, reproducible CLI script) --
+  both call the exact same real production functions every other
+  `scripts/*.py` entrypoint calls: import-local, store-backfill, page
+  processing, chunking, embedding, rules-baseline classification, real
+  AUD_RESIGN extraction+verification, audit-firm entity bootstrap,
+  `get_risk_score`, `run_investigation`, review-task routing, a real
+  alert rule firing a signed webhook delivery, and a real API check.
+  `test_full_pipeline_ingestion_to_dossier_citation_chain` passed,
+  asserting the full provenance/known_at chain end to end (every claim's
+  cited version/page/char-span resolves to the real stored page text).
+  `test_full_pipeline_runs_twice_without_duplicating_anything` passed,
+  proving idempotency via real row-count snapshots before/after a second
+  run. Both pass together in one pytest invocation. Full default suite
+  (408 tests) and the complete integration suite re-run clean afterward
+  (no regression from this section's fixes). Evidence:
+  `docs/phase-6/evidence/sec03-*.log`.
+
+  **Found and fixed a real, significant, previously-undiscovered bug**
+  while building this: `data/manifests/sources.yaml` never had a
+  `manual:` entry, despite `ledgerlight/acquisition/import_local.py`
+  always writing `source_id="manual"` for every manually-imported
+  document. This meant `documents.source_id`'s foreign key to `sources`
+  always failed for the documented manual-download workflow
+  (`docs/data/manual-download-checklist.md`'s own 14 real BSE/NSE-blocked
+  items) -- that workflow could never have actually completed, for this
+  project's entire history, because this exact path had never been
+  exercised end-to-end against a real database before. Fixed by adding a
+  real, documented `manual:` entry (verdict `AVAILABLE_WITH_LIMITS`,
+  verdict_reason naming this exact gap) and re-running
+  `scripts/sources_sync.py` (confirmed via direct DB query:
+  `manual | AVAILABLE_WITH_LIMITS | t`).
+
+  Also fixed, found while building the test: two real schema mismatches
+  in the test's own teardown SQL (`mentions`/`entity_links` keyed by
+  `version_id`, not a nonexistent `event_field_id`; `webhook_deliveries`
+  must be deleted before `alerts` due to its FK); two real NOT NULL gaps
+  in the test's own fixture setup (`alert_rules.created_by`,
+  `webhooks.created_by` both required, not optional) -- all test-side
+  issues, not production bugs, fixed directly.
+
+  **Found a real cross-test pollution regression** caused by the
+  `webhook_deliveries`-before-`alerts` teardown bug above: before it was
+  fixed, failed early attempts at this same test left real orphaned rows
+  committed (a tenant+webhook at a fixed demo URL, five test companies,
+  and -- via `scripts/e2e_pipeline_demo.py`'s own runs -- the first-ever
+  global `entities` row for "KPMG", since `bootstrap_audit_firm_entities`
+  creates that entity globally, not per-test, and this was genuinely the
+  first time AUD_RESIGN extraction had ever run end-to-end in this
+  project's history). These orphans broke two unrelated, previously
+  passing tests in the full integration run
+  (`test_generate_alerts.py::test_a_new_event_produces_one_real_alert_and_a_signed_webhook_delivery`
+  -- a stray unmocked webhook call; `test_knowledge_pipeline_integration.py
+  ::test_full_pipeline_on_small_real_subset_produces_events_fields_entities`
+  -- expected a new KPMG entity, found the leftover one instead). Root
+  cause confirmed by direct query (both orphan rows timestamped this
+  session, both referencing only this session's own test documents).
+  Manually deleted the identified orphan rows (tenant, 5 companies and
+  all dependents, 3 extra orphaned webhooks, the 1 leftover KPMG entity
+  and its 2 links). But the KPMG entity came back after the very next
+  clean (passing) run of `test_e2e_pipeline.py` -- this was not just a
+  one-time leftover from the earlier failed attempts, but a **real,
+  structural bug in the test's own teardown**: `bootstrap_audit_firm_
+  entities()` creates a brand-new `entities` row scoped globally, not
+  per document version, and the teardown's `mentions`/`entity_links`
+  cleanup (scoped by `version_id`) never reached the `entities` table at
+  all -- so every single passing run of this test, forever, would have
+  left a fresh orphan `entities` row behind, re-breaking
+  `test_knowledge_pipeline_integration.py` and any other test that
+  depends on the real count of audit-firm entities. Fixed properly this
+  time: the teardown now also deletes any `entities` row this test's own
+  mentions resolved to, scoped precisely (collected via the real
+  `entity_links` rows before they're deleted, removed only once no
+  `entity_links` reference them any more, so a real shared entity would
+  never be touched). Verified: ran `test_e2e_pipeline.py` again after the
+  fix, confirmed zero `entities` rows named "KPMG" remain afterward, then
+  re-ran the full integration suite (split into 4 memory-safe batches,
+  324 tests total) clean -- 0 failures (one `test_cross_tenant_idor.py`
+  DNS-resolution flake on the first batch attempt, confirmed transient
+  by an isolated re-run, unrelated to any change here). Full default
+  suite (408 tests) also re-confirmed clean.
+
+  This is still a real, disclosed limitation worth naming going forward:
+  any global, non-version-scoped side effect (entity bootstrap; a
+  non-tenant-scoped alert job) can leak across tests if a future test's
+  teardown doesn't account for it the same way -- not something this
+  phase's brief asked to re-architect project-wide, so noted here rather
+  than generalised into a framework-level fixture.
+
+  Commit: (pending -- committing next).
+
 ## Exact next step
 
-§2 is fully done. Move to §3: the automated end-to-end pipeline test
-(ingestion -> dossier), run twice to prove idempotency, asserting the
-full provenance/known_at chain.
+§3 is fully done. Move to §4: the golden-snapshot regression suite
+(extraction, event sets/tiers, entity links, feature values, score
+values, dossier hashes), a single `test-regression` command, and the
+full test-pyramid run with counts per layer.
 
 ## Known starting context (from Phase 5)
 

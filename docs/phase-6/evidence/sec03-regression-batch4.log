@@ -1,0 +1,18 @@
+..............................                                           [100%]
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:51
+  C:\ledger light\.venv\Lib\site-packages\starlette\testclient.py:51: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+tests/test_prompt_injection_separation.py::test_an_investigation_over_an_injected_document_is_unaffected_through_the_real_api
+  C:\ledger light\.venv\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+tests/test_security_controls.py::test_login_never_reuses_an_attacker_supplied_session_cookie
+tests/test_security_controls.py::test_login_never_reuses_an_attacker_supplied_session_cookie
+  C:\ledger light\.venv\Lib\site-packages\httpx\_client.py:822: DeprecationWarning: Setting per-request cookies=<...> is being deprecated, because the expected behaviour on cookie persistence is ambiguous. Set cookies directly on the client instance instead.
+    warnings.warn(message, DeprecationWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+30 passed, 5 deselected, 4 warnings in 63.44s (0:01:03)
+exit: 0
