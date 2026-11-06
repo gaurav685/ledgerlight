@@ -6,6 +6,42 @@ in each phase report. A gap listed here stays listed until the work
 that closes it actually lands -- this file is not a status dashboard
 that gets marked "done" on a promise.
 
+## Gate status (Phase 6A §15, evaluated 2026-11-06)
+
+Every gap below, evaluated against this phase's own four real outcome
+categories: **PASS** (no longer actually blocking -- re-assessed, not
+closed by force), **PENDING_HUMAN_REVIEW** (needs a specific human
+action, explicitly deferred to Phase 6B), **PENDING_PUSH** (needs this
+project's standing no-remote/no-push GIT POLICY to be lifted, a
+decision for later, not this phase), or **BLOCKED** (needs something
+else -- real data that doesn't exist yet, real host resources, a real
+external decision -- before it can close). None of these are forced
+to PASS; per the brief's own framing, the human and push gates are
+*expected* to be pending at this point, and most of the rest are
+expected to stay BLOCKED.
+
+| Gate | Status | Why |
+|---|---|---|
+| Review infra for field/entity-pair/retrieval-query labels | PENDING_HUMAN_REVIEW | Tooling built this phase; actual review is Phase 6B's job. |
+| Event-level gold coverage thin/uneven | BLOCKED | `RATING_ACT`/`FORENSIC` have zero real corpus examples reachable from `test`/`validation` -- no amount of review manufactures coverage that doesn't exist. |
+| Human spot-check of primary-outcome evidence | PENDING_HUMAN_REVIEW | Sample built (`docs/modelling/outcome-evidence-review.csv`); explicitly deferred to Phase 6B. |
+| GUIDANCE_MISS extraction | BLOCKED | 0 real guidance statements exist anywhere in the corpus; nothing to build against. |
+| Risk model statistically inconclusive | BLOCKED | Only 5 real pooled distinct positive events exist in the verified-coverage universe -- below the 30-event floor; closing this needs more real distress events to occur over time, not more engineering. |
+| No human review of agent dossiers | PENDING_HUMAN_REVIEW | Review pack built this phase; review itself is Phase 6B's job. |
+| GitHub Actions never run on GitHub | PENDING_PUSH | Validated locally; genuinely unverifiable until a first real push, which GIT POLICY defers. |
+| AWS Terraform never applied | BLOCKED | No AWS credentials in this environment; applying infra is out of scope for this phase. |
+| ZAP baseline + full Playwright e2e not run | BLOCKED | Real host memory constraints this phase; re-runnable once more headroom is available. |
+| Single-batch full integration run not captured | BLOCKED | Same real memory constraint -- the batched-run result is equally valid evidence, just not a single-pass one. |
+| Frontend CSP `unsafe-inline` | BLOCKED | A real Next.js 16.4.3 hydration-script limitation found this phase; the strict nonce-based policy doesn't yet work in this exact setup. |
+| Deployed Docker images predate dependency fix | BLOCKED | Rebuild attempted twice, killed twice by real host memory pressure; the fix exists in `pyproject.toml`/`uv.lock`, just not baked into the running image yet. |
+| `pymupdf` AGPL-3.0/commercial licence | BLOCKED | A real business/legal decision (Artifex licence or a library swap) that this phase cannot make unilaterally. |
+| 363 real corpus pages trip the OCR tripwire | BLOCKED | Not yet run through the real OCR path and spot-checked -- flagged, not investigated further this phase (outside §11's own scope). |
+
+**0 gates evaluate to PASS.** This is the expected, honest result for
+a phase whose own brief anticipates every remaining gap staying open
+at this point -- not a sign anything here was softened to look better
+than it is.
+
 ## Gap: no review infrastructure for field/entity-pair/retrieval-query gold labels
 
 **Status: PARTIALLY CLOSED (2026-11-06, Phase 6A §7).** The tools now

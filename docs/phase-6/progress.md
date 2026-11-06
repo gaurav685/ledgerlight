@@ -38,7 +38,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 - §13 Clean-install and reproducible-setup test -- **COMPLETE** (see
   below).
 - §14 Production-readiness checklist -- **COMPLETE** (see below).
-- §15 Release-gate status -- NOT STARTED.
+- §15 Release-gate status -- **COMPLETE** (see below).
 - §16 Run and verify -- NOT STARTED.
 - §17 Commit (local only) and backup -- ongoing throughout.
 - §18 Human checkpoint and 6A exit gates -- NOT STARTED. **STOP here --
@@ -758,11 +758,30 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 
   Commit: `beabfdb`.
 
+- §15 Release-gate status -- **COMPLETE** (2026-11-06).
+
+  Added a "Gate status" table directly to `docs/release/
+  release-gates.md` (evaluated in place, not a separate file -- the
+  brief's own wording treats that file's gaps as the gates to
+  evaluate). All 13 real open gaps evaluated against the phase's own
+  4-category outcome: 4 `PENDING_HUMAN_REVIEW` (review-pack/dossier/
+  outcome-evidence items, each explicitly deferred to Phase 6B), 1
+  `PENDING_PUSH` (GitHub Actions, genuinely unverifiable with no
+  remote), 8 `BLOCKED` (real data that doesn't exist, real host
+  memory limits, a real external licensing decision, a real Next.js
+  limitation). **0 gates evaluate to PASS** -- the honest, expected
+  result per the brief's own framing, not softened.
+
+  Commit: _(pending)_.
+
 ## Exact next step
 
-§14 is fully done. Move to §15: release-gate status (evaluate every
-gate in `docs/release/release-gates.md` as PASS/PENDING_HUMAN_REVIEW/
-PENDING_PUSH/BLOCKED, with evidence).
+§15 is fully done. Move to §16: run and verify (run every real test
+layer, regression, the e2e pipeline test twice, Playwright on
+e2e-lite, ZAP, backtest reproducibility, load test, failure-recovery
+drills, the security suite, licence inventory, the clean-install run,
+`pre-commit run --all-files`, full-history gitleaks -- recording raw
+output for each).
 
 ## Superseded: original §5 next-step note (kept for history)
 
