@@ -950,7 +950,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   pack itself). Git identity/SHAs/trailer check/bundle verify all
   re-confirmed clean in the report itself.
 
-  Commit: _(this file + the report, committed together)_.
+  Commit: `179e50f`.
 
 ## PHASE 6A COMPLETE
 
