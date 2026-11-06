@@ -1,0 +1,75 @@
+Phase 6A §4: complete test pyramid, run and verify.
+
+`scripts/test_pyramid_report.py` (the single automated command) was built
+to run every layer in one go, batching the integration layer internally
+with memory-aware waits. It was run twice; both times the harness's own
+external memory-pressure killer stopped the background process right at
+the start of the integration layer (host free memory measured 0.48-0.82GB
+at the time, from the user's own other applications -- same real,
+recurring host instability documented throughout this phase). This is a
+real, disclosed limitation of running the single command unbatched inside
+one long-lived process on this specific host: the script's own internal
+psutil-based wait loop cannot see or prevent an external OS-level kill of
+the whole process.
+
+The counts below were therefore produced by running the same batches the
+script would have run, as separate tool invocations instead of one long
+background job -- identical real pytest commands, identical real test
+files, just issued one batch at a time so a kill (if any) only costs one
+batch, not the whole run. Zero kills this time; all batches completed.
+
+=== Layer: unit (default) ===
+command: uv run pytest -q
+result: 408 passed, 335 deselected, 2 warnings in 27.22s
+(from the first scripts/test_pyramid_report.py attempt -- this layer
+completed before the process was killed at the start of "integration")
+
+=== Layer: integration ===
+command: uv run pytest -q -m integration <files>, batched (51 files, 4 batches)
+batch 1 (14 files): 140 passed, 19 deselected, 2 warnings in 106.40s
+batch 2 (14 files): 87 passed, 3 deselected, 1 warning in 756.53s
+batch 3 (11 files): 53 passed, 11 deselected, 1 warning in 179.92s
+batch 4 (12 files): 50 passed, 5 deselected, 4 warnings in 63.07s
+TOTAL: 330 passed, 0 failed, 0 errors
+Raw logs: docs/phase-6/evidence/sec04-pyramid-batch1.log .. batch4.log
+
+=== Layer: corpus ===
+command: uv run pytest -q -m corpus
+result: 1 passed, 1 failed, 741 deselected in 84.90s
+Raw log: docs/phase-6/evidence/sec04-corpus-layer.log
+
+FAILED: test_corpus_processing.py::test_real_corpus_has_no_genuinely_scanned_pdf_pages
+This is a real, pre-existing finding about the real downloaded corpus
+(data/raw/), NOT a regression introduced by this phase's work -- confirmed
+by direct investigation: of 403 real PDFs / 6226 real pages in data/raw,
+363 pages across 22 files (all in data/raw/ibbi/2026/, file mtimes dated
+2026-10-31, before this Phase 6A session began) now genuinely need OCR,
+where a prior run of this same test found zero. The test's own docstring
+says exactly this: "If this ever fails, it means a real scanned page
+finally showed up, which is useful to know, not a bug." No code in this
+phase touched PDF/OCR extraction or added any file to data/raw/. Left as
+a disclosed, real, open finding -- not fixed here (out of this phase's
+scope; the real OCR path itself is already proven separately by
+tests/test_ocr_engine.py's synthetic fixture).
+
+=== Layer: e2e (subset of integration) ===
+tests/test_e2e_pipeline.py -- 2/2 passed (counted once, in the
+integration total above; not run twice)
+
+=== Layer: security (subset of integration) ===
+tests/test_security_controls.py, test_authz_matrix.py,
+test_cross_tenant_idor.py, test_api_rls.py,
+test_prompt_injection_separation.py -- all passed (counted once, in the
+integration total above; not run twice)
+
+=== Not run by this report (separate toolchain) ===
+frontend Playwright e2e-lite suite (frontend/e2e/full-e2e-lite.spec.ts):
+  last recorded result 4/4 passed (Phase 6A §2)
+OWASP ZAP baseline: last recorded result 0 FAIL, 4 WARN, 64 PASS (Phase 6A §2)
+
+=== Grand total (this report) ===
+unit:        408 passed, 0 failed
+integration: 330 passed, 0 failed
+corpus:        1 passed, 1 failed (real, pre-existing, documented above)
+-----------------------------------------------
+TOTAL:       739 passed, 1 failed

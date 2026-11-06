@@ -1,5 +1,6 @@
 .PHONY: setup lint typecheck test verify-env verify-manifests acquire-seed import-local infra-up infra-check infra-down \
-	db-upgrade sources-sync store-backfill ingest backfill process reprocess ingest-report dagster-dev test-integration test-corpus
+	db-upgrade sources-sync store-backfill ingest backfill process reprocess ingest-report dagster-dev test-integration test-corpus \
+	test-regression test-pyramid
 
 # Dagster's own instance config (dagster_home/dagster.yaml) interpolates
 # LEDGERLIGHT_POSTGRES_* from the process environment, not from .env
@@ -75,6 +76,18 @@ test-integration:
 
 test-corpus:
 	uv run pytest -m corpus
+
+# Phase 6A §4: golden-snapshot regression tests over a fixed real
+# subset (extraction, events/tiers, entity links, feature values,
+# score values, dossier hashes). See tests/test_regression_snapshots.py
+# and scripts/update_regression_snapshots.py for how to update it.
+test-regression:
+	uv run pytest -m integration tests/test_regression_snapshots.py -v
+
+# Phase 6A §4: run the complete test pyramid (unit, integration,
+# corpus, e2e, security) and print counts per layer.
+test-pyramid:
+	uv run python scripts/test_pyramid_report.py
 
 # --- Phase 2: knowledge store, classification, extraction, entity resolution ---
 

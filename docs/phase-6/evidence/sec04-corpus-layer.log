@@ -1,0 +1,47 @@
+.F                                                                       [100%]
+================================== FAILURES ===================================
+_____________ test_real_corpus_has_no_genuinely_scanned_pdf_pages _____________
+
+    def test_real_corpus_has_no_genuinely_scanned_pdf_pages() -> None:
+        """Documents the real finding (not assumed): probing every PDF page in
+        the ingested corpus for the OCR heuristic found zero genuine scans --
+        every low-text page is a graphic-design layout. If this ever fails, it
+        means a real scanned page finally showed up, which is useful to know,
+        not a bug -- see tests/test_ocr_engine.py for the synthetic fixture
+        that actually proves the OCR path works."""
+        pdfs = _real_pdfs()
+        if not pdfs:
+            pytest.skip("data/raw has no PDFs -- run acquisition first")
+    
+        limits = ProcessingLimits()
+        ocr_needed_pages: list[str] = []
+        for pdf_path in pdfs:
+            try:
+                pages = pdf_mod.extract_pdf_pages(str(pdf_path), limits)
+            except Exception:  # noqa: BLE001 - a handful of real files may be unreadable; skip them
+                continue
+            for page in pages:
+                if page.needs_ocr:
+                    ocr_needed_pages.append(f"{pdf_path.name}:page{page.page_number}")
+    
+>       assert ocr_needed_pages == [], (
+            f"found {len(ocr_needed_pages)} page(s) now flagged as needing OCR in the real "
+            f"corpus (previously zero): {ocr_needed_pages[:10]}"
+        )
+E       AssertionError: found 363 page(s) now flagged as needing OCR in the real corpus (previously zero): ['0f64f87db76915cc3577b99393fdc2c174e6f40023689cbe81cc639d5acb0622.pdf:page1', '0f64f87db76915cc3577b99393fdc2c174e6f40023689cbe81cc639d5acb0622.pdf:page2', '0f64f87db76915cc3577b99393fdc2c174e6f40023689cbe81cc639d5acb0622.pdf:page3', '0f64f87db76915cc3577b99393fdc2c174e6f40023689cbe81cc639d5acb0622.pdf:page4', '0f64f87db76915cc3577b99393fdc2c174e6f40023689cbe81cc639d5acb0622.pdf:page5', '0f64f87db76915cc3577b99393fdc2c174e6f40023689cbe81cc639d5acb0622.pdf:page6', '2c21ca70468efb99f938ec6d953eeadb20618650b8e0f90a256cd90f7d9bf705.pdf:page1', '2c21ca70468efb99f938ec6d953eeadb20618650b8e0f90a256cd90f7d9bf705.pdf:page2', '2c21ca70468efb99f938ec6d953eeadb20618650b8e0f90a256cd90f7d9bf705.pdf:page3', '2c21ca70468efb99f938ec6d953eeadb20618650b8e0f90a256cd90f7d9bf705.pdf:page4']
+E       assert ['0f64f87db76...f:page6', ...] == []
+E         
+E         Left contains 363 more items, first extra item: '0f64f87db76915cc3577b99393fdc2c174e6f40023689cbe81cc639d5acb0622.pdf:page1'
+E         Use -v to get more diff
+
+C:\ledger light\tests\test_corpus_processing.py:84: AssertionError
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:51
+  C:\ledger light\.venv\Lib\site-packages\starlette\testclient.py:51: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_corpus_processing.py::test_real_corpus_has_no_genuinely_scanned_pdf_pages
+1 failed, 1 passed, 741 deselected, 1 warning in 84.90s (0:01:24)
+exit: 1

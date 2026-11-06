@@ -1,0 +1,11 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.15, pytest-8.4.2, pluggy-1.7.0
+rootdir: C:\ledger light
+configfile: pyproject.toml
+plugins: anyio-4.15.1, platformdirs-4.13.5, cov-5.0.0, respx-0.21.1
+collected 6 items
+
+tests\test_regression_snapshots.py ......                                [100%]
+
+============================== 6 passed in 1.21s ==============================
+exit: 0

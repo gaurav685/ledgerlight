@@ -1,0 +1,172 @@
+{
+  "_comment": "Phase 6A \u00a74 golden-snapshot regression fixtures. Every value here is read from this project's own real, already-persisted database rows (not fabricated or synthetic) -- see docs/phase-6/evidence/sec04-regression-snapshots.md for exactly which company/date/investigation each one came from and why. Any change to this file must go through scripts/update_regression_snapshots.py --confirm, never a hand edit, and must be documented in that same evidence file.",
+  "extraction": {
+    "company_id": "c84bde57-0fa2-444e-b70d-ec413d030d62",
+    "company_name": "VAKRANGEE",
+    "field_name": "audit_firm",
+    "records": [
+      {
+        "value_json": "Price Waterhouse & Co Chartered Accountants LLP",
+        "validation_status": "validated",
+        "event_status": "candidate",
+        "event_severity": "medium",
+        "detector_name": "aud-resign-rule-v1",
+        "detector_version": "1"
+      },
+      {
+        "value_json": "Price Waterhouse & Co Chartered Accountants LLP",
+        "validation_status": "validated",
+        "event_status": "candidate",
+        "event_severity": "medium",
+        "detector_name": "aud-resign-rule-v1",
+        "detector_version": "1"
+      },
+      {
+        "value_json": "Price Waterhouse & Co Chartered Accountants LLP",
+        "validation_status": "validated",
+        "event_status": "candidate",
+        "event_severity": "medium",
+        "detector_name": "aud-resign-rule-v1",
+        "detector_version": "1"
+      },
+      {
+        "value_json": "Price Waterhouse & Co Chartered Accountants LLP",
+        "validation_status": "validated",
+        "event_status": "candidate",
+        "event_severity": "medium",
+        "detector_name": "aud-resign-rule-v1",
+        "detector_version": "2"
+      },
+      {
+        "value_json": "Price Waterhouse & Co Chartered Accountants LLP",
+        "validation_status": "validated",
+        "event_status": "candidate",
+        "event_severity": "medium",
+        "detector_name": "aud-resign-rule-v1",
+        "detector_version": "2"
+      },
+      {
+        "value_json": "Price Waterhouse & Co Chartered Accountants LLP",
+        "validation_status": "validated",
+        "event_status": "candidate",
+        "event_severity": "medium",
+        "detector_name": "aud-resign-rule-v1",
+        "detector_version": "2"
+      }
+    ]
+  },
+  "events_and_tiers": {
+    "company_id": "c84bde57-0fa2-444e-b70d-ec413d030d62",
+    "company_name": "VAKRANGEE",
+    "by_type_status_severity": [
+      {
+        "event_type_code": "AUD_RESIGN",
+        "status": "candidate",
+        "severity": "medium",
+        "count": 6
+      },
+      {
+        "event_type_code": "SEBI_ORDER_AGAINST_COMPANY",
+        "status": "verified",
+        "severity": "high",
+        "count": 7
+      },
+      {
+        "event_type_code": "SEVERE_DRAWDOWN",
+        "status": "verified",
+        "severity": "high",
+        "count": 21
+      }
+    ]
+  },
+  "entity_links": {
+    "entity_id": "25fc33c3-55f4-4720-b6dd-7b29e41254c2",
+    "entity_display_name": "Price Waterhouse & Co Chartered Accountants LLP",
+    "entity_type": "audit_firm",
+    "records": [
+      {
+        "method": "manual",
+        "score": 100.0,
+        "status": "active"
+      },
+      {
+        "method": "normalized_name",
+        "score": 100.0,
+        "status": "active"
+      },
+      {
+        "method": "normalized_name",
+        "score": 100.0,
+        "status": "active"
+      }
+    ]
+  },
+  "feature_values": {
+    "company_id": "c84bde57-0fa2-444e-b70d-ec413d030d62",
+    "company_name": "VAKRANGEE",
+    "as_of": "2017-01-31",
+    "by_feature_set_version": {
+      "price-liquidity-1.0": {
+        "ret_1m": 0.11655096821337252,
+        "ret_3m": 0.20102181175083533,
+        "ret_6m": 0.6143687268885367,
+        "ret_12m": 0.8823529411764708,
+        "volatility_3m": 0.27775460825300724,
+        "max_drawdown_12m": -0.2841133816743573,
+        "amihud_illiquidity_1m": 5.007902200867739e-05,
+        "turnover_trend_1m_12m": 0.8596382140082076,
+        "distance_from_52w_high": -0.005208333333333259,
+        "downside_volatility_12m": 0.26982150044375686
+      },
+      "rule-verified-1.0": {
+        "downgrades_count_12m": 0,
+        "negative_outlook_flag": 0,
+        "current_rating_ordinal": 8,
+        "prior_sebi_orders_count": 0,
+        "rating_actions_count_12m": 1,
+        "days_since_last_downgrade": null,
+        "prior_ibbi_mentions_count": 0
+      },
+      "seed-governance-1.0": {
+        "id_exit_verified_count_12m": 0,
+        "forensic_verified_count_12m": 0,
+        "id_exit_candidate_count_12m": 0,
+        "kmp_exit_verified_count_12m": 0,
+        "forensic_candidate_count_12m": 0,
+        "kmp_exit_candidate_count_12m": 0,
+        "pledge_up_verified_count_12m": 0,
+        "aud_resign_verified_count_12m": 0,
+        "audit_qual_verified_count_12m": 0,
+        "governance_verified_total_12m": 0,
+        "pledge_up_candidate_count_12m": 0,
+        "rating_act_verified_count_12m": 0,
+        "rpt_growth_verified_count_12m": 0,
+        "aud_resign_candidate_count_12m": 0,
+        "audit_qual_candidate_count_12m": 0,
+        "governance_candidate_total_12m": 0,
+        "rating_act_candidate_count_12m": 0,
+        "rpt_growth_candidate_count_12m": 0,
+        "result_delay_verified_count_12m": 0,
+        "result_delay_candidate_count_12m": 0
+      }
+    }
+  },
+  "score": {
+    "company_id": "c3f1cd29-fd6b-4c6f-963e-b83710203c9e",
+    "company_name": "GENSOL",
+    "as_of": "2025-03-31",
+    "model_name": "primary-risk-lightgbm",
+    "model_version": "1.0",
+    "calibrated_probability": 0.9351340114169663,
+    "raw_probability": 0.9351340114169663,
+    "percentile": 100.0,
+    "outcome_spec_hash": "d879a2874d063b0025820ce52223e443b5b14d7c8746aa8d9e3117e4f3503e1b"
+  },
+  "dossier": {
+    "investigation_id": "a1d93092-6a23-41a0-b3e2-afd6f0dcce68",
+    "dossier_id": "8772fbf7-718f-46d6-a6c4-d64882d3a70e",
+    "company_name": "GENSOL",
+    "as_of": "2019-01-01",
+    "markdown_sha256": "2b388556ac4b4abbe35a7b1629bb90ae6cc7d3a83131acd3ac739e74dad30ae3"
+  }
+}

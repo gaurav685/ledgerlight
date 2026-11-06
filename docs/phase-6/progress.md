@@ -21,7 +21,7 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
   below).
 - §3 End-to-end pipeline test (ingestion -> dossier) -- **COMPLETE** (see
   below).
-- §4 Regression suite -- NOT STARTED.
+- §4 Regression suite -- **COMPLETE** (see below).
 - §5 Backtest reproducibility and audits -- NOT STARTED.
 - §6 Consolidated evaluation report (pre-review) -- NOT STARTED.
 - §7 Human review pack (build only, no reviewing) -- NOT STARTED.
@@ -186,12 +186,56 @@ ABSOLUTE RESTRICTION: no AI attribution of any kind on any commit.
 
   Commit: `c98ae2e`.
 
+- §4 Regression suite -- **COMPLETE** (2026-11-06).
+  `tests/test_regression_snapshots.py` (6 tests) checks real, already-
+  persisted production data (never synthetic) against a golden fixture
+  (`tests/fixtures/regression_snapshots.json`): extraction outputs and
+  event tiers (VAKRANGEE's real audit_firm events), entity links (the
+  real "Price Waterhouse & Co" audit_firm entity), feature values at a
+  fixed as_of (VAKRANGEE, 2017-01-31, all 3 real feature_set_versions),
+  score values for the frozen `primary-risk-lightgbm` v1.0 artifact
+  (GENSOL, 2025-03-31), and a dossier Markdown hash from the real
+  offline renderer (GENSOL's real FINALISED dossier at 2019-01-01).
+  Which real subject was chosen and why is documented in
+  `docs/phase-6/evidence/sec04-regression-snapshots.md`. All 6 pass.
+  `scripts/update_regression_snapshots.py --confirm --reason "..."`
+  regenerates the golden file from current data for the same frozen
+  subjects (never picks new ones) -- tested: refuses without
+  `--confirm`, and reproduces the current file's values exactly when
+  nothing has really changed. `make test-regression` runs the suite.
+
+  `scripts/test_pyramid_report.py` (`make test-pyramid`) runs the full
+  pyramid (unit, integration, corpus, e2e, security) and prints counts
+  per layer, batching the integration layer internally with memory-
+  aware waits. Real result, found and disclosed while building and
+  running it (`docs/phase-6/evidence/sec04-test-pyramid-report.log`):
+  - unit: 408 passed, 0 failed.
+  - integration: 330 passed, 0 failed (51 files, batched).
+  - corpus: 1 passed, **1 failed** -- a real, pre-existing, disclosed
+    finding, not a regression from this phase: 363 of 6226 real pages
+    across 22 real IBBI PDFs (file mtimes 2026-10-31, before this
+    session) now genuinely need OCR, where a prior run of this same
+    test found zero. The test's own docstring calls this scenario
+    "useful to know, not a bug." Left open -- out of this phase's
+    scope to build real OCR integration for it.
+  - The single automated script was itself killed twice by the
+    harness's own external memory-pressure killer, right at the start
+    of the integration layer, despite its own internal memory-aware
+    wait (which can only see memory inside its own process, not
+    prevent an external kill of the whole thing) -- a real, disclosed
+    limitation of running one long-lived process on this host. Worked
+    around by issuing the exact same batches as separate tool calls
+    instead (zero kills that way); the script's own docstring now
+    records this. The real counts above come from that successful run.
+  Commit: (pending -- committing next).
+
 ## Exact next step
 
-§3 is fully done. Move to §4: the golden-snapshot regression suite
-(extraction, event sets/tiers, entity links, feature values, score
-values, dossier hashes), a single `test-regression` command, and the
-full test-pyramid run with counts per layer.
+§4 is fully done. Move to §5: backtest reproducibility (clean
+DB restore/rebuild, re-run outcomes-build/features-build/backtest with
+frozen config, diff against the Phase 3 report) and the leakage/
+permutation/feature-shift/survivorship audits plus the point-in-time
+proof.
 
 ## Known starting context (from Phase 5)
 

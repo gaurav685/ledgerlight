@@ -134,6 +134,10 @@ ignore_missing_imports = true
 module = "lightgbm.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "psutil.*"
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 markers = [
     "network: tests that require real network access (excluded by default)",
