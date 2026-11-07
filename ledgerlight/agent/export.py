@@ -26,6 +26,27 @@ SECTION_HEADINGS: dict[str, str] = {
 SECTION_ORDER = list(SECTION_HEADINGS)
 
 
+def _render_sentence(sentence: str) -> list[str]:
+    """Almost every real sentence is single-line prose and renders as
+    a plain list item. The one real exception (`risk_signals`' model-
+    card "Intended use" excerpt, read live and verbatim from
+    docs/modelling/model-card.md -- see `get_risk_score`) carries its
+    own embedded Markdown, including a `## ` heading line. Phase 6
+    Correction 1 Sec3: a bare `- {sentence}` for that one broke the
+    list item (a blank line inside it ends the list) and, worse,
+    turned its embedded `## Intended use` into a heading at the SAME
+    level as this document's own `## 4. Risk signals` section heading
+    -- a stray sibling heading, not real nested content. A Markdown
+    blockquote properly delimits it instead: `> ## Intended use` is a
+    real heading, but nested INSIDE the quote, never breaking this
+    document's own outer heading hierarchy. Every line (including
+    blank ones) needs the `> ` marker -- an unmarked blank line would
+    end the blockquote partway through."""
+    if "\n" not in sentence:
+        return [f"- {sentence}"]
+    return [f"> {line}" if line else ">" for line in sentence.split("\n")]
+
+
 def export_dossier_markdown(
     dossier: Dossier, investigation: Investigation, company_name: str
 ) -> str:
@@ -49,7 +70,7 @@ def export_dossier_markdown(
         lines.append("")
         if sentences:
             for sentence in sentences:
-                lines.append(f"- {sentence}")
+                lines.extend(_render_sentence(sentence))
         else:
             lines.append("None found.")
         lines.append("")

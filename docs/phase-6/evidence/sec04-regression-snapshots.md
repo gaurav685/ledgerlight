@@ -22,6 +22,19 @@ golden file.
 
 - **2026-11-06** -- initial freeze, built while completing Phase 6A §4.
   No prior golden file existed.
+- **2026-11-07** -- Phase 6 Correction 1 §3: `export_dossier_markdown`'s
+  `_render_sentence` now renders a multiline sentence (GENSOL's
+  `risk_signals` section carries the model-card "Intended use" excerpt,
+  read live from `docs/modelling/model-card.md`) as a quoted Markdown
+  blockquote instead of a bare `- {sentence}` list item, which broke on
+  the excerpt's own embedded blank line and turned its `## Intended use`
+  into a stray heading sibling to this document's own `## 4. Risk
+  signals` section heading. This changes the dossier Markdown
+  byte-for-byte for any dossier with a non-empty `risk_signals` section
+  (GENSOL's own hash changed; see
+  `docs/phase-6/evidence/sec2-root-cause-and-fix.md`'s sibling bug for
+  the unrelated §2 fix this correction also made). Deliberate,
+  intentional renderer fix -- not a data change.
 
 ## How to update
 
