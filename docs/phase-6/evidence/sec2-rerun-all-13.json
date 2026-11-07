@@ -1,0 +1,145 @@
+[
+  {
+    "company": "JETAIRWAYS",
+    "as_of": "2023-01-01",
+    "old_investigation_id": "881b4156-e90a-44d7-a83c-9bf58eb94e42",
+    "new_investigation_id": "5c25c82a-ed35-4a4b-a23c-956bcd9b21f6",
+    "final_status": "FINALISED",
+    "failure_reason": null,
+    "claimed_filings": 9,
+    "independent_filings": 9,
+    "match": true
+  },
+  {
+    "company": "DMART",
+    "as_of": "2023-01-01",
+    "old_investigation_id": "1e73fa02-6bce-443f-8f7e-b4b308ebc983",
+    "new_investigation_id": "436b5c0a-2055-4972-ae63-fd34217cda8d",
+    "final_status": "FINALISED",
+    "failure_reason": null,
+    "claimed_filings": 13,
+    "independent_filings": 13,
+    "match": true
+  },
+  {
+    "company": "VAKRANGEE",
+    "as_of": "2023-01-01",
+    "old_investigation_id": "6eb85e6e-4078-4e2d-b5d4-0b63c64ba094",
+    "new_investigation_id": "6cc18b06-796e-46a2-8570-dd231ecd9640",
+    "final_status": "FINALISED",
+    "failure_reason": null,
+    "claimed_filings": 11,
+    "independent_filings": 11,
+    "match": true
+  },
+  {
+    "company": "PNBHOUSING",
+    "as_of": "2023-01-01",
+    "old_investigation_id": "a0dbe1d2-d3c1-4f6a-b323-e7b51e425789",
+    "new_investigation_id": "5c28239a-85cd-4c62-8fa3-189dc4e2a6ab",
+    "final_status": "FINALISED",
+    "failure_reason": null,
+    "claimed_filings": 16,
+    "independent_filings": 16,
+    "match": true
+  },
+  {
+    "company": "PNBHOUSING",
+    "as_of": "2019-01-01",
+    "old_investigation_id": "cf4508e6-d880-4438-ac94-a2dcdaa6dac0",
+    "new_investigation_id": "7b691900-d1d3-4b06-b635-d2777d3a1aac",
+    "final_status": "FINALISED",
+    "failure_reason": null,
+    "claimed_filings": 7,
+    "independent_filings": 7,
+    "match": true
+  },
+  {
+    "company": "DMART",
+    "as_of": "2019-01-01",
+    "old_investigation_id": "f94ba42e-9ce8-48f2-88de-efdd68191be7",
+    "new_investigation_id": "a931e7ee-86c3-4a81-89d2-336af3633703",
+    "final_status": "FINALISED",
+    "failure_reason": null,
+    "claimed_filings": 11,
+    "independent_filings": 11,
+    "match": true
+  },
+  {
+    "company": "PCJEWELLER",
+    "as_of": "2019-01-01",
+    "old_investigation_id": "3aaef03a-7066-493a-b658-3c2bde06e139",
+    "new_investigation_id": "f437dcb5-8d7c-4845-a058-03f082902027",
+    "final_status": "FINALISED",
+    "failure_reason": null,
+    "claimed_filings": 0,
+    "independent_filings": 0,
+    "match": true
+  },
+  {
+    "company": "SILVERCASE",
+    "as_of": "2023-01-01",
+    "old_investigation_id": "654b0b68-ba84-41c8-8d3d-d4527b42c280",
+    "new_investigation_id": "de955030-b72c-456f-9f6c-dc77e61d8b98",
+    "final_status": "FINALISED",
+    "failure_reason": null,
+    "claimed_filings": 0,
+    "independent_filings": 0,
+    "match": true
+  },
+  {
+    "company": "SMALLGROWW",
+    "as_of": "2019-01-01",
+    "old_investigation_id": "84b7c409-96a0-46b5-9a70-fbb9caac85f2",
+    "new_investigation_id": "c6e00ef9-c132-4cf2-a163-04926b5140e4",
+    "final_status": "FINALISED",
+    "failure_reason": null,
+    "claimed_filings": 0,
+    "independent_filings": 0,
+    "match": true
+  },
+  {
+    "company": "YESBANK",
+    "as_of": "2019-01-01",
+    "old_investigation_id": "c4cabce3-01b6-4260-8d99-056d18359368",
+    "new_investigation_id": "c91f855c-3088-4777-b17c-6f4e8cfe9848",
+    "final_status": "FINALISED",
+    "failure_reason": null,
+    "claimed_filings": 0,
+    "independent_filings": 0,
+    "match": true
+  },
+  {
+    "company": "182D110227",
+    "as_of": "2019-01-01",
+    "old_investigation_id": "4a0291e4-05a6-474f-b380-0b30e5bc56a9",
+    "new_investigation_id": "4a713681-50bf-4500-8a42-9b848a3f85e3",
+    "final_status": "FINALISED",
+    "failure_reason": null,
+    "claimed_filings": 0,
+    "independent_filings": 0,
+    "match": true
+  },
+  {
+    "company": "FRETAIL",
+    "as_of": "2019-01-01",
+    "old_investigation_id": "0caa6b19-c6c6-42c4-945c-1abdba16b322",
+    "new_investigation_id": "1f37c5d4-5ad5-4b6b-a40c-0957d0af662b",
+    "final_status": "FINALISED",
+    "failure_reason": null,
+    "claimed_filings": 11,
+    "independent_filings": 11,
+    "match": true
+  },
+  {
+    "company": "SUZLON",
+    "as_of": "2019-01-01",
+    "old_investigation_id": "fb91898a-910b-4912-bd16-0618d9a40b26",
+    "new_investigation_id": "269328fe-2976-4fe7-9727-362710e5ad17",
+    "final_status": "FINALISED",
+    "failure_reason": null,
+    "claimed_filings": 9,
+    "independent_filings": 9,
+    "match": true
+  }
+]

@@ -35,10 +35,10 @@ from typing import cast
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from ledgerlight.agent.models import Claim
+from ledgerlight.agent.models import Claim, Investigation
 from ledgerlight.agent.nli import entailment_score
 from ledgerlight.agent.render import ContradictionGroup, RenderedDossier
-from ledgerlight.agent.tools import get_evidence
+from ledgerlight.agent.tools import get_evidence, get_timeline
 
 DEFAULT_NLI_ENTAILMENT_THRESHOLD = 0.95
 """Calibrated via scripts/calibrate_nli_threshold.py against the SYNTHETIC
@@ -137,6 +137,7 @@ class DossierVerificationResult:
     banned_language_failures: list[str]
     sentence_value_failures: list[str]
     contradictions: list[ContradictionGroup]
+    count_mismatches: list[str] = field(default_factory=list)
 
     @property
     def passed(self) -> bool:
@@ -145,6 +146,7 @@ class DossierVerificationResult:
             and not self.sentence_mapping_failures
             and not self.banned_language_failures
             and not self.sentence_value_failures
+            and not self.count_mismatches
         )
 
     @property
@@ -347,6 +349,50 @@ def check_timeline_entry_claim(session: Session, claim: Claim, as_of: dt.date) -
     return CheckResult(
         "timeline_entry_version_resolves", True, "resolved, point-in-time valid, known_at matches"
     )
+
+
+def check_timeline_claim_count(
+    session: Session,
+    claims: list[Claim],
+    claim_results: list[ClaimVerificationResult],
+    as_of: dt.date,
+) -> str | None:
+    """Phase 6 Correction 1 §2.4: a real, previously-undiscovered bug
+    (five real FINALISED dossiers silently rendered "0 real filings
+    known as of" while `get_timeline` independently returned real
+    filings for the same company/as_of) reached FINALISE because
+    nothing ever compared the dossier's own claimed filing count
+    against an independent source. This closes that gap: the number of
+    `timeline_entry` claims passing THIS verification round must equal
+    the real, independently-queried filing count for the same
+    company/as_of -- any claim of "zero" or a specific count is
+    re-derived here, never trusted from the claim set alone. A
+    mismatch returns a real detail string (never None), which the
+    caller folds into `DossierVerificationResult.count_mismatches` and
+    therefore into `.passed`, failing closed to REPAIR/NEEDS_REVIEW
+    rather than silently finalizing an undercount."""
+    if not claims:
+        return None
+    investigation = session.get(Investigation, claims[0].investigation_id)
+    if investigation is None:
+        return None
+    results_by_id = {r.claim_id: r for r in claim_results}
+    passing_timeline_count = sum(
+        1
+        for c in claims
+        if c.claim_type == "timeline_entry"
+        and (r := results_by_id.get(c.id)) is not None
+        and r.passed
+    )
+    timeline = get_timeline(session, investigation.company_id, as_of).data
+    independent_count = sum(1 for entry in timeline if entry.kind == "filing")
+    if passing_timeline_count != independent_count:
+        return (
+            f"timeline_entry claim count ({passing_timeline_count}) does not match the "
+            f"independent get_timeline() filing count ({independent_count}) for company "
+            f"{investigation.company_id} as_of {as_of}"
+        )
+    return None
 
 
 def check_banned_language(sentence: str) -> CheckResult:
@@ -646,10 +692,16 @@ def verify_dossier(
 
     contradictions = find_contradictions(claims)
 
+    count_mismatches: list[str] = []
+    count_mismatch = check_timeline_claim_count(session, claims, claim_results, as_of)
+    if count_mismatch is not None:
+        count_mismatches.append(count_mismatch)
+
     return DossierVerificationResult(
         claim_results=claim_results,
         sentence_mapping_failures=sentence_mapping_failures,
         banned_language_failures=banned_language_failures,
         sentence_value_failures=sentence_value_failures,
         contradictions=contradictions,
+        count_mismatches=count_mismatches,
     )

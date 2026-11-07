@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 from ledgerlight.agent.budgets import BudgetConfig
 from ledgerlight.agent.models import Claim, Dossier, Investigation, InvestigationStep
 from ledgerlight.agent.state_machine import run_investigation
+from ledgerlight.agent.tools import get_timeline
 from ledgerlight.knowledge.models import Company
 
 pytestmark = pytest.mark.integration
@@ -212,3 +213,121 @@ def test_run_investigation_resume_after_a_simulated_crash_gives_the_same_final_d
     assert resumed.investigation.final_status == "FINALISED"
     assert resumed.rendered is not None
     assert resumed.rendered.sections == first_pass_sections
+
+
+def _cleanup_one_investigation(session: Session, investigation_id: uuid.UUID) -> None:
+    """Scoped to exactly one investigation -- unlike `_cleanup`, never
+    touches the company or any of its other investigations. Used by
+    the real-company regression tests below, which run against
+    pre-existing production-like companies (DMART, VAKRANGEE,
+    PNBHOUSING) that this test must never delete or whose real
+    historical investigations it must never disturb."""
+    session.execute(
+        text(
+            "DELETE FROM review_decisions_audit WHERE review_task_id IN "
+            "(SELECT id FROM review_tasks WHERE dossier_id IN "
+            "(SELECT id FROM dossiers WHERE investigation_id = :iid))"
+        ),
+        {"iid": investigation_id},
+    )
+    session.execute(
+        text(
+            "DELETE FROM review_tasks WHERE dossier_id IN "
+            "(SELECT id FROM dossiers WHERE investigation_id = :iid)"
+        ),
+        {"iid": investigation_id},
+    )
+    session.execute(
+        text("DELETE FROM dossiers WHERE investigation_id = :iid"), {"iid": investigation_id}
+    )
+    session.execute(
+        text("DELETE FROM claims WHERE investigation_id = :iid"), {"iid": investigation_id}
+    )
+    session.execute(
+        text("DELETE FROM investigation_steps WHERE investigation_id = :iid"),
+        {"iid": investigation_id},
+    )
+    session.execute(text("DELETE FROM investigations WHERE id = :iid"), {"iid": investigation_id})
+    session.commit()
+
+
+# --- Phase 6 Correction 1 Sec2: the real "0 filings known as of" bug ---------
+#
+# Five real, already-FINALISED dossiers (DMART x2, VAKRANGEE,
+# PNBHOUSING x2) rendered "0 real filings known as of" while
+# `get_timeline` independently returned real filings for the same
+# company/as_of. Root cause (confirmed via the real persisted
+# `InvestigationStep`/`Claim.verification_checks` evidence,
+# docs/phase-6/phase-6-correction-1.md Sec2): these five investigations
+# ran on 2026-11-01 BEFORE that same day's verifier fix (commit
+# 379fa27, then 9189752) added `timeline_entry` to the real dispatch in
+# `verify_claim` -- under the then-current code every `timeline_entry`
+# claim (which legitimately carries no evidence SPAN) fell through to
+# the generic "unsupported claim" check and failed closed, and the
+# investigations were never re-run after the fix landed. Current code
+# already dispatches `timeline_entry` claims to `check_timeline_entry_claim`
+# correctly (covered by tests/test_agent_verifier.py's own dispatch
+# tests) -- this test instead regression-pins the fix at the full
+# pipeline level: re-running each of the five real (company, as_of)
+# pairs today must FINALISE with a chronology claiming exactly the
+# real, independently-queried filing count, never zero.
+REAL_PREVIOUSLY_BROKEN_CASES = [
+    pytest.param(
+        uuid.UUID("597dab79-c0fd-425c-8bf3-4c045ef57479"), dt.date(2023, 1, 1), 13, id="DMART-2023"
+    ),
+    pytest.param(
+        uuid.UUID("597dab79-c0fd-425c-8bf3-4c045ef57479"), dt.date(2019, 1, 1), 11, id="DMART-2019"
+    ),
+    pytest.param(
+        uuid.UUID("c84bde57-0fa2-444e-b70d-ec413d030d62"),
+        dt.date(2023, 1, 1),
+        11,
+        id="VAKRANGEE-2023",
+    ),
+    pytest.param(
+        uuid.UUID("b75df19e-08c3-4eeb-ad32-1614b1487346"),
+        dt.date(2023, 1, 1),
+        16,
+        id="PNBHOUSING-2023",
+    ),
+    pytest.param(
+        uuid.UUID("b75df19e-08c3-4eeb-ad32-1614b1487346"),
+        dt.date(2019, 1, 1),
+        7,
+        id="PNBHOUSING-2019",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "company_id, as_of, expected_real_filing_count", REAL_PREVIOUSLY_BROKEN_CASES
+)
+def test_rerunning_a_previously_broken_real_dossier_shows_real_filings(
+    real_session: Session,
+    company_id: uuid.UUID,
+    as_of: dt.date,
+    expected_real_filing_count: int,
+) -> None:
+    independent_count = sum(
+        1 for entry in get_timeline(real_session, company_id, as_of).data if entry.kind == "filing"
+    )
+    assert independent_count == expected_real_filing_count, (
+        "the real, independently-queried filing count for this company/as_of no "
+        "longer matches this test's own frozen expectation -- the real underlying "
+        "data changed; update expected_real_filing_count with a documented reason, "
+        "never silently"
+    )
+
+    outcome = run_investigation(real_session, company_id, as_of, "test-phase-6-correction-1")
+    try:
+        assert outcome.investigation.final_status == "FINALISED"
+        assert outcome.rendered is not None
+        claimed_count = len(outcome.rendered.sections.get("chronology", []))
+        assert claimed_count == independent_count, (
+            f"dossier claimed {claimed_count} real filings but an independent "
+            f"get_timeline() query found {independent_count} for the same "
+            "company/as_of -- the real Sec2 bug has regressed"
+        )
+        assert claimed_count > 0
+    finally:
+        _cleanup_one_investigation(real_session, outcome.investigation.id)

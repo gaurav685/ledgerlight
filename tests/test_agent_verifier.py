@@ -20,12 +20,13 @@ from ledgerlight.agent.verifier import (
     check_entailment,
     check_name_in_span,
     check_number_in_span,
+    check_timeline_claim_count,
     find_contradictions,
     verify_claim,
     verify_dossier,
 )
 from ledgerlight.db.models import Document, DocumentPage, DocumentVersion
-from ledgerlight.knowledge.models import Company
+from ledgerlight.knowledge.models import Company, Filing
 
 COMPANY_A = uuid.uuid4()
 
@@ -528,3 +529,134 @@ def test_verify_dossier_flags_banned_language(db_session: Session) -> None:
     result = verify_dossier(db_session, [claim], rendered, as_of=dt.date(2020, 1, 1))
     assert not result.passed
     assert result.banned_language_failures
+
+
+# --- Phase 6 Correction 1 Sec2.4/Sec2.5: independent timeline-count check ----
+#
+# The real "0 real filings known as of" bug (see
+# docs/phase-6/phase-6-correction-1.md Sec2) reached FINALISE because
+# nothing independently re-derived the dossier's own claimed filing
+# count. `check_timeline_claim_count` closes that gap: these tests
+# pin it directly, including the synthetic "GATHER dropped a result"
+# case the brief calls for -- a real filing exists (confirmed via a
+# real `filings`/`document_versions` row), but no claim was ever made
+# for it, which must fail closed rather than silently under-report.
+
+
+def _make_company_and_investigation(
+    session: Session, as_of: dt.date
+) -> tuple[uuid.UUID, uuid.UUID]:
+    company = Company(id=uuid.uuid4(), display_name="Timeline Count Test Co")
+    session.add(company)
+    session.flush()
+    investigation = Investigation(
+        id=uuid.uuid4(),
+        company_id=company.id,
+        as_of=as_of,
+        requested_by="test",
+        budget_config={},
+        usage={},
+    )
+    session.add(investigation)
+    session.flush()
+    return company.id, investigation.id
+
+
+def _make_real_filing(
+    session: Session, company_id: uuid.UUID, known_at: dt.datetime
+) -> DocumentVersion:
+    version = _make_document_version(session, "A real filing document.", known_at)
+    session.add(
+        Filing(company_id=company_id, version_id=version.id, link_method="manual", confidence=1.0)
+    )
+    session.flush()
+    return version
+
+
+def _timeline_claim(investigation_id: uuid.UUID, version: DocumentVersion) -> Claim:
+    claim = Claim(
+        investigation_id=investigation_id,
+        claim_type="timeline_entry",
+        payload={
+            "kind": "filing",
+            "label": "test:filing",
+            "known_at": version.known_at.isoformat(),
+            "version_id": str(version.id),
+        },
+        evidence=[],
+    )
+    return claim
+
+
+@pytest.mark.integration
+def test_check_timeline_claim_count_matches_when_every_real_filing_has_a_claim(
+    db_session: Session,
+) -> None:
+    as_of = dt.date(2020, 6, 1)
+    company_id, investigation_id = _make_company_and_investigation(db_session, as_of)
+    versions = [
+        _make_real_filing(db_session, company_id, dt.datetime(2020, 1, d, tzinfo=dt.UTC))
+        for d in (1, 2, 3)
+    ]
+    claims = [_timeline_claim(investigation_id, v) for v in versions]
+    db_session.add_all(claims)
+    db_session.flush()
+
+    claim_results = [verify_claim(db_session, c, as_of) for c in claims]
+    mismatch = check_timeline_claim_count(db_session, claims, claim_results, as_of)
+    assert mismatch is None
+
+
+@pytest.mark.integration
+def test_check_timeline_claim_count_catches_a_gather_dropped_filing(db_session: Session) -> None:
+    """The real synthetic regression the brief asks for: three real
+    filings exist (real `filings`/`document_versions` rows), but
+    GATHER only ever produced claims for two of them -- the third was
+    silently dropped. This must fail closed, never pass as if only
+    two real filings existed."""
+    as_of = dt.date(2020, 6, 1)
+    company_id, investigation_id = _make_company_and_investigation(db_session, as_of)
+    versions = [
+        _make_real_filing(db_session, company_id, dt.datetime(2020, 1, d, tzinfo=dt.UTC))
+        for d in (1, 2, 3)
+    ]
+    # version[2] (the 3rd real filing) is deliberately dropped here
+    dropped_claims = [_timeline_claim(investigation_id, v) for v in versions[:2]]
+    db_session.add_all(dropped_claims)
+    db_session.flush()
+
+    claim_results = [verify_claim(db_session, c, as_of) for c in dropped_claims]
+    mismatch = check_timeline_claim_count(db_session, dropped_claims, claim_results, as_of)
+    assert mismatch is not None
+    assert "2" in mismatch and "3" in mismatch
+
+
+@pytest.mark.integration
+def test_verify_dossier_fails_closed_when_a_real_filing_claim_is_dropped(
+    db_session: Session,
+) -> None:
+    """Full-pipeline wiring: the same dropped-claim scenario must also
+    make `verify_dossier(...).passed` False, via the new
+    `count_mismatches` field -- not just the standalone check."""
+    as_of = dt.date(2020, 6, 1)
+    company_id, investigation_id = _make_company_and_investigation(db_session, as_of)
+    versions = [
+        _make_real_filing(db_session, company_id, dt.datetime(2020, 1, d, tzinfo=dt.UTC))
+        for d in (1, 2, 3)
+    ]
+    dropped_claims = [_timeline_claim(investigation_id, v) for v in versions[:2]]
+    db_session.add_all(dropped_claims)
+    db_session.flush()
+
+    rendered = RenderedDossier(
+        sections={
+            "chronology": [
+                f"A real test:filing filing was known as of {v.known_at.isoformat()}."
+                for v in versions[:2]
+            ]
+        },
+        claim_id_map={f"chronology:{i}": [str(c.id)] for i, c in enumerate(dropped_claims)},
+    )
+    result = verify_dossier(db_session, dropped_claims, rendered, as_of)
+    assert not result.passed
+    assert result.count_mismatches

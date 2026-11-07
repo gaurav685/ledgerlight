@@ -349,6 +349,7 @@ def run_investigation(
                     {
                         "passed": result.passed,
                         "failed_claim_ids": [str(c) for c in result.failed_claim_ids],
+                        "count_mismatches": result.count_mismatches,
                     },
                 )
                 investigation.usage = usage.to_json()
@@ -364,7 +365,8 @@ def run_investigation(
                         f"{len(result.failed_claim_ids)} claim(s) failing, "
                         f"{len(result.sentence_mapping_failures)} sentence-mapping failure(s), "
                         f"{len(result.banned_language_failures)} banned-language failure(s), "
-                        f"{len(result.sentence_value_failures)} sentence-value failure(s)"
+                        f"{len(result.sentence_value_failures)} sentence-value failure(s), "
+                        f"{len(result.count_mismatches)} count-mismatch failure(s)"
                     )
                     session.commit()
                     break
