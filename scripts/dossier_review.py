@@ -32,6 +32,7 @@ from ledgerlight.agent.review import (  # noqa: E402
 from ledgerlight.config.settings import load_settings  # noqa: E402
 from ledgerlight.db.session import make_session_factory  # noqa: E402
 from ledgerlight.knowledge.models import Company  # noqa: E402
+from ledgerlight.review_pack import require_human_confirmation  # noqa: E402
 
 
 def main() -> int:
@@ -66,6 +67,11 @@ def main() -> int:
     )
     decide_parser.add_argument("--reviewer", required=True)
     decide_parser.add_argument("--notes", default=None)
+    decide_parser.add_argument(
+        "--human",
+        action="store_true",
+        help="confirms a real human is reviewing -- required to record a decision",
+    )
 
     feedback_parser = sub.add_parser(
         "feedback", help="apply real reviewer feedback to an event's status"
@@ -75,8 +81,15 @@ def main() -> int:
     feedback_parser.add_argument("--reviewer", required=True)
     feedback_parser.add_argument("--task-id", default=None)
     feedback_parser.add_argument("--notes", default=None)
+    feedback_parser.add_argument(
+        "--human",
+        action="store_true",
+        help="confirms a real human is reviewing -- required to apply feedback",
+    )
 
     args = parser.parse_args()
+    if args.command in ("decide", "feedback"):
+        require_human_confirmation(args)
 
     settings = load_settings()
     session_factory = make_session_factory(settings)

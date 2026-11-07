@@ -28,6 +28,7 @@ from ledgerlight.db.session import make_session_factory  # noqa: E402
 from ledgerlight.knowledge.models import Chunk, LabelItem  # noqa: E402
 from ledgerlight.knowledge.retrieval import hybrid_search, load_bm25_index  # noqa: E402
 from ledgerlight.knowledge.retrieval_eval import GoldQuery, build_silver_queries  # noqa: E402
+from ledgerlight.review_pack import require_human_confirmation  # noqa: E402
 from ledgerlight.review_pack.audit import append_entry, latest_decisions  # noqa: E402
 from ledgerlight.review_pack.sampling import sample_test_split_first  # noqa: E402
 
@@ -57,7 +58,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Real human retrieval-review CLI.")
     parser.add_argument("--reviewer", required=True, help="your name/identifier")
     parser.add_argument("--limit", type=int, default=None, help="cap queries shown this run")
+    parser.add_argument(
+        "--human",
+        action="store_true",
+        help="confirms a real human is reviewing -- required to record any decision",
+    )
     args = parser.parse_args()
+    require_human_confirmation(args)
 
     settings = load_settings()
     session_factory = make_session_factory(settings)

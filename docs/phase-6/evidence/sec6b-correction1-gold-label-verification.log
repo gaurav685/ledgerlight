@@ -1,0 +1,8 @@
+﻿total label_items: 433
+by label_source: [('human_reviewed', 77), ('ai_assisted_unreviewed', 356)]
+human_reviewed count: 77
+snapshot count: 77
+ids match exactly: True
+extra in live not in snapshot: set()
+missing from live that snapshot has: set()
+label_items with proposer_name mentioning claude: 0

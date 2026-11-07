@@ -35,6 +35,7 @@ from ledgerlight.knowledge.models import (  # noqa: E402
     EventType,
     LabelItem,
 )
+from ledgerlight.review_pack import require_human_confirmation  # noqa: E402
 from ledgerlight.review_pack.audit import append_entry, latest_decisions  # noqa: E402
 from ledgerlight.review_pack.sampling import sample_test_split_first  # noqa: E402
 
@@ -106,7 +107,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Real human field-review CLI.")
     parser.add_argument("--reviewer", required=True, help="your name/identifier")
     parser.add_argument("--limit", type=int, default=None, help="cap items shown this run")
+    parser.add_argument(
+        "--human",
+        action="store_true",
+        help="confirms a real human is reviewing -- required to record any decision",
+    )
     args = parser.parse_args()
+    require_human_confirmation(args)
 
     settings = load_settings()
     session_factory = make_session_factory(settings)

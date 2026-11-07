@@ -75,10 +75,18 @@ def main() -> int:
             select(ReviewDecisionAudit)
             .where(ReviewDecisionAudit.action == "decided")
             .where(ReviewDecisionAudit.review_task_id.in_({uuid.UUID(t) for t in sample_task_ids}))
+            .order_by(ReviewDecisionAudit.created_at)
         ).all()
+        # Latest audit row per review_task_id wins -- a correction (a new
+        # row, same task) must not be double-counted as two decided items,
+        # matching the JSONL review types' own latest-decision-per-item
+        # semantics (Phase 6 Correction 1, 2026-11-07).
+        latest_by_task: dict[uuid.UUID, ReviewDecisionAudit] = {}
+        for audit in audits:
+            latest_by_task[audit.review_task_id] = audit
         by_decision: dict[str, int] = {}
         by_reviewer: dict[str, int] = {}
-        for audit in audits:
+        for audit in latest_by_task.values():
             after = audit.after or {}
             decision = str(after.get("decision", "unknown"))
             by_decision[decision] = by_decision.get(decision, 0) + 1

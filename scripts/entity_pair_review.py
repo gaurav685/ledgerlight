@@ -44,6 +44,7 @@ from ledgerlight.knowledge.entity_resolution import (  # noqa: E402
     _fuzzy_score,
 )
 from ledgerlight.knowledge.models import Entity, EntityLink, Mention  # noqa: E402
+from ledgerlight.review_pack import require_human_confirmation  # noqa: E402
 from ledgerlight.review_pack.audit import append_entry, latest_decisions  # noqa: E402
 
 AUDIT_PATH = REPO_ROOT / "docs" / "phase-6" / "review-pack" / "entity-pair-review-audit.jsonl"
@@ -111,7 +112,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Real human entity-pair review CLI.")
     parser.add_argument("--reviewer", required=True, help="your name/identifier")
     parser.add_argument("--limit", type=int, default=None, help="cap items shown this run")
+    parser.add_argument(
+        "--human",
+        action="store_true",
+        help="confirms a real human is reviewing -- required to record any decision",
+    )
     args = parser.parse_args()
+    require_human_confirmation(args)
 
     settings = load_settings()
     session_factory = make_session_factory(settings)

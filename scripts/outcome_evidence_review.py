@@ -28,6 +28,7 @@ from sqlalchemy.orm import Session  # noqa: E402
 from ledgerlight.config.settings import load_settings  # noqa: E402
 from ledgerlight.db.session import make_session_factory  # noqa: E402
 from ledgerlight.knowledge.models import Company, Event, Outcome  # noqa: E402
+from ledgerlight.review_pack import require_human_confirmation  # noqa: E402
 from ledgerlight.review_pack.audit import append_entry, latest_decisions  # noqa: E402
 
 AUDIT_PATH = REPO_ROOT / "docs" / "phase-6" / "review-pack" / "outcome-evidence-review-audit.jsonl"
@@ -76,7 +77,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Real human outcome-evidence review CLI.")
     parser.add_argument("--reviewer", required=True, help="your name/identifier")
     parser.add_argument("--limit", type=int, default=None, help="cap items shown this run")
+    parser.add_argument(
+        "--human",
+        action="store_true",
+        help="confirms a real human is reviewing -- required to record any decision",
+    )
     args = parser.parse_args()
+    require_human_confirmation(args)
 
     settings = load_settings()
     session_factory = make_session_factory(settings)
