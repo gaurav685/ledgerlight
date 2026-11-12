@@ -36,8 +36,8 @@ from ledgerlight.knowledge.models import (
     EventField,
     EventType,
     Mention,
+    ReviewQueueItem,
 )
-from ledgerlight.knowledge.review_queue import summarize_queue
 from ledgerlight.knowledge.taxonomy import load_taxonomy
 
 pytestmark = pytest.mark.integration
@@ -172,13 +172,20 @@ def test_full_pipeline_on_small_real_subset_produces_events_fields_entities(
     assert entity.display_name == "KPMG"
 
     # Nothing failed verification in this subset, so it didn't add any
-    # new open review item for its own event_field rows.
-    open_for_this_run = [
-        item
-        for item in summarize_queue(db_session).get("event_field", {}).items()
-        if item[0] == "open"
-    ]
-    assert not open_for_this_run or open_for_this_run[0][1] == 0
+    # new open review item for its own event_field rows. Scoped to
+    # THIS run's own fields (summarize_queue's own counts are real,
+    # whole-table totals -- a real review_queue row from an unrelated
+    # real event_field, e.g. Phase 6 Correction 1 Sec4's own sweep,
+    # must not fail this test).
+    this_runs_field_ids = {f.id for f in fields}
+    open_for_this_run = db_session.scalars(
+        select(ReviewQueueItem.id).where(
+            ReviewQueueItem.item_type == "event_field",
+            ReviewQueueItem.reference_id.in_(this_runs_field_ids),
+            ReviewQueueItem.status == "open",
+        )
+    ).all()
+    assert not open_for_this_run
 
 
 def test_full_pipeline_is_idempotent_on_rerun(db_session: Session) -> None:

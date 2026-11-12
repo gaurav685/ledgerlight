@@ -84,3 +84,47 @@ def test_extractor_never_executes_html_or_script_content_as_instructions() -> No
     # the <script> tag, it just happens to coexist in the string.
     for f in fields:
         assert "alert(" not in str(f.value_json)
+
+
+# --- Phase 6 Correction 1 Sec4: the real THERMAX field-citation bug ---------
+
+
+def test_resignation_date_ignores_an_unrelated_date_far_from_the_firm_mention() -> None:
+    """The real THERMAX finding: a chunk naming the real statutory
+    auditor ALSO contained an unrelated Company Secretary's own
+    resignation date, far from the auditor mention. The old
+    whole-chunk date scan picked up that unrelated date as this
+    AUD_RESIGN event's own resignation_date -- a citation that
+    doesn't support the field at all. The date search is now scoped
+    to a window around the real firm mention."""
+    chunk = (
+        "The Board confirms that KPMG continues as the Company's "
+        "statutory auditor for the current financial year.\n\n"
+        + ("Unrelated filler text separating these two notices. " * 20)
+        + "\n\nSeparately, Ms. Janhavi Khele, Company Secretary and KMP, "
+        "has tendered her resignation effective April 18, 2025."
+    )
+    fields = extract_aud_resign_fields(chunk, chunk_char_start=0)
+    date_field = next((f for f in fields if f.field_name == "resignation_date"), None)
+    assert date_field is None, (
+        f"resignation_date must not be extracted from a date far from the firm "
+        f"mention, but got {date_field!r}"
+    )
+
+
+def test_resignation_date_still_found_near_the_real_firm_mention() -> None:
+    """The real, correct case: the resignation date for the real
+    auditor itself, reasonably close to its own mention, must still
+    be found."""
+    chunk = (
+        "UPDATE ON RESIGNATION FROM THE AUDIT ENGAGEMENT\n"
+        "BY THE STATUTORY AUDITOR - KPMG\n\n"
+        "This is to hereby inform that KPMG has resigned as statutory "
+        "auditor with effect from April 28, 2018, due to other "
+        "professional commitments."
+    )
+    fields = extract_aud_resign_fields(chunk, chunk_char_start=0)
+    date_field = next((f for f in fields if f.field_name == "resignation_date"), None)
+    assert date_field is not None
+    assert date_field.value_json == "2018-04-28"
+    assert date_field.validation_status == "validated"

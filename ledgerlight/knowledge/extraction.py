@@ -29,12 +29,21 @@ from ledgerlight.knowledge.evidence import (
 )
 
 EXTRACTOR_NAME = "aud-resign-rule-v1"
-# v2: the field-matching logic below is unchanged; bumped because
-# ledgerlight.knowledge.extraction_pipeline's event-creation gate (which
-# keys idempotency off this version) now requires `audit_firm` to be
-# present before materializing an event -- see that module's docstring
-# for the real false positive this fixes.
-EXTRACTOR_VERSION = "2"
+# v3: resignation_date is now only searched for near the real firm
+# mention (Phase 6 Correction 1 Sec4's own real finding -- a
+# resignation date anywhere else in the chunk, unrelated to the
+# auditor, used to be picked up instead). Bumped because
+# ledgerlight.knowledge.extraction_pipeline's event-creation gate keys
+# idempotency off this version.
+EXTRACTOR_VERSION = "3"
+
+DATE_SEARCH_WINDOW_CHARS = 300
+"""How far around the real firm mention to look for its resignation
+date -- wide enough for "KPMG ... has resigned ... effective April 28,
+2018" (the real corpus phrasing), narrow enough to exclude an
+unrelated date elsewhere in the same chunk (the real THERMAX finding:
+a Company Secretary's own resignation date, far from the auditor
+mention)."""
 
 _KNOWN_AUDIT_FIRMS = [
     "Price Waterhouse & Co Chartered Accountants LLP",
@@ -95,21 +104,37 @@ def extract_aud_resign_fields(chunk_text: str, chunk_char_start: int) -> list[Ex
             )
         )
 
-    date_match = re.search(r"\b[A-Za-z]+ \d{1,2},? \d{4}\b|\b\d{1,2}-[A-Za-z]+-\d{4}\b", chunk_text)
-    if date_match is not None:
-        dates = find_dates_in_text(date_match.group(0))
-        if dates:
-            resignation_date = dates[0]
-            status = verify_date(resignation_date, date_match.group(0))
-            fields.append(
-                ExtractedField(
-                    field_name="resignation_date",
-                    value_json=resignation_date.isoformat(),
-                    normalized_value=resignation_date.isoformat(),
-                    char_start=chunk_char_start + date_match.start(),
-                    char_end=chunk_char_start + date_match.end(),
-                    validation_status=status,
+    # Phase 6 Correction 1 Sec4: a real finding -- the date search used
+    # to scan the WHOLE chunk for the first date-shaped string,
+    # independent of where (or whether) the audit firm itself was
+    # mentioned. A real THERMAX chunk that also named a Company
+    # Secretary's own, unrelated resignation date picked up THAT date
+    # for this AUD_RESIGN event instead. Only a date near the real
+    # firm mention is now considered -- no firm match, no date claim,
+    # matching this schema's own "never infer" rule (see this module's
+    # docstring): there is no firm context to anchor a resignation
+    # date to.
+    if firm_match is not None:
+        window_start = max(0, firm_match.start() - DATE_SEARCH_WINDOW_CHARS)
+        window_end = min(len(chunk_text), firm_match.end() + DATE_SEARCH_WINDOW_CHARS)
+        search_text = chunk_text[window_start:window_end]
+        date_match = re.search(
+            r"\b[A-Za-z]+ \d{1,2},? \d{4}\b|\b\d{1,2}-[A-Za-z]+-\d{4}\b", search_text
+        )
+        if date_match is not None:
+            dates = find_dates_in_text(date_match.group(0))
+            if dates:
+                resignation_date = dates[0]
+                status = verify_date(resignation_date, date_match.group(0))
+                fields.append(
+                    ExtractedField(
+                        field_name="resignation_date",
+                        value_json=resignation_date.isoformat(),
+                        normalized_value=resignation_date.isoformat(),
+                        char_start=chunk_char_start + window_start + date_match.start(),
+                        char_end=chunk_char_start + window_start + date_match.end(),
+                        validation_status=status,
+                    )
                 )
-            )
 
     return fields
