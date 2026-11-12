@@ -123,7 +123,18 @@ def real_session() -> Iterator[Session]:
 
 
 @pytest.fixture
-def client() -> TestClient:
+def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
+    # conftest.py's own autouse _isolate_env fixture chdir's to a real
+    # tmp_path for every test (so a stray real .env in the repo root
+    # never leaks into a plain unit test) -- real for THIS integration
+    # test, which explicitly wants the real .env, create_app()'s own
+    # load_settings() resolves ".env" relative to cwd, so it would
+    # otherwise silently fall back to Settings' hardcoded field
+    # defaults (e.g. postgres_port=55432) instead of this machine's
+    # real, possibly-different local port. Restore cwd to the repo
+    # root for this one call, matching how real_session (above) does
+    # the same thing explicitly via Settings(_env_file=...).
+    monkeypatch.chdir(REPO_ROOT)
     try:
         from ledgerlight.api.app import create_app
     except Exception as exc:

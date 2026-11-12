@@ -158,7 +158,16 @@ def _make_document_page(real_session: Session, version: DocumentVersion, raw_tex
 
 
 @pytest.fixture
-def client() -> TestClient:
+def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
+    # conftest.py's autouse _isolate_env fixture chdir's to a tmp_path
+    # for every test, so create_app()'s own load_settings() would
+    # otherwise resolve ".env" relative to that empty tmp_path and
+    # silently fall back to Settings' hardcoded field defaults instead
+    # of this machine's real local config. Restore cwd to the repo
+    # root for this one call.
+    from pathlib import Path as _Path
+
+    monkeypatch.chdir(_Path(__file__).resolve().parent.parent)
     try:
         from ledgerlight.api.app import create_app
     except Exception as exc:

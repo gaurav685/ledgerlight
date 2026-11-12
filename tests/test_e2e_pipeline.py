@@ -267,7 +267,14 @@ def real_session() -> Iterator[Session]:
 
 
 @pytest.fixture
-def client() -> TestClient:
+def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
+    # See real_session's own note above: conftest.py's autouse
+    # _isolate_env fixture chdir's to a tmp_path for every test, so
+    # create_app()'s own load_settings() would otherwise resolve
+    # ".env" relative to that empty tmp_path and silently fall back to
+    # Settings' hardcoded field defaults instead of this machine's
+    # real local config. Restore cwd to the repo root for this call.
+    monkeypatch.chdir(Path(__file__).resolve().parent.parent)
     try:
         from ledgerlight.api.app import create_app
     except Exception as exc:
@@ -448,7 +455,9 @@ def _make_test_company(real_session: Session, seed_name: str) -> uuid.UUID:
     return company.id
 
 
-def test_full_pipeline_ingestion_to_dossier_citation_chain(real_session: Session) -> None:
+def test_full_pipeline_ingestion_to_dossier_citation_chain(
+    real_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Steps 1-10, with the real provenance/known_at citation chain
     asserted end to end: the dossier's own cited excerpt must resolve
     to the exact stored page span of the real ingested version."""
@@ -586,6 +595,9 @@ def test_full_pipeline_ingestion_to_dossier_citation_chain(real_session: Session
     # --- 10. the API showing the result -------------------------------
     from ledgerlight.api.app import create_app
 
+    # See the client() fixture's own note above for why this chdir is
+    # needed before create_app() picks up the real .env.
+    monkeypatch.chdir(Path(__file__).resolve().parent.parent)
     api_client = TestClient(create_app())
     login_response = api_client.post(
         "/v1/auth/login",

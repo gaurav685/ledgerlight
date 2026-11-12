@@ -114,10 +114,15 @@ def _login(client: TestClient, real_session: Session, name: str) -> tuple[Tenant
 
 @pytest.fixture
 def two_tenants(
-    real_session: Session,
+    real_session: Session, monkeypatch: pytest.MonkeyPatch
 ) -> tuple[tuple[TestClient, str, Tenant], tuple[TestClient, str, Tenant]]:
+    from pathlib import Path as _Path
+
     from ledgerlight.api.app import create_app
 
+    # See test_e2e_pipeline.py's client() fixture for why this chdir is
+    # needed before create_app() picks up the real .env.
+    monkeypatch.chdir(_Path(__file__).resolve().parent.parent)
     client_a = TestClient(create_app())
     tenant_a, csrf_a = _login(client_a, real_session, "IDOR Tenant A")
     client_b = TestClient(create_app())

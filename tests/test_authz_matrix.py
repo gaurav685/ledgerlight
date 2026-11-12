@@ -147,10 +147,15 @@ class RoleClient:
 
 
 @pytest.fixture
-def role_clients(real_session: Session) -> dict[str, RoleClient]:
+def role_clients(real_session: Session, monkeypatch: pytest.MonkeyPatch) -> dict[str, RoleClient]:
     """Logs in as all 4 real roles inside one real shared tenant, each
     with its own independent `TestClient` (so logging in as one role
     never disturbs another's session cookie)."""
+    # See test_e2e_pipeline.py's client() fixture for why this chdir is
+    # needed before create_app() picks up the real .env.
+    from pathlib import Path as _Path
+
+    monkeypatch.chdir(_Path(__file__).resolve().parent.parent)
     tenant = Tenant(name="Authz Matrix Co", slug=f"authz-matrix-{uuid.uuid4().hex[:8]}")
     real_session.add(tenant)
     real_session.flush()
