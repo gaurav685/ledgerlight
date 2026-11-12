@@ -31,10 +31,17 @@ this section is a short pointer, not a substitute.
   structured extractor with evidence verification, entity resolution,
   hybrid BM25+embedding retrieval. `docs/phase-2/phase-2-report.md`.
 - **Phase 3** — temporal features and a LightGBM risk model, trained and
-  deployed. The real, verified-coverage universe is only 5 companies
-  (5 pooled distinct positive events) -- **statistically inconclusive**
-  per the brief's own 30-event floor; no model variant beats the
-  training-fold base rate. See `docs/modelling/model-card.md`
+  deployed. **Honest scope: this is an evaluation framework run on a
+  5-company verified-coverage sample (144 company-months, 5 distress
+  events); no demonstrated predictive skill; results inconclusive**
+  per the brief's own 30-event floor -- no model variant beats the
+  training-fold base rate, and this has never been shown to generalise
+  to any other company. One of those 5 companies, SpiceJet, was
+  originally picked as a "no known distress" control, not a positive
+  case; a later search found 8 real NCLT insolvency *petitions*
+  against it (2021-2026) -- petitions, not admissions -- which calls
+  its control-group status into question and is flagged for human
+  decision, not resolved unilaterally. See `docs/modelling/model-card.md`
   (generated, re-verified byte-identical in Phase 6A §12) for the full
   real metrics and explicit no-predictive-skill-claim.
   `docs/phase-3/phase-3-report.md`.

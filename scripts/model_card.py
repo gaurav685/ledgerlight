@@ -81,11 +81,13 @@ def main() -> int:
         "",
         "## Intended use",
         "",
-        "A research prototype that scores Indian listed companies for evidence-backed "
-        "corporate-governance and financial-distress red flags. **Not investment advice, "
-        "not a credit rating, and not validated for any production decision.** The real "
-        "result below is that no model variant in this pipeline beats the training-fold "
-        "base rate -- there is no demonstrated predictive skill to rely on.",
+        "A research prototype evaluated on a small, hindsight-selected sample of Indian "
+        "listed companies for evidence-backed corporate-governance and financial-"
+        "distress red flags -- never shown to generalise beyond that sample, and never "
+        "a market-wide prediction tool. **Not investment advice, not a credit rating, "
+        "and not validated for any production decision.** The real result below is "
+        "that no model variant in this pipeline beats the training-fold base rate -- "
+        "there is no demonstrated predictive skill to rely on.",
         "",
         "## Data and outcomes",
         "",
@@ -94,13 +96,19 @@ def main() -> int:
         f"companies. Window: [{coverage.window_start}, {coverage.window_end}].",
         "",
         f"Pooled, coverage-restricted real counts: {counts.company_month_rows} "
-        f"company-month rows, {counts.distinct_positive_companies} distinct positive "
-        f"companies, {counts.distinct_positive_events} distinct positive events.",
+        f"positive company-month rows, {counts.distinct_positive_companies} distinct "
+        f"positive companies, {counts.distinct_positive_events} distinct positive "
+        f"events, out of {lightgbm.metrics.n} real pooled company-months total "
+        "(positive and negative) across the walk-forward test folds.",
         "",
-        f"**Statistically inconclusive: {counts.distinct_positive_events} distinct "
-        "positive events is below the 30-event floor for any predictive-skill claim.** "
-        "All results below are reported for completeness and methodology validation "
-        "only, per the user's explicit condition (2026-10-31).",
+        "**Honest scope, stated plainly: this is an evaluation framework run on a "
+        f"{len(coverage.company_names)}-company verified-coverage sample "
+        f"({lightgbm.metrics.n} company-months, {counts.distinct_positive_events} "
+        "distress events); no demonstrated predictive skill; results inconclusive "
+        f"({counts.distinct_positive_events} distinct positive events is below the "
+        "30-event floor for any predictive-skill claim).** All results below are "
+        "reported for completeness and methodology validation only, per the user's "
+        "explicit condition (2026-10-31).",
         "",
         "## Metrics, with company-clustered bootstrap 95% intervals (pooled, LightGBM)",
         "",

@@ -179,6 +179,13 @@ Phase 6B.
 
 ## 6. Risk model (backtest)
 
+**Honest scope, stated plainly: this is an evaluation framework run
+on a 5-company verified-coverage sample (144 company-months, 5
+distress events); no demonstrated predictive skill; results
+inconclusive.** This is never a market-wide prediction tool -- it has
+not been shown to generalise beyond this small, hindsight-selected
+sample of already-famous distress cases.
+
 **Tier: SILVER-UNREVIEWED** / **INCONCLUSIVE** by the backtest's own
 explicit statistical threshold (fewer than 30 distinct positive
 events). Not a gold result -- there is no human-labelled "correct
@@ -207,6 +214,14 @@ events). Company-clustered bootstrap 95% CI (LightGBM): PR-AUC 0.267
 interval straddles both positive and negative BSS. Calibration:
 badly miscalibrated in the majority bin (108/144 rows predicted ~0,
 real actual positive rate 22.2%).
+
+The 5th verified-coverage company, SpiceJet, was originally picked
+(Phase 0) as a "no known distress" control, not a positive case; a
+later search found 8 real NCLT insolvency *petitions* filed against
+it (2021-2026) -- petitions, not admissions -- which calls its
+control-group status into question. Not resolved unilaterally;
+flagged for human decision (`docs/phase-3/progress.md`,
+`docs/release/release-gates.md`).
 
 Leakage/permutation/feature-shift audit, also exactly reproduced:
 

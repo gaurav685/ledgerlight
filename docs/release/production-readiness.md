@@ -45,10 +45,20 @@ disclosed reason.
 
 ## Temporal risk model
 
+**Honest scope, stated plainly: this is an evaluation framework run
+on a 5-company verified-coverage sample (144 company-months, 5
+distress events); no demonstrated predictive skill; results
+inconclusive.** Never a market-wide prediction tool. One of those 5
+companies, SpiceJet, was originally a Phase 0 "no known distress"
+control, not a positive case; 8 real NCLT insolvency *petitions*
+(2021-2026) were later found against it -- petitions, not admissions
+-- which questions its control-group status; not resolved
+unilaterally, flagged for human decision.
+
 | Capability | Status | Evidence | Reason |
 |---|---|---|---|
 | Point-in-time feature pipeline | **COMPLETE** | `docs/modelling/`, Phase 3 §4: 100% of feature rows satisfy `max_input_known_at <= as_of`, 0 violations | -- |
-| **Predictive validity** | **BLOCKED -- inconclusive** | `docs/modelling/model-card.md` (generated): PR-AUC 0.267 [0.099, 0.649], Brier skill score -0.221 (worse than base rate) | Real, verified-coverage universe is only 5 companies / 5 pooled distinct positive events -- below the brief's own 30-event floor for any predictive-skill claim. No model variant (B0-B3, LightGBM) beats the training-fold base rate. **Not investment advice; must not be used for any real decision.** |
+| **Predictive validity** | **BLOCKED -- inconclusive** | `docs/modelling/model-card.md` (generated): PR-AUC 0.267 [0.099, 0.649], Brier skill score -0.221 (worse than base rate) | Real, verified-coverage universe is only 5 companies / 5 pooled distinct positive events / 144 real pooled company-months -- below the brief's own 30-event floor for any predictive-skill claim. No model variant (B0-B3, LightGBM) beats the training-fold base rate. **Not investment advice; must not be used for any real decision.** |
 | **Financial features** | **BLOCKED -- excluded** | `docs/phase-3/phase-3-report.md` §5 | Excluded with real evidence (too much real missingness in the available universe) rather than shipped untested. |
 | Leakage/survivorship/ablation audits | **COMPLETE** | `scripts/leakage_check.py`, `scripts/ablation.py`, Phase 3 report | Real, disclosed anomalies noted (shifted-PR-AUC artifact, one univariate flag at 1.0) -- neither confirmed as a leak given the sample size. |
 | Backtest reproducibility | **COMPLETE** | Phase 6A §5, `docs/phase-6/progress.md` | One real sub-step (`build_feature_snapshots.py`) marked BLOCKED by host memory, not code -- independently confirmed row-count-identical against the live DB instead. |
