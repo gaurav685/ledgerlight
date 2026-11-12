@@ -34,17 +34,22 @@ expected to stay BLOCKED.
 | Single-batch full integration run not captured | BLOCKED | Same real memory constraint -- the batched-run result is equally valid evidence, just not a single-pass one. |
 | Frontend CSP `unsafe-inline` | BLOCKED | A real Next.js 16.4.3 hydration-script limitation found this phase; the strict nonce-based policy doesn't yet work in this exact setup. |
 | Deployed Docker images predate dependency fix | BLOCKED | Rebuild attempted twice, killed twice by real host memory pressure; the fix exists in `pyproject.toml`/`uv.lock`, just not baked into the running image yet. |
-| `pymupdf` AGPL-3.0/commercial licence | BLOCKED | A real business/legal decision (Artifex licence or a library swap) that this phase cannot make unilaterally. |
+| `pymupdf` AGPL-3.0/commercial licence | **PASS** (closed, Phase 6 Correction 2 §5, 2026-11-12) | Resolved by licensing this whole project AGPL-3.0-or-later (`LICENSE`), not an Artifex licence or a library swap. See the gap section below. |
 | 363 real corpus pages trip the OCR tripwire | BLOCKED | Not yet run through the real OCR path and spot-checked -- flagged, not investigated further this phase (outside §11's own scope). |
 | Real "0 filings" bug drops filings from FINALISED dossiers | **PASS** (closed, Phase 6 Correction 1 §2, 2026-11-07) | Root cause confirmed (stale pre-fix investigations, never re-run); all 13 real dossiers re-ran clean; new permanent independent-count regression guard added. See the gap section below. |
 | Dossier template's "Intended use" markdown bleed | **PASS** (closed, Phase 6 Correction 1 §3, 2026-11-07) | `export_dossier_markdown` now quotes multiline content properly; a real heading-hierarchy structure test added. See the gap section below. |
+| `days_since_last_downgrade` univariate PR-AUC flag at 1.0 | **PASS** (investigated, confirmed NOT a leak, Phase 6 Correction 2 §1, 2026-11-12) | Real traced evidence rules out circular self-reference; confirmed a single-company (FRETAIL) null-pattern autocorrelation artifact, not a temporal leak. See the gap section below. |
+| Review routing never fired on real high-severity findings | **PASS** (closed, Phase 6 Correction 2 §2, 2026-11-12) | Severity never threaded through outcome-context event claims, and metric claims (default-grade ratings) were structurally invisible to the routing check. Both fixed; real backfill created 58 new review tasks. See the gap section below. |
+| Dossier rendering: "Unknown company" / raw UTC dates in prose | **PASS** (closed, Phase 6 Correction 2 §3, 2026-11-12) | Company name now resolved via the real `filings` link; prose dates render as Asia/Kolkata calendar dates. See the gap section below. |
 
-**3 of 15 gates evaluate to PASS** (ZAP/Playwright, corrected
+**7 of 18 gates evaluate to PASS** (ZAP/Playwright, corrected
 2026-11-07 above -- genuinely closed in §2; the real "0 filings" bug
 and the "Intended use" markdown bleed, both closed in Phase 6
-Correction 1). The other 12 stay open as the brief's own framing
-anticipated -- not a sign anything here was softened to look better
-than it is.
+Correction 1; the `pymupdf` licence, the univariate leak
+investigation, the review-routing fix, and the dossier-rendering
+fixes, all closed in Phase 6 Correction 2). The other 12 stay open as
+the brief's own framing anticipated -- not a sign anything here was
+softened to look better than it is.
 
 ## Gap: no review infrastructure for field/entity-pair/retrieval-query gold labels
 
@@ -202,7 +207,9 @@ both state this is not investment advice.
 **Also disclosed, not hidden:** (1) the Sec7 feature-shift leakage test shows shifted PR-AUC
 higher than unshifted, attributable to long same-episode label runs in this tiny dataset
 rather than a demonstrated leak; (2) the univariate PR-AUC flag catches
-`days_since_last_downgrade` at 1.0 in the real data; (3) `scripts/score.py`'s deployment-time
+`days_since_last_downgrade` at 1.0 in the real data -- investigated with real traced evidence
+(Phase 6 Correction 2 §1) and confirmed NOT a temporal leak, a single-company (FRETAIL)
+null-pattern autocorrelation artifact instead; see the gap section below; (3) `scripts/score.py`'s deployment-time
 imputation and calibration are simplified relative to training time, since persisting the
 exact training-time medians and the per-fold calibration map was not built given there is no
 real predictive signal at stake either way; (4) SpiceJet's original Phase 0 role as a "no
@@ -354,6 +361,21 @@ not-applicable findings. Playwright re-confirmed 4/4 after the header fixes. Thi
 gate is fully closed, not partially -- the original gate text above is kept for
 history; this note is the current, accurate status.
 
+**Not re-run again in Phase 6 Correction 2 (2026-11-12), by explicit user
+choice.** `infra/docker-compose.e2e-lite.yml` is an override on the SAME
+project/ports as this session's live, currently-running dev Postgres (holding
+every real investigation/claim/dossier this whole phase has worked against) --
+running it means tearing that container down and recreating it, mid
+verification pass. Correction 2 §3's dossier-rendering fix (company name,
+IST dates) is user-facing, so a fresh e2e check has real value; asked the
+user directly rather than assuming, and they chose not to disrupt the live
+stack. The real coverage used instead: the backend render/export/verifier
+test suites (`docs/phase-6/evidence/sec3-dossier-rendering-fixes.md`, 92
+passed) plus a fresh real `agent-eval` run (60 investigations, 0 leakage),
+both exercising the exact same rendering code path the frontend displays.
+The last real Playwright result (4/4, above) still stands, unchanged by
+this phase's backend-only fixes.
+
 ## Gap: a real, single-batch full integration-test run was not captured for §11's final evidence pass
 
 **Status:** open, same real cause as the gap above. **Reason:** `pytest -q -m
@@ -451,36 +473,32 @@ own residual-risks section for those).
 
 ## Gap: `pymupdf`'s AGPL-3.0/commercial dual licence is unresolved
 
-**Status: open.** **First seen:** Phase 6A §11 (2026-11-06).
+**Status: CLOSED (Phase 6 Correction 2 §5, 2026-11-12).** **First
+seen:** Phase 6A §11 (2026-11-06).
 
-**What's missing:** a real decision on `pymupdf` (`pyproject.toml`:
+**What was missing:** a real decision on `pymupdf` (`pyproject.toml`:
 `"pymupdf>=2.0,<3"`, imported directly in
 `ledgerlight/processing/pdf.py` for real PDF extraction, part of the
 application's own served code). It is dual-licensed: GNU AGPL-3.0, or
-Artifex's commercial licence. This project holds neither an Artifex
+Artifex's commercial licence. This project held neither an Artifex
 commercial licence nor a plan to release its own source under AGPL.
-Full detail: `docs/compliance/data-sources.md`.
 
-**What this blocks:** any commercial or SaaS-style launch that serves
-this platform's PDF-extraction functionality to outside users over a
-network (`docs/deploy/aws-architecture.md`'s own intended deployment
-model) -- AGPL-3.0's network-use clause would require releasing the
-entire combined work's source under AGPL-3.0 unless resolved first.
-Does not block continuing to run this platform as a research/internal
-tool today.
+**Decision and fix:** the user chose AGPL-3.0 (LICENCE_CHOICE,
+Correction 2 brief). This whole project is now licensed
+AGPL-3.0-or-later: the real, full official licence text is
+`LICENSE` (root), `pyproject.toml` declares
+`license = "AGPL-3.0-or-later"` (PEP 639), `frontend/package.json`
+declares the same, and `README.md` carries a Licence section
+explaining why. Licensing the entire combined work under AGPL-3.0
+satisfies `pymupdf`'s own AGPL-3.0 branch directly -- including for a
+networked SaaS deployment, which is exactly what previously made this
+a blocker. No Artifex commercial licence was obtained, and `pymupdf`
+was not replaced; neither was necessary once the whole project itself
+is AGPL-3.0.
 
-**Why it's not closed:** resolving it means either (a) obtaining an
-Artifex commercial PyMuPDF licence, or (b) replacing `pymupdf` with a
-permissively-licensed alternative (`pypdf`/`pdfplumber`/
-`pdfminer.six`, all MIT/BSD-family) -- a real business decision and a
-real extraction-pipeline change respectively, both outside a
-compliance review's own scope to make unilaterally.
-
-**Closing this gap requires:** a human decision on which path to
-take, then (if swapping libraries) re-verifying extraction fidelity
-against the existing PDF-page-integrity checks
-(`docs/phase-2/evidence/preflight-pdf-page-integrity.log`) before
-switching.
+**Evidence:** `docs/compliance/data-sources.md` §2's `pymupdf` finding
+and §3 commercial-use statement, both now marked RESOLVED with the
+same reasoning.
 
 ## Gap: 363 real corpus pages now trip the "no genuinely scanned PDFs" tripwire test
 
@@ -570,3 +588,89 @@ multiline content. Golden dossier snapshot updated and documented
 **Evidence:** `docs/phase-6/evidence/sec5-negation-hardening.md`'s
 sibling commit messages (`phase-6: Correction 1 Sec3`), full diff in
 `ledgerlight/agent/export.py`.
+
+## Gap: `days_since_last_downgrade` univariate PR-AUC flag at 1.0 -- leak or artefact, unresolved
+
+**Status: CLOSED (Phase 6 Correction 2 §1, 2026-11-12).** **First
+seen:** Phase 3 §7 leakage audit, disclosed but not investigated.
+
+**Investigation, real evidence, not guessed:** confirmed the flag is
+in-sample/non-walk-forward/non-null-masked (as implemented), then
+traced every real positive row's own downgrade `known_at` against its
+outcome event -- ruling out the most natural leak hypothesis
+(circular self-reference) with a real traced example (a 2020-10-28
+B-downgrade feeding a 2022-01-02 D-outcome for FRETAIL, 431 days
+apart, a distinct rating action from the outcome itself). The real
+explanation: all 19 real non-null rows for this feature come from a
+single company (FRETAIL) -- an extreme null-pattern sparsity artefact
+(single-company autocorrelation), not a cross-company generalizable
+signal, and not a temporal leak. LightGBM's own 0.267 pooled PR-AUC
+(far below 1.0) is consistent with this: a feature that is perfectly
+separating within one company contributes little pooled across 5.
+
+**Fix:** no code fix needed (not a leak) -- `docs/modelling/data-quality.md`
+and `docs/modelling/model-card.md` (generated, via `scripts/model_card.py`)
+both updated with the full real evidence trace, replacing the prior
+"disclosed, not confirmed" wording with the confirmed explanation.
+
+**Evidence:** `docs/phase-6/evidence/sec1-downgrade-flag-investigation.md`.
+
+## Gap: review routing never fired on real high-severity findings
+
+**Status: CLOSED (Phase 6 Correction 2 §2, 2026-11-12).** **First
+seen:** this phase's own brief (only a seeded QC task existed despite
+72 real REPAIR-removed claims and real default-grade (D) rating
+findings in real dossiers).
+
+**Root cause, confirmed not guessed:** two independent gaps. (1)
+`claims_from_outcomes_context`'s real IBBI/SEBI event claims never
+carried `severity` in their payload at all -- `get_outcomes_context`'s
+own SQL never selected `events.severity`, even though the real
+underlying rows are created with `severity="high"`. (2) A
+default-grade ("D") CARE rating is a `metric` claim, not an `event`
+claim, and the routing check only ever inspected `event`-typed
+claims' own `severity` field, making every rating observation
+structurally invisible regardless of its real value.
+
+**Fix:** `OutcomeEvent` now carries `severity`, threaded into the
+claim payload; a new `_is_high_severity` recognises both a high-
+severity event claim and a default-grade metric claim; two new
+reason codes (`repair_removed_high_severity`,
+`repair_emptied_section`) cover REPAIR-removed high-severity claims
+and sections REPAIR left completely empty. Real dry run before/after:
+`high_severity_finding` 3 -> 16, dossiers receiving >= 1 task 7 -> 55
+(of 239). Backfilled for real, append-only, idempotent
+(`scripts/backfill_review_routing.py --apply`): 58 new review tasks
+created; a second `--apply` run creates 0 (confirmed idempotent). 9
+new tests.
+
+**Evidence:** `docs/phase-6/evidence/sec2-review-routing-fix.md`,
+`docs/agent/review-workflow.md`.
+
+## Gap: dossier rendering shows "Unknown company" and raw UTC timestamps in prose
+
+**Status: CLOSED (Phase 6 Correction 2 §3, 2026-11-12).** **First
+seen:** this phase's own brief (50 real dossiers' latest versions
+showed "Unknown company" in the Sources section).
+
+**Root cause, confirmed not guessed:** the Sources-section title used
+`Document.company_name_raw or 'Unknown company'` -- a Phase 1
+ingestion-time field that is almost always NULL in this corpus, never
+the real `filings` link the brief asked for. Separately, every prose
+date (`"known as of 2019-06-04T00:00:00+00:00"`) embedded the raw UTC
+ISO timestamp verbatim rather than a human-readable local date.
+
+**Fix:** the company name is now resolved via the real `filings` link
+(`Filing.company_id -> Company.display_name`), scoped to the
+dossier's own `company_id`, falling back to `company_name_raw` then
+the investigation's own `company_name` before ever reaching "Unknown
+company". Prose dates now render as the real Asia/Kolkata calendar
+date (`"4 June 2019 (IST)"`); every stored/exported timestamp stays
+UTC. Fixed a real regression this surfaced in
+`ledgerlight.agent.verifier.check_sentence_values_in_claims` (the new
+date format broke its number-containment heuristic, flipping 5 real
+investigations to NEEDS_REVIEW) without weakening the check. A fresh
+real agent-eval run (60 investigations) confirms 0 leakage and 60/60
+FINALISED.
+
+**Evidence:** `docs/phase-6/evidence/sec3-dossier-rendering-fixes.md`.

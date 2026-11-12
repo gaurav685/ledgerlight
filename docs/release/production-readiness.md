@@ -31,7 +31,7 @@ disclosed reason.
 | PDF/HTML/bhavcopy/XBRL extraction | **COMPLETE** | `ledgerlight/processing/`, `docs/phase-1/phase-1-report.md` | -- |
 | OCR fallback | **PARTIAL** | `tests/test_ocr_engine.py` (synthetic, passes); `docs/release/release-gates.md`'s "363 real corpus pages" gap | 363 real corpus pages (mostly from Phase 3's large discovery runs) now genuinely trip the OCR heuristic -- not yet run through the real OCR path and spot-checked for extraction quality. |
 | Subprocess isolation / timeout safety | **COMPLETE** | `ledgerlight/processing/runner.py`, `ledgerlight/processing/limits.py` | -- |
-| **`pymupdf` licensing** | **BLOCKED for commercial use** | `docs/compliance/data-sources.md`, `docs/release/release-gates.md` | Dual-licensed AGPL-3.0/Artifex commercial; this project holds neither. Does not block research/internal use. |
+| **`pymupdf` licensing** | **COMPLETE** (resolved, Phase 6 Correction 2 §5) | `LICENSE`, `docs/compliance/data-sources.md`, `docs/release/release-gates.md` | Dual-licensed AGPL-3.0/Artifex commercial; resolved by licensing this whole project AGPL-3.0-or-later, not an Artifex licence or a library swap. No longer blocks commercial/SaaS use. |
 
 ## Knowledge extraction, entity resolution, retrieval
 
@@ -139,11 +139,11 @@ unilaterally, flagged for human decision.
 
 | Capability | Status | Evidence | Reason |
 |---|---|---|---|
-| Python dependency licences (195 packages) | **COMPLETE, 1 flagged** | `docs/phase-6/evidence/sec11-python-licences.md` | All permissive except `pymupdf` (see below). |
+| Python dependency licences (195 packages) | **COMPLETE, 1 flagged (now resolved)** | `docs/phase-6/evidence/sec11-python-licences.md` | All permissive except `pymupdf` (see below, resolved). |
 | npm dependency licences (332 packages) | **COMPLETE** | `docs/phase-6/evidence/sec11-npm-licences-summary.log` | All permissive. |
 | Model checkpoint licences | **COMPLETE** | `docs/compliance/data-sources.md` §2 | Both real models (`BAAI/bge-small-en-v1.5`, `MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli`) are MIT, explicitly commercial-use-permitted. |
 | Container base image licences | **COMPLETE** | `docs/compliance/data-sources.md` §2 | Python/Node/pgvector all permissive. Garage is AGPL-3.0 but used unmodified as a separate networked service -- low risk, not a blocker. |
-| **`pymupdf` dual licence** | **BLOCKED -- unresolved** | `docs/compliance/data-sources.md`, `docs/release/release-gates.md` | AGPL-3.0 or Artifex commercial; this project holds neither. Blocks any commercial/SaaS launch of the real PDF-extraction functionality until resolved (Artifex licence, or a library swap). Does not block research/internal use today. |
+| **`pymupdf` dual licence** | **COMPLETE** (resolved, Phase 6 Correction 2 §5) | `LICENSE`, `docs/compliance/data-sources.md`, `docs/release/release-gates.md` | AGPL-3.0 or Artifex commercial; resolved by licensing this whole project AGPL-3.0-or-later. No longer blocks commercial/SaaS use. |
 | Data redistribution policy | **COMPLETE** | `docs/adr/0002-data-acquisition-policy.md` | Raw documents never committed; only manifests (metadata) are, since most sources require permission before redistributing content. |
 
 ## Git and backup policy
@@ -168,8 +168,11 @@ order of severity:
 2. **No gold human review has happened yet** -- every extraction/
    entity-resolution/retrieval/dossier metric above GOLD-tier
    classification is silver-unreviewed, pending Phase 6B.
-3. **`pymupdf`'s AGPL-3.0 licensing question is unresolved** -- blocks
-   commercial/SaaS use specifically, not research/internal use.
+
+`pymupdf`'s AGPL-3.0 licensing question, previously the 3rd item here,
+is now resolved (Phase 6 Correction 2 §5): this whole project is
+AGPL-3.0-or-later licensed, which no longer blocks commercial/SaaS
+use.
 
 Everything else (BSE/NSE/CRISIL/ICRA/MCA/Thermax blocks, AWS not
 deployed, GitHub Actions unverified, financial features excluded,

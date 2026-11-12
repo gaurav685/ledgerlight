@@ -206,6 +206,34 @@ shorter string for the dossier-review audit rows specifically (the
 four JSONL-backed review types have no such column-width limit and
 kept the longer, fully explicit identifier).
 
+## Addendum: automatic review routing was broken, found in Phase 6 Correction 2 §2
+
+This review pack's own 13 dossier reviews above were worked from a
+sample built directly against real dossiers -- not from the real
+automatic routing queue a human reviewer would actually see day to
+day. Phase 6 Correction 2 §2 found, and fixed, a real gap directly
+relevant to this document's own scope: `create_review_tasks`'s
+routing had only ever created a seeded QC task and a handful of
+others (7 real tasks across 239 real dossiers), despite 72 real
+claims failing verification and being REPAIR-removed, and real
+default-grade (CARE rating "D") findings sitting in real, FINALISED
+dossiers -- neither of which the routing logic could see at all
+(outcome-context event claims never carried `severity`; metric claims
+had no `severity` field to check in the first place). **This means
+that, before this fix, a real dossier with content this review pack
+would likely have rejected or sent back for edits -- the same kind of
+finding this pack's own "5 reject, 8 approve_with_edits" breakdown
+reflects -- would often never have reached a human reviewer's queue
+automatically in the first place**, this review pack's own sample
+having been built by hand specifically to work around that gap, not
+because the routing was working.
+
+Fixed: real dry run after the fix finds 60 decisions across 55 of 239
+dossiers (up from 7 across a handful); backfilled for real,
+append-only, idempotent (58 new review tasks created). Full evidence:
+`docs/phase-6/evidence/sec2-review-routing-fix.md`,
+`docs/agent/review-workflow.md`.
+
 ## What this does not do
 
 This review pass does not retroactively change any real score,
