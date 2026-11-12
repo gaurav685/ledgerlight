@@ -57,7 +57,7 @@ See `docs/modelling/event-reliability.md` for the full real gold-validation prec
 
 - Inconclusive by construction: too few real distinct positive events (5 pooled) for any model to demonstrate real skill.
 - The feature-shift leakage test shows a real, disclosed anomaly (shifted PR-AUC higher than unshifted) attributable to long same-episode label runs in this tiny dataset, not a demonstrated leak -- see `ledgerlight.modelling.leakage`.
-- The univariate PR-AUC flag catches `days_since_last_downgrade` at 1.0 in the real data; disclosed, not confirmed as leakage given the sample size.
+- The univariate PR-AUC flag catches `days_since_last_downgrade` at 1.0 in the real data -- investigated (Phase 6 Correction 2 §1), confirmed NOT a temporal leak: every one of its 19 real non-null rows (9 positive, 10 negative) comes from a single company, FRETAIL (the other 4 have no qualifying downgrade ever recorded); the downgrade it cites for each row is a distinct, earlier, point-in-time-valid rating action, never the outcome event itself. The 'perfect' separation is a single-company autocorrelation artifact (FRETAIL's own rating agency went quiet for ~11 months before its real default), not a cross-company generalizable signal -- see `docs/modelling/data-quality.md` for the full real evidence trace.
 - Deployment-time imputation and calibration are simplified relative to training time (see Calibration above) -- acceptable only because there is no real predictive signal at stake either way.
 
 ## Ethical considerations

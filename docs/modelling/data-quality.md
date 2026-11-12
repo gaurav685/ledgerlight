@@ -66,6 +66,37 @@ one-time patches.
 - **Governance events are 100% CANDIDATE tier, 0% VERIFIED**: confirmed by direct query,
   project-wide, matching Phase 1 §1.5's finding that no event type clears the
   gold-reliability bar.
+- **`days_since_last_downgrade`'s univariate PR-AUC=1.0 flag is a real, investigated
+  non-leak -- a single-company sparsity artifact, not a temporal violation** (Phase 6
+  Correction 2 §1). The flag (`ledgerlight.modelling.leakage.univariate_pr_auc_flags`)
+  computes in-sample, non-walk-forward, on whatever rows have a non-null value --
+  disclosed as "a real signal worth investigating, not automatically proof of leakage" in
+  its own docstring. Real investigation: of the 144 real pooled rows, exactly **19** have
+  a non-null value (9 positive, 10 negative) -- all 19 from **one company, FRETAIL**; the
+  other 4 companies (DHFL, GENSOL, JETAIRWAYS, SPICEJET) have `days_since_last_downgrade =
+  None` for every one of their own rows (no qualifying downgrade *transition* ever
+  recorded as of their own relevant `as_of` windows). Traced FRETAIL's real rating history
+  directly (`ledgerlight.modelling.rating_features.extract_rating_observations`): its last
+  real downgrade before its real 2022-01-02 default was to "B" on 2020-10-28 -- a distinct,
+  earlier, separate rating action, not the outcome event itself. `known_at` (2020-10-28) <=
+  every one of the later `as_of` dates that cite it (confirmed point-in-time valid); the
+  real D-rating outcome observation (`known_at=2022-01-02`) is never itself used as "last
+  downgrade" for any `as_of` before it occurs -- not self-referential. The real pattern:
+  FRETAIL's rating agency took no further action for ~11 months before its real default,
+  so `days_since_last_downgrade` grows large and strictly monotonically (95 -> 337) across
+  FRETAIL's own final pre-default months (all labeled positive), while its earlier,
+  negative-labeled months (closer to the 2020-10-28 downgrade itself) show small values
+  (3-66). This is a real, honestly-computed signal **within FRETAIL's own single-company
+  timeline** -- not a cross-company generalizable one: with every non-null point drawn
+  from one company's own autocorrelated calendar, "perfect separation" reflects that
+  company's own trajectory, not a real law relating rating-downgrade recency to distress.
+  This is exactly why the pooled, company-clustered LightGBM model (trained/evaluated
+  across all 5 companies, PR-AUC 0.267) does not inherit this apparent signal: the feature
+  is null for 100% of the other 4 companies' rows, and FRETAIL's own idiosyncratic
+  calendar does not generalize under a real walk-forward, cross-company split. No fix
+  applied -- not a leak, a disclosed sparsity artifact. See
+  `docs/modelling/model-card.md`'s own "Coverage limits" section for the model-card-facing
+  statement.
 
 ## IBBI full-universe discovery coverage
 
