@@ -13,13 +13,14 @@ import pytest
 from sqlalchemy.orm import Session
 
 from ledgerlight.agent.models import Claim, Investigation
-from ledgerlight.agent.render import RenderedDossier
+from ledgerlight.agent.render import RenderedDossier, event_claim_sentence
 from ledgerlight.agent.verifier import (
     check_banned_language,
     check_date_in_span,
     check_entailment,
     check_name_in_span,
     check_number_in_span,
+    check_sentence_values_in_claims,
     check_timeline_claim_count,
     find_contradictions,
     verify_claim,
@@ -131,6 +132,60 @@ def test_check_number_in_span_fails_on_a_real_numeric_mismatch() -> None:
 def test_check_banned_language_fails_on_an_unquoted_banned_term() -> None:
     result = check_banned_language("The company committed fraud against investors.")
     assert not result.passed
+
+
+def _event_claim(known_at_iso: str) -> Claim:
+    return Claim(
+        investigation_id=uuid.uuid4(),
+        claim_type="event",
+        payload={
+            "event_type_code": "AUD_RESIGN",
+            "tier": "VERIFIED",
+            "known_at": known_at_iso,
+        },
+        evidence=[],
+    )
+
+
+def test_check_sentence_values_in_claims_passes_with_the_correct_ist_date() -> None:
+    """Phase 6 Correction 2 §3.2's real IST prose date, checked against
+    the exact real sentence `event_claim_sentence` produces -- proves
+    the `_flatten_payload_numbers` IST widening does not merely avoid
+    false failures, it genuinely recognises the correct date."""
+    claim = _event_claim("2019-06-03T20:00:00+00:00")  # 4 June 2019 in IST
+    sentence = event_claim_sentence(claim)
+    assert "4 June 2019 (IST)" in sentence
+    result = check_sentence_values_in_claims(sentence, [claim])
+    assert result.passed
+
+
+def test_check_sentence_values_in_claims_fails_when_the_ist_date_does_not_match_the_claim() -> None:
+    """Correction 2 §3's ADDENDUM check: the IST-widening fix in
+    `_flatten_payload_numbers` must not have loosened the check so far
+    that a WRONG prose date slips through. Claim's real IST date is 4
+    June 2019; the rendered sentence is deliberately corrupted to claim
+    5 June instead -- this must still fail, exactly as the pre-IST
+    raw-ISO-string prose would have."""
+    claim = _event_claim("2019-06-03T20:00:00+00:00")  # 4 June 2019 in IST
+    correct_sentence = event_claim_sentence(claim)
+    wrong_sentence = correct_sentence.replace("4 June 2019", "5 June 2019")
+    assert wrong_sentence != correct_sentence
+    result = check_sentence_values_in_claims(wrong_sentence, [claim])
+    assert not result.passed
+    assert "5.0" in result.detail
+
+
+def test_check_sentence_values_in_claims_fails_on_a_stray_unrelated_number() -> None:
+    """A number with no date-prefix structure and no match anywhere in
+    the claim's own payload must still fail -- the check's core,
+    original purpose (real insurance against a renderer introducing a
+    number no real claim actually carries), unaffected by the IST
+    widening added for dates."""
+    claim = _event_claim("2019-06-03T20:00:00+00:00")
+    sentence = event_claim_sentence(claim) + " The penalty was 999 crore."
+    result = check_sentence_values_in_claims(sentence, [claim])
+    assert not result.passed
+    assert "999.0" in result.detail
 
 
 def test_check_banned_language_allows_a_short_attributed_quote() -> None:

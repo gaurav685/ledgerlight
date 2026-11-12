@@ -59,13 +59,27 @@ def test_real_bhavcopy_files_parse_with_low_quarantine_rate() -> None:
     )
 
 
+@pytest.mark.xfail(
+    strict=True,
+    reason="363 real scanned pages pending OCR spot-check — see release-gates.md",
+)
 def test_real_corpus_has_no_genuinely_scanned_pdf_pages() -> None:
     """Documents the real finding (not assumed): probing every PDF page in
     the ingested corpus for the OCR heuristic found zero genuine scans --
     every low-text page is a graphic-design layout. If this ever fails, it
     means a real scanned page finally showed up, which is useful to know,
     not a bug -- see tests/test_ocr_engine.py for the synthetic fixture
-    that actually proves the OCR path works."""
+    that actually proves the OCR path works.
+
+    Phase 6 Correction 2 §6 ADDENDUM: this is the known, documented,
+    pre-existing "363 real corpus pages trip the OCR tripwire" finding
+    (`docs/release/release-gates.md`, BLOCKED since Phase 6A §11) --
+    marked `xfail(strict=True)` rather than left as a silent, ignored
+    red X, so this stays the one disclosed exception, not a precedent
+    for hiding a future real failure here. `strict=True` means an
+    unexpected PASS (all 363 pages resolved) fails this test loudly,
+    exactly the "useful to know" signal the original docstring above
+    already asked for."""
     pdfs = _real_pdfs()
     if not pdfs:
         pytest.skip("data/raw has no PDFs -- run acquisition first")
