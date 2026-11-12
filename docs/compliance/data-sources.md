@@ -147,7 +147,7 @@ uv run pip-licenses --format=markdown --with-urls
 ```
 
 **All permissive (MIT/BSD/Apache-2.0/ISC/PSF) except one real,
-significant finding:**
+significant finding -- now RESOLVED (Phase 6 Correction 2 §5):**
 
 - **`pymupdf` (2.0) is dual-licensed: GNU AGPL-3.0, or Artifex's
   commercial licence.** This project does not hold an Artifex
@@ -163,12 +163,18 @@ significant finding:**
   commercial licence is obtained first. **This was never previously
   flagged** (Phase 1/2 only mention `pymupdf` by name in unrelated
   contexts -- install-size and page-count cross-checks, never its
-  licence). **Real decision needed before any commercial/SaaS
-  launch**: either obtain an Artifex commercial PyMuPDF licence, or
-  replace it with a permissively-licensed alternative (e.g. `pypdf`,
-  `pdfplumber`, `pdfminer.six` -- all MIT/BSD-family) -- a real
-  extraction-pipeline change outside this compliance review's own
-  scope, not made here.
+  licence).
+  **RESOLVED**: rather than obtaining an Artifex commercial licence or
+  replacing the library, the user chose (Phase 6 Correction 2 §5,
+  licence decision 2026-11-12) to license this whole project under
+  **AGPL-3.0-or-later** -- see `LICENSE` (root), `README.md`'s Licence
+  section, and `pyproject.toml`'s `license = "AGPL-3.0-or-later"`.
+  Licensing the entire combined work under AGPL-3.0 satisfies
+  `pymupdf`'s own AGPL-3.0 branch directly: the network-use clause no
+  longer presents a conflict, because this project's own source is
+  now required to be made available under the same terms regardless.
+  No Artifex commercial licence was obtained, and the library was not
+  replaced.
 - `psycopg`/`psycopg2-binary` (LGPL-3.0 / LGPL) -- used unmodified, as
   a dynamically-linked driver; LGPL explicitly permits this without
   triggering copyleft on the calling application. No concern.
@@ -238,12 +244,15 @@ completeness, not flagged as a blocker.
 ## 3. Explicit commercial-use statement
 
 - **No real blocker exists today for continuing to run this platform
-  as a research/internal tool.** The one real, significant open
-  question is `pymupdf`'s AGPL-3.0/commercial dual licence (above) --
-  it must be resolved (Artifex licence, or a library swap) **before**
-  any commercial or SaaS-style launch that serves this platform's PDF-
-  extraction functionality to outside users over a network. This is
-  the single most important finding of this review.
+  as a research/internal tool, or for a commercial/SaaS-style
+  launch.** `pymupdf`'s AGPL-3.0/commercial dual licence (above) is
+  **RESOLVED**, as of Phase 6 Correction 2 §5: this whole project is
+  now licensed AGPL-3.0-or-later (`LICENSE`), which satisfies
+  `pymupdf`'s own AGPL-3.0 branch directly, including for a networked
+  SaaS deployment that serves this platform's PDF-extraction
+  functionality to outside users. This was the single most important
+  finding of this review when first made, and is carried here as
+  resolved, not re-opened.
 - **BSE, NSE (except `nse_archives`), CRISIL, ICRA, MCA, and (newly,
   this phase) Thermax IR are BLOCKED** and this project does not
   fetch from them -- see the explicit statement above for the real

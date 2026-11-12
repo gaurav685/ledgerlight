@@ -185,10 +185,10 @@ targets (`field-review`, `entity-pair-review`, `retrieval-review`,
   Access Denied. See `docs/compliance/data-sources.md` for the full,
   dated re-check and the exact reason for each.
 - **`pymupdf` (this project's real PDF-extraction dependency) is
-  dual-licensed GNU AGPL-3.0 / Artifex commercial — unresolved.** Does
-  not block research/internal use; blocks any commercial/SaaS launch
-  of the PDF-extraction functionality until resolved. See
-  `docs/compliance/data-sources.md` and
+  dual-licensed GNU AGPL-3.0 / Artifex commercial — resolved by
+  licensing this whole project under AGPL-3.0** (see Licence below),
+  rather than by obtaining an Artifex commercial licence or swapping
+  the library. See `docs/compliance/data-sources.md` and
   `docs/release/release-gates.md`.
 
 ## Repository layout
@@ -218,4 +218,19 @@ infra/                docker-compose.yml (Postgres+pgvector, Garage
 tests/                unit + integration + corpus + security + e2e
                       tests (network/integration/corpus marked and
                       excluded by default -- see pyproject.toml)
+```
+
+## Licence
+
+Licensed under the **GNU Affero General Public License v3.0 or later
+(AGPL-3.0-or-later)** — see `LICENSE` for the full text. This choice
+was made specifically to resolve this project's own real,
+load-bearing `pymupdf` dependency, which is dual-licensed GNU
+AGPL-3.0 / Artifex commercial (`docs/compliance/data-sources.md`):
+licensing the whole combined work under AGPL-3.0 satisfies that
+dependency's own licence without needing a commercial Artifex licence
+or a library swap. New source files in `ledgerlight/`, `scripts/`,
+and `frontend/` should carry an `SPDX-License-Identifier:
+AGPL-3.0-or-later` header near the top, per this project's own
+licensing-tool convention.
 ```
