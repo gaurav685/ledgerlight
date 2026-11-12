@@ -47,8 +47,16 @@ def real_session() -> Iterator[Session]:
 
 
 def test_seed_creates_two_tenants_with_every_role_and_is_idempotent(
-    real_session: Session,
+    real_session: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # conftest.py's autouse _isolate_env fixture chdir's to a tmp_path
+    # for every test, so seed_test_tenants.py's own main() (which
+    # calls load_settings() independently, with no override hook)
+    # would otherwise resolve ".env" relative to that empty tmp_path
+    # and fall back to Settings' hardcoded postgres_port default
+    # instead of this machine's real local port. Restore cwd to the
+    # repo root.
+    monkeypatch.chdir(REPO_ROOT)
     first_exit_code = _MODULE.main()
     assert first_exit_code == 0
 

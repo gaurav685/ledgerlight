@@ -52,6 +52,30 @@
         "event_severity": "medium",
         "detector_name": "aud-resign-rule-v1",
         "detector_version": "2"
+      },
+      {
+        "value_json": "Price Waterhouse & Co Chartered Accountants LLP",
+        "validation_status": "validated",
+        "event_status": "candidate",
+        "event_severity": "medium",
+        "detector_name": "aud-resign-rule-v1",
+        "detector_version": "2"
+      },
+      {
+        "value_json": "Price Waterhouse & Co Chartered Accountants LLP",
+        "validation_status": "validated",
+        "event_status": "candidate",
+        "event_severity": "medium",
+        "detector_name": "aud-resign-rule-v1",
+        "detector_version": "2"
+      },
+      {
+        "value_json": "Price Waterhouse & Co Chartered Accountants LLP",
+        "validation_status": "validated",
+        "event_status": "candidate",
+        "event_severity": "medium",
+        "detector_name": "aud-resign-rule-v1",
+        "detector_version": "2"
       }
     ]
   },
@@ -63,7 +87,7 @@
         "event_type_code": "AUD_RESIGN",
         "status": "candidate",
         "severity": "medium",
-        "count": 6
+        "count": 9
       },
       {
         "event_type_code": "SEBI_ORDER_AGAINST_COMPANY",

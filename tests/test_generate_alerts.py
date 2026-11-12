@@ -100,8 +100,15 @@ def real_session() -> Iterator[Session]:
 
 
 def test_a_new_event_produces_one_real_alert_and_a_signed_webhook_delivery(
-    real_session: Session,
+    real_session: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # conftest.py's autouse _isolate_env fixture chdir's to a tmp_path
+    # for every test, so generate_alerts.py's own main() (which calls
+    # load_settings() independently, with no override hook) would
+    # otherwise resolve ".env" relative to that empty tmp_path and
+    # fall back to Settings' hardcoded postgres_port default instead
+    # of this machine's real local port. Restore cwd to the repo root.
+    monkeypatch.chdir(REPO_ROOT)
     tenant = Tenant(name="Alerts Job Test Co", slug=f"alerts-job-{uuid.uuid4().hex[:8]}")
     real_session.add(tenant)
     real_session.flush()

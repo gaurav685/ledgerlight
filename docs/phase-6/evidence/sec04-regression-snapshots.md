@@ -35,6 +35,22 @@ golden file.
   `docs/phase-6/evidence/sec2-root-cause-and-fix.md`'s sibling bug for
   the unrelated §2 fix this correction also made). Deliberate,
   intentional renderer fix -- not a data change.
+- **2026-11-12** -- Phase 6 Correction 1 §4/§5: VAKRANGEE's real
+  `AUD_RESIGN` event/field counts grew from 6 to 9 (extraction output)
+  and the event-tier count from 6 to 9 for `(AUD_RESIGN, candidate,
+  medium)`. Real cause: `ledgerlight.knowledge.extraction`'s
+  `EXTRACTOR_VERSION` was bumped twice (§4's firm-proximity date fix,
+  then §5's negation/resign-language requirement) -- each bump makes
+  `run_aud_resign_extraction` treat every previously-processed chunk
+  as unprocessed again, creating a NEW superseding
+  Event+EventField row per chunk (via `supersedes_event_id`) rather
+  than overwriting the old one. Re-running the real pipeline
+  (`scripts/extract.py`) during §5's own validation added 3 more real
+  superseding rows for VAKRANGEE's real chunks. Deliberate,
+  intentional consequence of fixing real bugs -- not a data
+  regression; the new rows' own `value_json` is identical ("Price
+  Waterhouse & Co Chartered Accountants LLP"), only the count of
+  superseding versions changed.
 
 ## How to update
 
