@@ -36,10 +36,13 @@ expected to stay BLOCKED.
 | Deployed Docker images predate dependency fix | BLOCKED | Rebuild attempted twice, killed twice by real host memory pressure; the fix exists in `pyproject.toml`/`uv.lock`, just not baked into the running image yet. |
 | `pymupdf` AGPL-3.0/commercial licence | BLOCKED | A real business/legal decision (Artifex licence or a library swap) that this phase cannot make unilaterally. |
 | 363 real corpus pages trip the OCR tripwire | BLOCKED | Not yet run through the real OCR path and spot-checked -- flagged, not investigated further this phase (outside §11's own scope). |
+| Real "0 filings" bug drops filings from FINALISED dossiers | **PASS** (closed, Phase 6 Correction 1 §2, 2026-11-07) | Root cause confirmed (stale pre-fix investigations, never re-run); all 13 real dossiers re-ran clean; new permanent independent-count regression guard added. See the gap section below. |
+| Dossier template's "Intended use" markdown bleed | **PASS** (closed, Phase 6 Correction 1 §3, 2026-11-07) | `export_dossier_markdown` now quotes multiline content properly; a real heading-hierarchy structure test added. See the gap section below. |
 
-**1 of 13 gates evaluates to PASS** (ZAP/Playwright, corrected
-2026-11-07 above -- genuinely closed in §2, this table's own original
-row was stale). The other 12 stay open as the brief's own framing
+**3 of 15 gates evaluate to PASS** (ZAP/Playwright, corrected
+2026-11-07 above -- genuinely closed in §2; the real "0 filings" bug
+and the "Intended use" markdown bleed, both closed in Phase 6
+Correction 1). The other 12 stay open as the brief's own framing
 anticipated -- not a sign anything here was softened to look better
 than it is.
 
@@ -214,6 +217,15 @@ claim can be made, plus a human decision on SpiceJet's control-group status.
 
 **Status:** open, by explicit instruction. **Deferred to:** Phase 6, per the Phase 4
 brief's own §8 text: "Human quality evaluation DEFERRED to Phase 6."
+
+**Note (Phase 6 Correction 1 §1, 2026-11-07):** the Phase 6B review
+pack WAS run, but by an AI session under an explicit, bounded user
+override -- it is real QA, never gold, and does not close this gate.
+Every decision from that pass is quarantined (reviewer re-tagged
+`"ai-qa-review"`, excluded from all gold metrics) -- see
+`docs/phase-6/phase-6-correction-1.md` §1 and
+`docs/phase-6/phase-6b-review-findings.md`'s own caveat. This gate
+stays genuinely open until a real human runs `dossier-review`.
 
 **What's missing:** every real dossier the Phase 4 investigation agent produces has been
 checked by the automated verifier (`docs/agent/verifier.md`) and, where §9's adversarial
@@ -509,53 +521,52 @@ silently left for someone to discover by accident again.
 
 ## Gap: a real, confirmed bug drops real filings from some FINALISED dossiers
 
-**Status: open.** **First seen:** Phase 6B review pass, 2026-11-07
-(user-authorized AI review of the §7 review pack -- see
-`docs/phase-6/phase-6b-review-findings.md` for the full writeup and
-caveats).
+**Status: CLOSED (Phase 6 Correction 1 §2, 2026-11-07).** **First
+seen:** Phase 6B review pass, 2026-11-07 (user-authorized AI review of
+the §7 review pack -- see `docs/phase-6/phase-6b-review-findings.md`
+for the full writeup and caveats).
 
-**What's missing:** 5 of 13 real dossiers in the §7 sample (DMART×2,
-VAKRANGEE, PNBHOUSING×2) claim "0 real filings known as of" their own
-`as_of` date, when real filings genuinely exist in the database well
-before that date (confirmed via direct SQL and, independently, by
-calling `ledgerlight.agent.tools.get_timeline()` directly with the
-exact same real arguments -- it correctly returns every real filing
-every time). Ruled out directly: a data problem (the filings are
-real, correctly dated, long pre-dating the investigation's own run);
-a duplicate-company-row problem (each affected company has exactly
-one real row, matching the investigation's own `company_id` exactly);
-a bug in `get_timeline()` itself (proven correct in isolation).
-`JETAIRWAYS`, `SUZLON`, `FRETAIL`, and the 3 genuinely-empty companies
-in the same sample all show correct real counts, so this is not
-universal.
+**Root cause, confirmed not guessed:** the five affected investigations
+ran on 2026-11-01 just BEFORE that same day's own verifier fix
+(`timeline_entry` added to the real `verify_claim` dispatch,
+commits `379fa27`/`9189752`) landed. Under the then-current code,
+every `timeline_entry` claim fell through to the generic "unsupported
+claim" check and failed closed; the investigations were never re-run
+after the fix. Current code already dispatches `timeline_entry`
+correctly -- this was a stale-data bug, not a live defect.
 
-**What this blocks:** trusting any FINALISED dossier's "0 filings/0
-events" claim at face value. This sample is only 13 items; the same
-bug likely affects real investigations elsewhere in the project.
+**Fix:** re-ran all 13 real dossiers fresh under current code --
+every one FINALISED with claimed filings matching an independent
+`get_timeline()` count, including all 5 previously-broken cases
+(13/11/11/16/7 filings, all now correctly shown). Added a new,
+permanent regression guard
+(`ledgerlight.agent.verifier.check_timeline_claim_count`): any claim
+of a filing count is now independently re-derived via `get_timeline()`
+at verify time and fails closed to REPAIR/NEEDS_REVIEW on any future
+mismatch, rather than silently finalizing an undercount. Regression
+tests cover the 5 real cases plus a synthetic GATHER-drops-a-result
+case.
 
-**Why it's not closed:** the bug is narrowed to somewhere between a
-correctly-working `get_timeline()` and the final rendered dossier
-text -- most likely the real investigation's own GATHER step or the
-offline template renderer's consumption of its output -- but not
-root-caused to a specific line. This review pass's own scope was
-reviewing, not re-engineering the agent pipeline.
-
-**Closing this gap requires:** tracing one of the 5 affected
-investigations' real GATHER step (or re-running one with
-instrumentation) to find exactly where the real `get_timeline()`
-result -- proven correct when called directly -- gets lost before
-rendering.
+**Evidence:** `docs/phase-6/evidence/sec2-root-cause-and-fix.md`,
+`docs/phase-6/evidence/sec2-rerun-all-13.json`.
 
 ## Gap: dossier template renders the model card's "Intended use" text as a broken nested heading
 
-**Status: open.** **First seen:** Phase 6B review pass, 2026-11-07.
+**Status: CLOSED (Phase 6 Correction 1 §3, 2026-11-07).** **First
+seen:** Phase 6B review pass, 2026-11-07.
 
-**What's missing:** every one of the 13 real dossiers checked shows
-the model card's "Intended use" paragraph appended to the "Risk
-signals" section as a raw, un-escaped `## Intended use` markdown
-heading nested inside a bullet point -- breaking the document's own
-structure. Cosmetic, not a factual-accuracy problem.
+**Fix:** `export_dossier_markdown`'s renderer now renders any
+multiline sentence (the model card excerpt carries its own embedded
+`## Intended use` heading) as a real Markdown blockquote instead of a
+bare list item -- the embedded heading now nests correctly inside the
+quote instead of escaping into the document's own outer heading
+hierarchy. A new heading-hierarchy structure test
+(`tests/test_agent_export.py`) parses every one of the 8 real
+sections' rendered Markdown and asserts no stray heading can escape
+its section, for both the regression case and every section carrying
+multiline content. Golden dossier snapshot updated and documented
+(`docs/phase-6/evidence/sec04-regression-snapshots.md`).
 
-**Closing this gap requires:** fixing the offline template renderer
-to either omit the nested heading syntax or render the disclaimer as
-a proper top-level section.
+**Evidence:** `docs/phase-6/evidence/sec5-negation-hardening.md`'s
+sibling commit messages (`phase-6: Correction 1 Sec3`), full diff in
+`ledgerlight/agent/export.py`.

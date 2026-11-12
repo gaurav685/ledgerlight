@@ -78,6 +78,23 @@ independent check like the one above, until this bug is found and
 fixed. This likely affects real investigations beyond this 13-item
 sample too.
 
+> **STATUS: FIXED (Phase 6 Correction 1 §2, 2026-11-07).** Root cause
+> confirmed, not guessed: these five investigations ran on 2026-11-01
+> just BEFORE that same day's own verifier fix (`timeline_entry` added
+> to the real `verify_claim` dispatch) landed — under the then-current
+> code every `timeline_entry` claim fell through to the generic
+> "unsupported claim" check and failed closed, and the investigations
+> were never re-run after the fix. Re-ran all 13 real dossiers fresh:
+> every one FINALISED with claimed filings matching an independent
+> `get_timeline()` count, including all 5 previously-broken cases
+> (13/11/11/16/7 filings, all now correctly shown). Added a new,
+> permanent regression guard
+> (`ledgerlight.agent.verifier.check_timeline_claim_count`) that
+> independently re-derives the real filing count at verify time and
+> fails closed on any future mismatch. Full evidence:
+> `docs/phase-6/evidence/sec2-root-cause-and-fix.md`,
+> `docs/phase-6/evidence/sec2-rerun-all-13.json`.
+
 ## Other real findings from this review pass
 
 **A second, separate, lower-severity bug — also real, also every
@@ -87,6 +104,16 @@ un-escaped `## Intended use` markdown heading, breaking the
 document's own structure (a level-2 heading nested inside a bullet
 point). Confirmed in all 13 dossiers checked. Cosmetic, not a
 factual-accuracy problem, but still a real template bug.
+
+> **STATUS: FIXED (Phase 6 Correction 1 §3, 2026-11-07).**
+> `export_dossier_markdown` now renders a multiline sentence as a real
+> Markdown blockquote instead of a bare list item, so an embedded
+> heading nests correctly inside the quote instead of escaping into
+> the document's own outer heading hierarchy. A real heading-hierarchy
+> structure test (`tests/test_agent_export.py`) now asserts no stray
+> heading can escape any of the 8 real sections. Golden dossier
+> snapshot updated and documented
+> (`docs/phase-6/evidence/sec04-regression-snapshots.md`).
 
 **Field review (3 of 30 marked unsupported, not rubber-stamped)**:
 - A THERMAX `AUD_RESIGN` event's `resignation_date` field is evidenced
@@ -101,11 +128,29 @@ factual-accuracy problem, but still a real template bug.
   quorum procedural matter — the word "Brightcom" never appears
   anywhere in either of the document's 2 real pages.
 
+> **STATUS: FIXED / DISCLOSED (Phase 6 Correction 1 §4, 2026-11-07).**
+> THERMAX: real root cause was the date-extractor scanning the WHOLE
+> chunk for any date near the audit firm, independent of resignation
+> language — fixed, scoped to a window requiring real, non-negated
+> resign language (`ledgerlight.knowledge.extraction` v3→v4). BCG: new
+> `order-document-names-company` check (the document's own real search
+> term must appear in its text) confirms and queues it to the review
+> queue for real human review. RELCAPITAL: a genuine name-collision
+> ("Reliance Capital" is a real substring of the wrong entity's own
+> longer name) that this automated check cannot resolve — stays
+> flagged via the §1 quarantine, disclosed, not silently dropped. Full
+> evidence: `docs/phase-6/evidence/sec4-field-citation-fixes.md`.
+
 **Outcome-evidence review (45/45 "yes", one flagged anomaly)**: GHCL's
 `case_number` field ("CP. (IB) No. 1231/") is identical to a different
 real company's (RELCAPITAL) — likely a case-number-extraction regex
 artifact, not an admission-language problem (the admission language
 itself is a separate, genuine real phrase for each).
+
+> **STATUS: NOT FIXED (out of this correction's scope).** A real
+> case-number-extraction regex issue in a different detector/field
+> than any of §1–§6's own fixes touch — disclosed here, not
+> investigated further in this phase.
 
 **Retrieval review (4 real findings among 100 judgments)**:
 - Query "qualified or adverse audit opinion": the real top-10 results
@@ -124,11 +169,29 @@ itself is a separate, genuine real phrase for each).
   silver-labeling false positive from keyword overlap without
   checking negation.
 
+> **STATUS: FIXED (Phase 6 Correction 1 §5, 2026-11-07)** for the
+> negation finding specifically. `ledgerlight.knowledge.labeling`'s
+> `_aud_resign`/`_director_or_kmp_exit` (v2→v3) now require a
+> non-negated resign/cease match, developed and evaluated only against
+> the real gold dev/validation splits, never the frozen test split.
+> The real extractor fix (`ledgerlight.knowledge.extraction` v3→v4)
+> found a bigger, related issue: 40+ real chunks where a firm name
+> co-occurred with an unrelated date and no resign language at all —
+> also fixed. The retrieval-miss and silver/chunk-mismatch findings
+> above are NOT fixed (out of this correction's scope — real retrieval
+> quality work, not a negation or citation-verification gap). Full
+> evidence: `docs/phase-6/evidence/sec5-negation-hardening.md`.
+
 **Minor finding (2 of 13 dossiers)**: `FRETAIL` and `182D110227`
 (both resumed, Version 2, `NEEDS_REVIEW`) show a phantom "1 CANDIDATE
 event" in their summary that a fresh `get_events()` call no longer
 finds — likely a stale artifact from the resume process, low severity,
 noted in their own review decisions.
+
+> **STATUS: NOT FIXED (out of this correction's scope).** Low
+> severity, already noted in each dossier's own review decision;
+> none of §1–§6's own fixes touch the resume-path summary cache this
+> traces to.
 
 **A third, small, real bug found and fixed in the review tooling
 itself**: `scripts/review_progress.py` filtered

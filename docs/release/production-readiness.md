@@ -58,9 +58,13 @@ disclosed reason.
 | Capability | Status | Evidence | Reason |
 |---|---|---|---|
 | State machine, tools, offline template renderer | **COMPLETE** | `docs/phase-4/phase-4-report.md`, `docs/architecture.md` | No live LLM call anywhere, by design -- Phase 4's own ground rule, not a missing API key. |
-| Per-claim verifier | **COMPLETE** | `docs/evaluation/final-evaluation.md`: 0 unsupported-claim leakage across 740 claims; 14/14 adversarial tests passed | -- |
-| Human review of real dossiers | **BLOCKED -- not yet done** | `docs/release/release-gates.md` "no human review...has ever happened" | Explicitly deferred to Phase 6B by the brief's own instruction. The review pack itself (5 tools, deterministic sampling, audit trail) is built and ready. |
+| Per-claim verifier | **COMPLETE** | `docs/evaluation/final-evaluation.md`: 0 unsupported-claim leakage across 740 claims; 14/14 adversarial tests passed. Freshly re-confirmed, Phase 6 Correction 1 §6 (2026-11-07): 60/60 real investigations FINALISED, 0 NEEDS_REVIEW, 0 unsupported-claim leakage. | -- |
+| Human review of real dossiers | **BLOCKED -- not yet done** | `docs/release/release-gates.md` "no human review...has ever happened" | Explicitly deferred to Phase 6B by the brief's own instruction. The review pack itself (5 tools, deterministic sampling, audit trail) is built and ready. The Phase 6B review that DID run was by an AI under explicit user override -- real QA, never gold, quarantined (Correction 1 §1) -- this gate stays genuinely open. |
 | Resume-with-new-budget / stale-status bugs | **COMPLETE (fixed)** | Phase 6A §8, `ledgerlight/agent/state_machine.py` | Two real, previously-undiscovered bugs found and fixed this phase. |
+| "0 real filings" dossier-rendering bug | **COMPLETE (fixed)** | Phase 6 Correction 1 §2, `docs/phase-6/evidence/sec2-root-cause-and-fix.md` | Real, found by the AI-performed Phase 6B review; root-caused, fixed, re-validated across all 13 real dossiers; new permanent independent-count regression guard added. |
+| "Intended use" markdown-bleed renderer bug | **COMPLETE (fixed)** | Phase 6 Correction 1 §3, `ledgerlight/agent/export.py` | Same provenance; fixed via a proper Markdown blockquote, with a new heading-hierarchy structure test. |
+| 3 field-citation mismatches (THERMAX/RELCAPITAL/BCG) | **PARTIAL (2 of 3 fixed)** | Phase 6 Correction 1 §4, `docs/phase-6/evidence/sec4-field-citation-fixes.md` | THERMAX (detector-level) and BCG (new document-identity check) fixed; RELCAPITAL is a genuine name-collision no automated check can resolve, stays flagged PENDING_HUMAN_REVIEW. |
+| Negated resignation language in silver labels/detector | **COMPLETE (fixed)** | Phase 6 Correction 1 §5, `docs/phase-6/evidence/sec5-negation-hardening.md` | Both the silver proposer and the real AUD_RESIGN detector now require non-negated resign/cease language; developed only against dev/gold-validation, never the frozen test split. |
 
 ## Human review infrastructure (gold-label status)
 
