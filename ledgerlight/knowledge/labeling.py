@@ -71,6 +71,41 @@ the real event:
 See docs/modelling/event-reliability.md and docs/phase-3/phase-3-report.md
 §5 for the real before/after gold-validation precision/recall this
 produced.
+
+PROPOSER_VERSION 3 (Phase 6 Correction 1 §5, negation hardening): v2's
+resign/cease proximity check has no negation awareness at all -- real
+corpus examples found on the dev/validation splits (never the frozen
+test split -- see docs/phase-6/evidence/sec5-negation-hardening.md for
+the real before/after this produced):
+  - A gold-reviewed AUD_RESIGN chunk ("There has been no resignation
+    of the statutory auditors during the year") has "resign" and
+    "statutory auditor" genuinely close together, in a real negated
+    disclosure -- v2 happens to already reject this ONE chunk anyway,
+    via its own separate "a date must exist somewhere in the chunk"
+    requirement (this specific chunk has none), not because of
+    negation. The negation gap is still real: a future chunk with the
+    same negated phrasing AND an unrelated nearby date would wrongly
+    pass v2's checks.
+  - A real, separate ID_EXIT positive (gold-accepted) sits right next
+    to a negated clause in the same chunk ("none of the Independent
+    Directors ... have resigned") -- confirms this negated-resign
+    phrasing is real and common in this corpus, not a one-off.
+v3 adds `ledgerlight.knowledge.evidence.is_negated_before`: before
+counting a resign/cease match as positive evidence, the text
+immediately preceding it must not contain a negating word ("no",
+"not", "nil", "never", "none"). Applied to both _aud_resign and
+_director_or_kmp_exit -- the only two rules that anchor on resign/
+cease language at all; the simple keyword rules (RATING_ACT,
+RESULT_DELAY, FORENSIC, RPT_GROWTH) were checked against the same
+dev/validation set and showed no real negation-driven false positive,
+so are left as-is rather than guessing at an unverified fix. Measured
+effect on the real corpus (docs/phase-6/evidence/
+sec5-negation-hardening.md): zero chunks' own predictions change,
+confirmed by running v2 and v3 head-to-head over all 2593 real
+chunks -- every negated occurrence in THIS corpus today already fails
+one of v2's OTHER independent requirements. A real, disclosed,
+preventative hardening against a confirmed real text pattern, not a
+retroactive fix to a currently-live miscount.
 """
 
 from __future__ import annotations
@@ -82,11 +117,11 @@ from dataclasses import dataclass, field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ledgerlight.knowledge.evidence import find_dates_in_text
+from ledgerlight.knowledge.evidence import find_dates_in_text, is_negated_before
 from ledgerlight.knowledge.models import Chunk, LabelItem
 
 PROPOSER_NAME = "keyword-rule-baseline"
-PROPOSER_VERSION = "2"
+PROPOSER_VERSION = "3"
 
 # How close two pieces of evidence must be (in characters) to count as
 # "about the same thing" -- generous enough for real disclosure text
@@ -143,6 +178,10 @@ def _positions(pattern: re.Pattern[str], text: str) -> list[int]:
     return [m.start() for m in pattern.finditer(text)]
 
 
+def _non_negated_positions(pattern: re.Pattern[str], text: str) -> list[int]:
+    return [p for p in _positions(pattern, text) if not is_negated_before(text, p)]
+
+
 def _any_within_window(positions_a: list[int], positions_b: list[int], window: int) -> bool:
     return any(abs(a - b) <= window for a in positions_a for b in positions_b)
 
@@ -170,13 +209,13 @@ def _director_or_kmp_exit(text: str, role_pattern: re.Pattern[str]) -> bool:
     segments = _row_segments(text)
     if segments is not None:
         return any(
-            _RESIGN_OR_CEASE_PATTERN.search(seg)
+            _non_negated_positions(_RESIGN_OR_CEASE_PATTERN, seg)
             and role_pattern.search(seg)
             and _PERSON_NAME_PATTERN.search(seg)
             for seg in segments
         )
 
-    resign_positions = _positions(_RESIGN_OR_CEASE_PATTERN, text)
+    resign_positions = _non_negated_positions(_RESIGN_OR_CEASE_PATTERN, text)
     role_positions = _positions(role_pattern, text)
     name_positions = _positions(_PERSON_NAME_PATTERN, text)
     if not (resign_positions and role_positions and name_positions):
@@ -187,7 +226,7 @@ def _director_or_kmp_exit(text: str, role_pattern: re.Pattern[str]) -> bool:
 
 
 def _aud_resign(text: str) -> bool:
-    resign_positions = _positions(_RESIGN_OR_CEASE_PATTERN, text)
+    resign_positions = _non_negated_positions(_RESIGN_OR_CEASE_PATTERN, text)
     auditor_positions = _positions(_STATUTORY_AUDITOR_PATTERN, text)
     if not (resign_positions and auditor_positions):
         return False

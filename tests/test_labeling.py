@@ -154,6 +154,62 @@ def test_propose_event_type_roster_table_same_row_kmp_exit_matches() -> None:
     assert propose_event_type(text) == "KMP_EXIT"
 
 
+# --- Phase 6 Correction 1 Sec5: negation hardening (v3) ----------------------
+# Real text from the real gold-reviewed dev/validation items that
+# motivated this (see labeling.py's own PROPOSER_VERSION 3 docstring
+# and docs/phase-6/evidence/sec5-negation-hardening.md) -- never the
+# frozen test split.
+
+
+def test_propose_event_type_negated_aud_resign_is_none() -> None:
+    # Real text, gold-corrected from AUD_RESIGN to "none": a CARO
+    # (Companies Auditor's Report Order) disclosure clause.
+    text = (
+        "(xvii)\tThe Company has not incurred cash losses in the "
+        "current and preceding financial year.\n"
+        "(xviii)There has been no resignation of the statutory "
+        "auditors during the year and accordingly requirement "
+        "to report on Clause 3(xviii) of the Order is not "
+        "applicable to the Company."
+    )
+    assert propose_event_type(text) is None
+
+
+def test_propose_event_type_negated_aud_resign_with_a_nearby_date_is_still_none() -> None:
+    """The real gold chunk above has no date at all, so v2's own date
+    requirement already (coincidentally) rejected it -- this
+    synthetic variant adds a nearby date to prove the negation guard
+    itself is doing real work, not just riding on the date check."""
+    text = (
+        "There has been no resignation of the statutory auditors "
+        "during the year ended March 31, 2024."
+    )
+    assert propose_event_type(text) is None
+
+
+def test_propose_event_type_negated_director_exit_does_not_match_on_its_own() -> None:
+    # Real text, gold-accepted (the chunk's own separate, real
+    # cessation elsewhere makes it a true ID_EXIT -- but this negated
+    # clause alone, in isolation, must not independently trigger it).
+    text = (
+        "During the year under review, none of the "
+        "Independent Directors of the Company have "
+        "resigned before the expiry of their respective term(s)."
+    )
+    assert propose_event_type(text) is None
+
+
+def test_propose_event_type_roster_table_negated_resign_row_is_not_exit() -> None:
+    """Same real table shape as the KMP_EXIT same-row test above, but
+    this row's own resign language is negated -- must not match."""
+    text = (
+        "\x078\t\nMs. Janhavi Khele - Company Secretary (has not resigned)\n\t\n"
+        "\x079\t\nMr. Ravi Shankar Gopinath - Independent Director\n\t\n"
+        "\x0710\t\nMr. Shyamak Tata - Independent Director (w.e.f. October 17, 2023)\n\t\n"
+    )
+    assert propose_event_type(text) is None
+
+
 def test_propose_labels_is_idempotent(db_session: Session) -> None:
     import datetime as dt
 

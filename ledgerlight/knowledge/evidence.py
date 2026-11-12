@@ -11,6 +11,13 @@ Three verification rules, one per value shape:
   parse to the same calendar date as the claimed value).
 - numbers/percentages: numeric equality within an explicit tolerance
   (handles OCR/typesetting noise like "55.0" vs "55" or a stray space).
+
+Plus one shared negation primitive (Phase 6 Correction 1 §5), used by
+both the real AUD_RESIGN detector (ledgerlight.knowledge.extraction)
+and the silver label proposer (ledgerlight.knowledge.labeling) -- real
+corpus text cites a negated resignation ("there has been no
+resignation of the statutory auditors during the year") as if it were
+positive evidence without this.
 """
 
 from __future__ import annotations
@@ -23,6 +30,32 @@ from typing import Literal
 ValidationStatus = Literal["validated", "failed", "unverifiable"]
 
 NUMERIC_TOLERANCE = Decimal("0.01")
+
+# A negating word ("no", "not", "nil", "never", "none") immediately
+# before a trigger match -- "no resignation", "has not resigned",
+# "none of the Independent Directors ... have resigned" are all real
+# dev/validation corpus examples (see
+# docs/phase-6/evidence/sec5-negation-hardening.md).
+NEGATION_PATTERN = re.compile(r"\b(?:no|not|nil|never|none)\b", re.IGNORECASE)
+NEGATION_WINDOW_CHARS = 80
+
+
+def is_negated_before(text: str, position: int, window: int = NEGATION_WINDOW_CHARS) -> bool:
+    """A negating word appears in the `window` characters immediately
+    before `position`, truncated at the nearest preceding sentence
+    boundary (".") so an unrelated EARLIER sentence's own negation
+    can't bleed into a later, real positive. Deliberately a short,
+    disclosed heuristic, not a dependency parse: real corpus negations
+    found so far all fit within one un-punctuated clause, which this
+    covers; a real negation separated from its verb by a full sentence
+    break would not be caught -- a disclosed, real limitation, not
+    attempted here."""
+    start = max(0, position - window)
+    preceding = text[start:position]
+    last_period = preceding.rfind(".")
+    if last_period != -1:
+        preceding = preceding[last_period + 1 :]
+    return bool(NEGATION_PATTERN.search(preceding))
 
 
 def _normalize_text(s: str) -> str:

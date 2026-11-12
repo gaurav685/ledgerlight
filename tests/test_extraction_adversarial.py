@@ -112,6 +112,47 @@ def test_resignation_date_ignores_an_unrelated_date_far_from_the_firm_mention() 
     )
 
 
+def test_resignation_date_ignores_a_negated_resignation_near_the_firm() -> None:
+    """Phase 6 Correction 1 Sec5: "KPMG continues as our statutory
+    auditor; there has been no resignation this year" with some
+    unrelated nearby date (an engagement-letter renewal) must not
+    extract that date as a resignation_date -- the only resign
+    language near the firm is negated."""
+    chunk = (
+        "KPMG continues to serve as the Company's statutory auditor. "
+        "There has been no resignation of the statutory auditor during "
+        "the year. The engagement letter was renewed effective April "
+        "1, 2024 for the following financial year."
+    )
+    fields = extract_aud_resign_fields(chunk, chunk_char_start=0)
+    date_field = next((f for f in fields if f.field_name == "resignation_date"), None)
+    assert (
+        date_field is None
+    ), f"must not extract a date from negated resign language, got {date_field!r}"
+
+
+def test_resignation_date_ignores_a_firm_signature_block_with_no_resign_language() -> None:
+    """Phase 6 Correction 1 Sec5: scanning the real corpus found 40+
+    chunks where a known firm name merely appears in a routine
+    signature block or audit-report footer, with an unrelated nearby
+    date (e.g. the report's own sign-off date) and NO "resign"/"cease"
+    word anywhere in the chunk at all. Real example text."""
+    chunk = (
+        "liability or any duty of care for any other purpose or to any "
+        "person other than the Company.\n"
+        "For Price Waterhouse Chartered Accountants LLP\n"
+        "Firm Registration Number: 012754N/500016\n"
+        "Hirak Patwa\nPartner\nMembership Number: 128990\n"
+        "Place: Ahmedabad\nDate: July 04, 2025"
+    )
+    fields = extract_aud_resign_fields(chunk, chunk_char_start=0)
+    date_field = next((f for f in fields if f.field_name == "resignation_date"), None)
+    assert date_field is None, (
+        f"must not extract a date from a signature block with no resign language, "
+        f"got {date_field!r}"
+    )
+
+
 def test_resignation_date_still_found_near_the_real_firm_mention() -> None:
     """The real, correct case: the resignation date for the real
     auditor itself, reasonably close to its own mention, must still

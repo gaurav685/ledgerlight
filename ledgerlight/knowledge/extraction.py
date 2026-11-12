@@ -24,18 +24,32 @@ from dataclasses import dataclass
 from ledgerlight.knowledge.evidence import (
     ValidationStatus,
     find_dates_in_text,
+    is_negated_before,
     verify_date,
     verify_name,
 )
 
 EXTRACTOR_NAME = "aud-resign-rule-v1"
-# v3: resignation_date is now only searched for near the real firm
-# mention (Phase 6 Correction 1 Sec4's own real finding -- a
-# resignation date anywhere else in the chunk, unrelated to the
-# auditor, used to be picked up instead). Bumped because
+# v4 (Phase 6 Correction 1 Sec5): the firm-anchored date window (v3,
+# Sec4) still extracted ANY date near a known firm name, with no
+# requirement that the firm mention be about a resignation AT ALL --
+# a real, bigger-than-expected finding: scanning the whole real
+# corpus found 40+ real chunks where a firm name merely co-occurred
+# with an unrelated date (a signature block, a financial-statement
+# note, a court-hearing date) and no "resign"/"cease" word anywhere
+# in the chunk, yet still produced a resignation_date. v4 requires a
+# real, non-negated "resign"/"cease" word inside the same firm-
+# anchored window before a date is extracted at all -- this also
+# covers the narrower negation case ("KPMG continues as our statutory
+# auditor; there has been no resignation this year" with some
+# unrelated nearby date). See
+# docs/phase-6/evidence/sec5-negation-hardening.md for the full real
+# before/after. Bumped because
 # ledgerlight.knowledge.extraction_pipeline's event-creation gate keys
 # idempotency off this version.
-EXTRACTOR_VERSION = "3"
+EXTRACTOR_VERSION = "4"
+
+_RESIGN_OR_CEASE_PATTERN = re.compile(r"resign|ceas(?:e|ed|ing)", re.IGNORECASE)
 
 DATE_SEARCH_WINDOW_CHARS = 300
 """How far around the real firm mention to look for its resignation
@@ -43,7 +57,19 @@ date -- wide enough for "KPMG ... has resigned ... effective April 28,
 2018" (the real corpus phrasing), narrow enough to exclude an
 unrelated date elsewhere in the same chunk (the real THERMAX finding:
 a Company Secretary's own resignation date, far from the auditor
-mention)."""
+mention).
+
+Real, disclosed limitation found while validating Sec5 (not
+introduced by it -- already true of v3): a real Vakrangee covering
+letter has its date in the letterhead (the very top of the page) and
+its firm/resign language later in the body, more than this many chars
+apart -- neither v3 nor v4 extracts a resignation_date from it today.
+Widening this window would risk reopening the original THERMAX bug
+this constant exists to prevent; narrowing the gap properly needs a
+"nearest real date in the whole chunk, once firm+resign evidence
+exists anywhere in it" design (closer to how
+ledgerlight.knowledge.labeling._aud_resign already does it), not
+attempted here -- flagged for separate, deliberate follow-up."""
 
 _KNOWN_AUDIT_FIRMS = [
     "Price Waterhouse & Co Chartered Accountants LLP",
@@ -118,8 +144,19 @@ def extract_aud_resign_fields(chunk_text: str, chunk_char_start: int) -> list[Ex
         window_start = max(0, firm_match.start() - DATE_SEARCH_WINDOW_CHARS)
         window_end = min(len(chunk_text), firm_match.end() + DATE_SEARCH_WINDOW_CHARS)
         search_text = chunk_text[window_start:window_end]
-        date_match = re.search(
-            r"\b[A-Za-z]+ \d{1,2},? \d{4}\b|\b\d{1,2}-[A-Za-z]+-\d{4}\b", search_text
+        # Phase 6 Correction 1 Sec5: a real, non-negated "resign"/
+        # "cease" word must exist in this same window -- "KPMG
+        # continues as our statutory auditor; there has been no
+        # resignation this year" with some unrelated nearby date must
+        # not extract that date as a resignation_date.
+        has_real_resign_language = any(
+            not is_negated_before(search_text, m.start())
+            for m in _RESIGN_OR_CEASE_PATTERN.finditer(search_text)
+        )
+        date_match = (
+            re.search(r"\b[A-Za-z]+ \d{1,2},? \d{4}\b|\b\d{1,2}-[A-Za-z]+-\d{4}\b", search_text)
+            if has_real_resign_language
+            else None
         )
         if date_match is not None:
             dates = find_dates_in_text(date_match.group(0))
