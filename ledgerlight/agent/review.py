@@ -21,9 +21,15 @@ VERIFICATION_FAILED = "verification_failed"
 CANDIDATE_TIER_MAJORITY = "candidate_tier_majority"
 BUDGET_EXCEEDED = "budget_exceeded"
 SEEDED_QC = "seeded_qc"
+REPAIR_REMOVED_HIGH_SEVERITY = "repair_removed_high_severity"
+REPAIR_EMPTIED_SECTION = "repair_emptied_section"
 
 REASON_CODES: dict[str, str] = {
-    HIGH_SEVERITY_FINDING: "A real event with severity='high' appears in the dossier.",
+    HIGH_SEVERITY_FINDING: (
+        "A real high-severity finding appears in the dossier -- a real event with "
+        "severity='high' (e.g. an IBBI_CIRP_ADMISSION or SEBI_ORDER_AGAINST_COMPANY "
+        "outcome event), or a real default-grade (CARE rating symbol 'D') metric claim."
+    ),
     CONFLICTING_EVIDENCE: (
         "The verifier found two or more real claims of the same event type with "
         "different known_at dates -- presented together, never silently resolved."
@@ -45,11 +51,51 @@ REASON_CODES: dict[str, str] = {
         "measure real reviewer catch rate -- never a real finding; excluded from every "
         "other real statistic."
     ),
+    REPAIR_REMOVED_HIGH_SEVERITY: (
+        "REPAIR removed a real claim that would itself have been a high-severity "
+        "finding (by the same definition as HIGH_SEVERITY_FINDING above) -- a human "
+        "should confirm the dossier's silence on it is correct, not a verifier miss."
+    ),
+    REPAIR_EMPTIED_SECTION: (
+        "REPAIR removed every real claim that would have populated a section "
+        "('chronology', 'findings', or 'risk_signals'), leaving it empty in the final "
+        "dossier -- a human should confirm there is genuinely nothing to report, not "
+        "that real content was silently dropped."
+    ),
 }
 
 LOW_CONFIDENCE_THRESHOLD = 0.7
 DEFAULT_REVIEW_PRIORITY = 0
 HIGH_REVIEW_PRIORITY = 10
+
+DEFAULT_GRADE_RATING_SYMBOLS = frozenset({"D"})
+"""The real CARE rating symbol(s) that mean "in default" -- the worst
+real rating this corpus's own RATING_ORDINAL assigns (see
+ledgerlight.modelling.rating_features). A metric claim naming this
+symbol is always a high-severity finding, by the same real-world
+meaning the risk model's own outcome taxonomy already assigns it
+(RATING_DOWNGRADE_D is a PRIMARY outcome type)."""
+
+# Which claim_type(s) a dossier section's own sentences are built from
+# (ledgerlight.agent.render.render_offline) -- used to tell "REPAIR
+# removed something that would have populated this section" apart from
+# "this section was always going to be empty."
+_SECTION_SOURCE_CLAIM_TYPES: dict[str, frozenset[str]] = {
+    "chronology": frozenset({"timeline_entry"}),
+    "findings": frozenset({"event", "metric"}),
+    "risk_signals": frozenset({"risk_signal"}),
+}
+
+
+def _is_high_severity(claim: Claim) -> bool:
+    """A claim real enough to independently justify the
+    HIGH_SEVERITY_FINDING routing reason -- an event with
+    severity='high', or a default-grade rating metric claim."""
+    if claim.claim_type == "event":
+        return claim.payload.get("severity") == "high"
+    if claim.claim_type == "metric" and claim.payload.get("name") == "care_rating":
+        return claim.payload.get("value") in DEFAULT_GRADE_RATING_SYMBOLS
+    return False
 
 
 @dataclass
@@ -75,12 +121,25 @@ def _confidence_for_event_claims(
 
 
 def determine_routing(
-    session: Session, investigation: Investigation, dossier: Dossier, claims: list[Claim]
+    session: Session,
+    investigation: Investigation,
+    dossier: Dossier,
+    claims: list[Claim],
+    failed_claims: list[Claim] | None = None,
 ) -> list[RoutingDecision]:
     """Real routing decisions for one real investigation's finished
     dossier -- every rule the brief lists, checked against real data,
-    never assumed. More than one reason can fire; all are returned."""
+    never assumed. More than one reason can fire; all are returned.
+
+    `claims` is the real, ACTIVE (rendered) claim set -- every existing
+    check here is deliberately scoped to "what the final dossier
+    actually shows", never to claims that failed verification.
+    `failed_claims` (Phase 6 Correction 2 Sec2, optional for backward
+    compatibility with any other caller) is the real set REPAIR
+    removed -- used ONLY by the two REPAIR-specific checks below, which
+    are about what got silently dropped, not what's shown."""
     decisions: list[RoutingDecision] = []
+    failed_claims = failed_claims or []
 
     if dossier.sections.get("conflicting_evidence"):
         decisions.append(RoutingDecision(CONFLICTING_EVIDENCE, HIGH_REVIEW_PRIORITY))
@@ -92,8 +151,18 @@ def determine_routing(
             decisions.append(RoutingDecision(VERIFICATION_FAILED, HIGH_REVIEW_PRIORITY))
 
     event_claims = [c for c in claims if c.claim_type == "event"]
-    if any(c.payload.get("severity") == "high" for c in event_claims):
+    if any(_is_high_severity(c) for c in claims):
         decisions.append(RoutingDecision(HIGH_SEVERITY_FINDING, HIGH_REVIEW_PRIORITY))
+
+    if any(_is_high_severity(c) for c in failed_claims):
+        decisions.append(RoutingDecision(REPAIR_REMOVED_HIGH_SEVERITY, HIGH_REVIEW_PRIORITY))
+
+    for section, source_types in _SECTION_SOURCE_CLAIM_TYPES.items():
+        if dossier.sections.get(section):
+            continue  # not empty -- nothing was lost
+        if any(c.claim_type in source_types for c in failed_claims):
+            decisions.append(RoutingDecision(REPAIR_EMPTIED_SECTION, HIGH_REVIEW_PRIORITY))
+            break  # one task covers the whole dossier, not one per section
 
     if event_claims:
         candidate_count = sum(1 for c in event_claims if c.payload.get("tier") == "CANDIDATE")
@@ -112,8 +181,9 @@ def create_review_tasks(
     investigation: Investigation,
     dossier: Dossier,
     claims: list[Claim],
+    failed_claims: list[Claim] | None = None,
 ) -> list[ReviewTask]:
-    decisions = determine_routing(session, investigation, dossier, claims)
+    decisions = determine_routing(session, investigation, dossier, claims, failed_claims)
 
     tasks: list[ReviewTask] = []
     for decision in decisions:

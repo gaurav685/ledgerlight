@@ -155,6 +155,7 @@ def claims_from_outcomes_context(outcomes: OutcomesContext) -> list[ClaimDraft]:
                     "event_time": event.event_time.isoformat() if event.event_time else None,
                     "known_at": event.known_at.isoformat(),
                     "tier": event.tier,
+                    "severity": event.severity,
                 },
                 evidence=[
                     EvidenceRef(span.version_id, span.page_number, span.char_start, span.char_end)

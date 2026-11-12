@@ -474,6 +474,7 @@ class OutcomeEvent(BaseModel):
     event_time: dt.datetime | None
     known_at: dt.datetime
     tier: str
+    severity: str
     evidence: list[EvidenceSpanRef]
 
 
@@ -514,7 +515,7 @@ def get_outcomes_context(
         rows = session.execute(
             text(
                 """
-                SELECT e.id, e.event_time, e.known_at, e.status
+                SELECT e.id, e.event_time, e.known_at, e.status, e.severity
                 FROM events e
                 JOIN event_types et ON et.id = e.event_type_id
                 JOIN taxonomy_versions tv ON tv.id = et.taxonomy_version_id
@@ -550,6 +551,7 @@ def get_outcomes_context(
                     event_time=row[1],
                     known_at=row[2],
                     tier=_TIER_BY_STATUS.get(row[3], "CANDIDATE"),
+                    severity=row[4],
                     evidence=evidence,
                 )
             )

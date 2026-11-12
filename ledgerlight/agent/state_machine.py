@@ -400,7 +400,11 @@ def run_investigation(
 
         dossier = _persist_dossier(session, investigation, rendered)
         create_review_tasks(
-            session, investigation, dossier, _active_claims(session, investigation.id)
+            session,
+            investigation,
+            dossier,
+            _active_claims(session, investigation.id),
+            _failed_claims(session, investigation.id),
         )
 
     except BudgetExceeded as exc:
@@ -409,7 +413,11 @@ def run_investigation(
         investigation.usage = usage.to_json()
         dossier = _persist_dossier(session, investigation, rendered)
         create_review_tasks(
-            session, investigation, dossier, _active_claims(session, investigation.id)
+            session,
+            investigation,
+            dossier,
+            _active_claims(session, investigation.id),
+            _failed_claims(session, investigation.id),
         )
 
     investigation.finished_at = _now()
@@ -423,6 +431,21 @@ def _active_claims(session: Session, investigation_id: uuid.UUID) -> list[Claim]
             select(Claim)
             .where(Claim.investigation_id == investigation_id)
             .where(Claim.verification_status != "failed")
+            .order_by(Claim.created_at)
+        ).all()
+    )
+
+
+def _failed_claims(session: Session, investigation_id: uuid.UUID) -> list[Claim]:
+    """Phase 6 Correction 2 Sec2: the real claims REPAIR removed from
+    this investigation -- fed to create_review_tasks so routing can
+    catch a high-severity finding or a whole section REPAIR silently
+    dropped, which _active_claims's own exclusion otherwise hides."""
+    return list(
+        session.scalars(
+            select(Claim)
+            .where(Claim.investigation_id == investigation_id)
+            .where(Claim.verification_status == "failed")
             .order_by(Claim.created_at)
         ).all()
     )

@@ -17,7 +17,9 @@ all of them do.
 
 | Code | Fires when | Priority |
 |---|---|---|
-| `high_severity_finding` | a real event claim has `severity="high"` | high |
+| `high_severity_finding` | a real high-severity finding appears in the final, rendered dossier -- a real event claim with `severity="high"` (an IBBI_CIRP_ADMISSION / SEBI_ORDER_AGAINST_COMPANY outcome event), OR a real default-grade (CARE rating symbol `"D"`) metric claim | high |
+| `repair_removed_high_severity` | REPAIR removed a real claim that would *itself* have been a high-severity finding, by the same definition as above | high |
+| `repair_emptied_section` | REPAIR removed every claim that would have populated `chronology`, `findings`, or `risk_signals`, leaving it empty in the final dossier | high |
 | `conflicting_evidence` | the dossier's "Conflicting evidence" section is non-empty | high |
 | `verification_failed` | `final_status="NEEDS_REVIEW"` for a reason other than a budget | high |
 | `budget_exceeded` | `final_status="NEEDS_REVIEW"` and `failure_reason` mentions a budget | high |
@@ -27,6 +29,60 @@ all of them do.
 
 `REASON_CODES` in `review.py` is the single source of truth for both
 the codes and their real descriptions.
+
+### `high_severity_finding`'s real fix (Phase 6 Correction 2 §2)
+
+Two real, confirmed gaps meant this reason almost never fired despite
+real high-severity content reaching real, FINALISED dossiers:
+
+1. **IBBI/SEBI outcome events never carried `severity` into their own
+   claim payload.** `claims_from_outcomes_context` built its event
+   claims from `get_outcomes_context`'s own `OutcomeEvent` model, which
+   never selected the real `events.severity` column at all (it selected
+   `event_time`/`known_at`/`status` only) -- even though the real
+   underlying `Event` row has `severity="high"` for every
+   IBBI_CIRP_ADMISSION and SEBI_ORDER_AGAINST_COMPANY row
+   (`scripts/populate_outcomes.py`). Fixed: `OutcomeEvent` now carries
+   `severity`, threaded straight from the real `events.severity`
+   column, into the claim payload.
+2. **A default-grade ("D") rating is a `metric` claim, not an `event`
+   claim.** The routing check only ever looked at `claim_type ==
+   "event"` claims' own `severity` field -- a `metric` claim (CARE
+   rating observations, via the same `claims_from_outcomes_context`)
+   has no `severity` field at all and was structurally invisible to
+   this rule, regardless of its real rating value. Fixed:
+   `_is_high_severity` now also recognises a `metric` claim named
+   `"care_rating"` whose value is in `DEFAULT_GRADE_RATING_SYMBOLS`
+   (`{"D"}`) as high severity.
+
+**Real before/after dry run** (`determine_routing`, all 239 real
+current investigations' latest dossier, 2026-11-12):
+
+```
+BEFORE: high_severity_finding=3, budget_exceeded=2, candidate_tier_majority=2
+AFTER:  high_severity_finding=16, repair_emptied_section=37,
+        repair_removed_high_severity=3, budget_exceeded=2,
+        candidate_tier_majority=2
+dossiers receiving >=1 task: 7 -> 55 (of 239)
+```
+
+### REPAIR-removed claims (new, Phase 6 Correction 2 §2)
+
+`determine_routing` now takes an optional `failed_claims` parameter --
+the real claims REPAIR removed (`Claim.verification_status ==
+"failed"`), which `_active_claims`'s own exclusion otherwise hides
+completely from every other rule. The real call site
+(`run_investigation`) now queries both the active and the failed claim
+sets and passes both through, so:
+- a real high-severity claim that REPAIR removed (`_is_high_severity`
+  on a `failed` claim) still gets a human's attention
+  (`repair_removed_high_severity`), rather than silently vanishing;
+- a section that ends up completely empty in the final dossier, where
+  REPAIR removed at least one claim of the real claim type that
+  section is built from (`chronology` <- `timeline_entry`, `findings`
+  <- `event`/`metric`, `risk_signals` <- `risk_signal` --
+  `_SECTION_SOURCE_CLAIM_TYPES`), gets `repair_emptied_section` -- one
+  task per dossier, not one per empty section.
 
 ## The `dossier-review` CLI (`scripts/dossier_review.py`)
 

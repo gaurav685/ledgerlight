@@ -101,6 +101,7 @@ def test_claims_from_outcomes_context_covers_ibbi_sebi_and_ratings() -> None:
                 event_time=None,
                 known_at=dt.datetime(2020, 1, 1, tzinfo=dt.UTC),
                 tier="VERIFIED",
+                severity="high",
                 evidence=[],
             )
         ],
@@ -121,6 +122,12 @@ def test_claims_from_outcomes_context_covers_ibbi_sebi_and_ratings() -> None:
     drafts = claims_from_outcomes_context(outcomes)
     assert sum(1 for d in drafts if d.claim_type == "event") == 1
     assert sum(1 for d in drafts if d.claim_type == "metric") == 1
+    event_draft = next(d for d in drafts if d.claim_type == "event")
+    assert event_draft.payload["severity"] == "high", (
+        "Phase 6 Correction 2 Sec2: the real Event.severity must reach the claim "
+        "payload -- it never did before, which is why a real IBBI_CIRP_ADMISSION "
+        "event never routed to review as a high-severity finding"
+    )
 
 
 def test_standing_limitation_claims_are_always_non_empty() -> None:

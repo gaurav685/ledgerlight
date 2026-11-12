@@ -21,6 +21,8 @@ from ledgerlight.agent.review import (
     CONFLICTING_EVIDENCE,
     HIGH_SEVERITY_FINDING,
     LOW_CONFIDENCE_EXTRACTION,
+    REPAIR_EMPTIED_SECTION,
+    REPAIR_REMOVED_HIGH_SEVERITY,
     VERIFICATION_FAILED,
     apply_event_feedback,
     create_review_tasks,
@@ -63,6 +65,10 @@ def _dossier(investigation_id: uuid.UUID, sections: dict[str, list[str]] | None 
 
 def _event_claim(**payload: object) -> Claim:
     return Claim(investigation_id=uuid.uuid4(), claim_type="event", payload=payload, evidence=[])
+
+
+def _metric_claim(**payload: object) -> Claim:
+    return Claim(investigation_id=uuid.uuid4(), claim_type="metric", payload=payload, evidence=[])
 
 
 # --- determine_routing (read-only) --------------------------------------------
@@ -135,6 +141,113 @@ def test_determine_routing_empty_when_nothing_real_triggers(db_session: Session)
     dossier = _dossier(uuid.uuid4())
     decisions = determine_routing(db_session, investigation, dossier, [])
     assert decisions == []
+
+
+# --- Phase 6 Correction 2 Sec2: high-severity now sees metric claims too -----
+
+
+def test_determine_routing_flags_high_severity_for_a_default_grade_rating(
+    db_session: Session,
+) -> None:
+    """The real THERMAX/FRETAIL-shaped finding: a CARE 'D' rating is a
+    metric claim, not an event claim -- had no severity field at all
+    under the old rule, so a real default-grade finding never routed."""
+    investigation = _investigation()
+    dossier = _dossier(uuid.uuid4())
+    claims = [_metric_claim(name="care_rating", value="D", unit="CARE_rating_symbol")]
+    decisions = determine_routing(db_session, investigation, dossier, claims)
+    assert any(d.reason_code == HIGH_SEVERITY_FINDING for d in decisions)
+
+
+def test_determine_routing_does_not_flag_a_non_default_rating(db_session: Session) -> None:
+    investigation = _investigation()
+    dossier = _dossier(uuid.uuid4())
+    claims = [_metric_claim(name="care_rating", value="AA-", unit="CARE_rating_symbol")]
+    decisions = determine_routing(db_session, investigation, dossier, claims)
+    assert not any(d.reason_code == HIGH_SEVERITY_FINDING for d in decisions)
+
+
+def test_determine_routing_flags_high_severity_for_an_outcome_event_with_real_severity(
+    db_session: Session,
+) -> None:
+    """The real IBBI_CIRP_ADMISSION/SEBI_ORDER_AGAINST_COMPANY finding:
+    claims_from_outcomes_context's own event claims now carry the real
+    Event.severity field through to the payload (it never used to)."""
+    investigation = _investigation()
+    dossier = _dossier(uuid.uuid4())
+    claims = [_event_claim(event_type_code="IBBI_CIRP_ADMISSION", tier="VERIFIED", severity="high")]
+    decisions = determine_routing(db_session, investigation, dossier, claims)
+    assert any(d.reason_code == HIGH_SEVERITY_FINDING for d in decisions)
+
+
+# --- Phase 6 Correction 2 Sec2: REPAIR-removed claims now route too ----------
+
+
+def test_determine_routing_flags_repair_removed_high_severity(db_session: Session) -> None:
+    investigation = _investigation()
+    dossier = _dossier(uuid.uuid4())
+    failed = [_metric_claim(name="care_rating", value="D", unit="CARE_rating_symbol")]
+    decisions = determine_routing(db_session, investigation, dossier, [], failed)
+    assert any(d.reason_code == REPAIR_REMOVED_HIGH_SEVERITY for d in decisions)
+
+
+def test_determine_routing_does_not_flag_repair_removed_for_a_low_severity_failure(
+    db_session: Session,
+) -> None:
+    investigation = _investigation()
+    dossier = _dossier(uuid.uuid4())
+    failed = [_event_claim(severity="low", tier="CANDIDATE")]
+    decisions = determine_routing(db_session, investigation, dossier, [], failed)
+    assert not any(d.reason_code == REPAIR_REMOVED_HIGH_SEVERITY for d in decisions)
+
+
+def test_determine_routing_flags_repair_emptied_findings_section(db_session: Session) -> None:
+    investigation = _investigation()
+    # "findings" is empty in the real, final dossier -- but a real
+    # event claim existed and was removed by REPAIR.
+    dossier = _dossier(uuid.uuid4(), sections={"findings": []})
+    failed = [_event_claim(severity="low", tier="CANDIDATE")]
+    decisions = determine_routing(db_session, investigation, dossier, [], failed)
+    assert any(d.reason_code == REPAIR_EMPTIED_SECTION for d in decisions)
+
+
+def test_determine_routing_does_not_flag_repair_emptied_when_section_has_content(
+    db_session: Session,
+) -> None:
+    investigation = _investigation()
+    dossier = _dossier(uuid.uuid4(), sections={"findings": ["A real finding."]})
+    failed = [_event_claim(severity="low", tier="CANDIDATE")]
+    decisions = determine_routing(db_session, investigation, dossier, [], failed)
+    assert not any(d.reason_code == REPAIR_EMPTIED_SECTION for d in decisions)
+
+
+def test_determine_routing_does_not_flag_repair_emptied_for_an_unrelated_failed_claim(
+    db_session: Session,
+) -> None:
+    """A section genuinely always empty (no real claim type that would
+    have populated it ever failed) must not be flagged -- only a
+    failure of the SPECIFIC claim type that section is built from."""
+    investigation = _investigation()
+    # "findings" has real content (excluded from the empty-section
+    # check); "risk_signals" is genuinely empty, but the only failed
+    # claim is an "event" (feeds "findings"), not a "risk_signal".
+    dossier = _dossier(uuid.uuid4(), sections={"findings": ["A real finding."], "risk_signals": []})
+    failed = [_event_claim(severity="low", tier="CANDIDATE")]
+    decisions = determine_routing(db_session, investigation, dossier, [], failed)
+    assert not any(d.reason_code == REPAIR_EMPTIED_SECTION for d in decisions)
+
+
+def test_determine_routing_emptied_section_is_one_task_not_one_per_section(
+    db_session: Session,
+) -> None:
+    investigation = _investigation()
+    dossier = _dossier(uuid.uuid4(), sections={"findings": [], "chronology": []})
+    failed = [
+        _event_claim(severity="low", tier="CANDIDATE"),
+        Claim(investigation_id=uuid.uuid4(), claim_type="timeline_entry", payload={}, evidence=[]),
+    ]
+    decisions = determine_routing(db_session, investigation, dossier, [], failed)
+    assert sum(1 for d in decisions if d.reason_code == REPAIR_EMPTIED_SECTION) == 1
 
 
 # --- create_review_tasks / record_decision / apply_event_feedback (real commits) --
