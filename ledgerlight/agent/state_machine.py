@@ -128,7 +128,11 @@ def _persist_claims(
 
 
 def _render(
-    session: Session, claims: list[Claim], company_name: str, as_of_iso: str
+    session: Session,
+    claims: list[Claim],
+    company_name: str,
+    as_of_iso: str,
+    company_id: uuid.UUID,
 ) -> RenderedDossier:
     """`render_offline` with real, freshly-computed contradictions
     always passed in -- `find_contradictions` is a pure function of
@@ -139,7 +143,12 @@ def _render(
     persisted dossier's "Conflicting evidence" section -- a real gap
     found while writing Sec9's contradictory-sources adversarial test."""
     return render_offline(
-        session, claims, company_name, as_of_iso, contradictions=find_contradictions(claims)
+        session,
+        claims,
+        company_name,
+        as_of_iso,
+        company_id,
+        contradictions=find_contradictions(claims),
     )
 
 
@@ -295,7 +304,7 @@ def run_investigation(
             company = session.get(Company, company_id)
             company_name = company.display_name if company is not None else str(company_id)
             active_claims = _active_claims(session, investigation.id)
-            rendered = _render(session, active_claims, company_name, as_of.isoformat())
+            rendered = _render(session, active_claims, company_name, as_of.isoformat(), company_id)
 
             _checkpoint(
                 session,
@@ -317,7 +326,9 @@ def run_investigation(
                 if rendered is None:
                     company = session.get(Company, company_id)
                     company_name = company.display_name if company is not None else str(company_id)
-                    rendered = _render(session, active_claims, company_name, as_of.isoformat())
+                    rendered = _render(
+                        session, active_claims, company_name, as_of.isoformat(), company_id
+                    )
                 try:
                     result = verify_dossier(session, active_claims, rendered, as_of)
                 except Exception as verify_exc:
@@ -379,7 +390,9 @@ def run_investigation(
                 active_claims = _active_claims(session, investigation.id)
                 company = session.get(Company, company_id)
                 company_name = company.display_name if company is not None else str(company_id)
-                rendered = _render(session, active_claims, company_name, as_of.isoformat())
+                rendered = _render(
+                    session, active_claims, company_name, as_of.isoformat(), company_id
+                )
                 _checkpoint(
                     session, investigation, "REPAIR", [], {"repair_round": repair_round + 1}
                 )

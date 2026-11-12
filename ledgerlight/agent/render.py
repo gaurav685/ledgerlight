@@ -17,6 +17,7 @@ import json
 import uuid
 from dataclasses import dataclass
 from typing import cast
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -28,6 +29,35 @@ RENDERER_VERSION = "1"
 
 MAX_EXCERPT_WORDS = 15
 
+_IST = ZoneInfo("Asia/Kolkata")
+
+
+def _format_ist_date(value: object) -> str:
+    """A real UTC instant, rendered as the Asia/Kolkata calendar date a
+    human reader expects in prose (e.g. "4 June 2019 (IST)"). Never
+    mutates the underlying UTC value -- every stored/exported
+    timestamp (`Claim.payload["known_at"]`, `document_versions`,
+    `events`) stays UTC; only prose-sentence construction reads this
+    localised form."""
+    if value is None:
+        return "an unknown date"
+    parsed: dt.datetime | dt.date | None = None
+    if isinstance(value, str):
+        try:
+            parsed = dt.datetime.fromisoformat(value)
+        except ValueError:
+            return value
+    elif isinstance(value, dt.date):
+        parsed = value
+    else:
+        return str(value)
+    if isinstance(parsed, dt.datetime):
+        aware = parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=dt.UTC)
+        local = aware.astimezone(_IST)
+    else:
+        local = dt.datetime.combine(parsed, dt.time.min, tzinfo=dt.UTC).astimezone(_IST)
+    return f"{local.day} {local.strftime('%B %Y')} (IST)"
+
 
 def event_claim_sentence(claim: Claim) -> str:
     """The real "Findings" sentence for one event claim -- factored
@@ -36,7 +66,7 @@ def event_claim_sentence(claim: Claim) -> str:
     sees, never a separately-drifting approximation of it."""
     tier = claim.payload.get("tier", "CANDIDATE")
     code = claim.payload.get("event_type_code", "an event")
-    known_at = claim.payload.get("known_at", "an unknown date")
+    known_at = _format_ist_date(claim.payload.get("known_at"))
     qualifier = "unverified (CANDIDATE)" if tier == "CANDIDATE" else "VERIFIED"
     return f"A {qualifier} {code} event was known as of {known_at}."
 
@@ -46,7 +76,7 @@ def care_rating_claim_sentence(claim: Claim) -> str:
     -- same reuse reason as `event_claim_sentence`."""
     return (
         f"CARE assigned the rating {claim.payload.get('value')} known as of "
-        f"{claim.payload.get('known_at')}."
+        f"{_format_ist_date(claim.payload.get('known_at'))}."
     )
 
 
@@ -93,26 +123,38 @@ def _add_sentence(
 
 
 def _resolve_source_citations(
-    session: Session, version_ids: set[uuid.UUID]
+    session: Session, version_ids: set[uuid.UUID], company_id: uuid.UUID, company_name: str
 ) -> dict[uuid.UUID, dict[str, object]]:
-    """Real document title (best-effort: `company_name_raw` +
-    `document_type`), source, date (`published_at`, falling back to
-    `known_at`), and a real, <=15-word excerpt from the real page 1
-    text -- for the Sources section (§6.7)."""
+    """Real document title, source, date (`published_at`, falling back
+    to `known_at`), and a real, <=15-word excerpt from the real page 1
+    text -- for the Sources section (§6.7).
+
+    The company name in the title is resolved via the real
+    `filings` link (`Filing.version_id` -> `Filing.company_id` ->
+    `Company.display_name`), scoped to this dossier's own
+    `company_id` -- never `Document.company_name_raw`, which is
+    almost always NULL in this corpus and was the real cause of
+    every "Unknown company" Sources entry (Phase 6 Correction 2
+    §3.1). `company_name_raw` is kept only as a fallback for a
+    version with no real filing link, ahead of the investigation's
+    own already-resolved `company_name`; "Unknown company" is now
+    reached only if neither resolves."""
     if not version_ids:
         return {}
     rows = session.execute(
         text(
             """
             SELECT dv.id, d.source_id, d.company_name_raw, d.document_type,
-                   dv.published_at, dv.known_at, dp.raw_text
+                   dv.published_at, dv.known_at, dp.raw_text, c.display_name
             FROM document_versions dv
             JOIN documents d ON d.id = dv.document_id
             LEFT JOIN document_pages dp ON dp.version_id = dv.id AND dp.page_number = 1
+            LEFT JOIN filings f ON f.version_id = dv.id AND f.company_id = :company_id
+            LEFT JOIN companies c ON c.id = f.company_id
             WHERE dv.id = ANY(:ids)
             """
         ),
-        {"ids": list(version_ids)},
+        {"ids": list(version_ids), "company_id": company_id},
     ).all()
     citations: dict[uuid.UUID, dict[str, object]] = {}
     for row in rows:
@@ -123,7 +165,9 @@ def _resolve_source_citations(
         published_at = cast("dt.datetime | None", row[4])
         known_at = cast(dt.datetime, row[5])
         raw_text = cast("str | None", row[6])
-        title = f"{company_name_raw or 'Unknown company'}: {document_type}"
+        filing_company_name = cast("str | None", row[7])
+        resolved_name = filing_company_name or company_name_raw or company_name or "Unknown company"
+        title = f"{resolved_name}: {document_type}"
         excerpt = ""
         if raw_text:
             words = raw_text.split()[:MAX_EXCERPT_WORDS]
@@ -131,7 +175,7 @@ def _resolve_source_citations(
         citations[version_id] = {
             "title": title,
             "source": source_id,
-            "date": (published_at or known_at).date().isoformat(),
+            "date": _format_ist_date(published_at or known_at),
             "excerpt": excerpt,
         }
     return citations
@@ -142,6 +186,7 @@ def render_offline(
     claims: list[Claim],
     company_name: str,
     as_of_iso: str,
+    company_id: uuid.UUID,
     contradictions: list[ContradictionGroup] | None = None,
 ) -> RenderedDossier:
     sections: dict[str, list[str]] = {}
@@ -188,7 +233,7 @@ def render_offline(
     # 2. Chronology
     for claim in timeline_claims:
         label = claim.payload.get("label", "a filing")
-        known_at = claim.payload.get("known_at", "an unknown date")
+        known_at = _format_ist_date(claim.payload.get("known_at"))
         _add_sentence(
             sections,
             claim_id_map,
@@ -265,7 +310,7 @@ def render_offline(
     for claim in claims:
         for ev in claim.evidence:
             version_ids.add(uuid.UUID(str(cast("dict[str, object]", ev)["document_version_id"])))
-    citations = _resolve_source_citations(session, version_ids)
+    citations = _resolve_source_citations(session, version_ids, company_id, company_name)
     evidence_claims_by_version: dict[uuid.UUID, list[uuid.UUID]] = {}
     for claim in claims:
         for ev in claim.evidence:

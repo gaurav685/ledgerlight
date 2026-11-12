@@ -37,7 +37,7 @@ from sqlalchemy.orm import Session
 
 from ledgerlight.agent.models import Claim, Investigation
 from ledgerlight.agent.nli import entailment_score
-from ledgerlight.agent.render import ContradictionGroup, RenderedDossier
+from ledgerlight.agent.render import _IST, ContradictionGroup, RenderedDossier
 from ledgerlight.agent.tools import get_evidence, get_timeline
 
 DEFAULT_NLI_ENTAILMENT_THRESHOLD = 0.95
@@ -426,7 +426,14 @@ def _flatten_payload_numbers(payload: dict[str, object]) -> set[float]:
     both actual numeric fields and numbers embedded in a payload
     string (e.g. an ISO date/datetime), so a date rendered verbatim
     from `known_at` is recognized as "in the claim" the same way a
-    numeric field like `percentile` is."""
+    numeric field like `percentile` is.
+
+    A payload string that parses as a real UTC datetime also
+    contributes its Asia/Kolkata calendar day/month/year (Phase 6
+    Correction 2 §3.2 renders prose dates in IST, e.g. "4 June 2019
+    (IST)", never the raw UTC ISO string) -- without this, a UTC
+    instant near the IST day boundary would render a day number this
+    function's plain digit-regex scan of the UTC string cannot find."""
     numbers: set[float] = set()
     for value in payload.values():
         if isinstance(value, bool):
@@ -435,6 +442,15 @@ def _flatten_payload_numbers(payload: dict[str, object]) -> set[float]:
             numbers.add(float(value))
         elif isinstance(value, str):
             numbers.update(float(m) for m in re.findall(r"-?\d+(?:\.\d+)?", value))
+            try:
+                parsed = dt.datetime.fromisoformat(value)
+            except ValueError:
+                pass
+            else:
+                if parsed.tzinfo is None:
+                    parsed = parsed.replace(tzinfo=dt.UTC)
+                local = parsed.astimezone(_IST)
+                numbers.update({float(local.day), float(local.month), float(local.year)})
     return numbers
 
 

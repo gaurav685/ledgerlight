@@ -203,7 +203,7 @@ def seed_flawed_dossier(
     company = session.get(Company, company_id)
     company_name = company.display_name if company is not None else str(company_id)
     all_claims = [*real_claims, flawed_claim]
-    rendered = render_offline(session, all_claims, company_name, as_of.isoformat())
+    rendered = render_offline(session, all_claims, company_name, as_of.isoformat(), company_id)
 
     existing_versions = session.scalars(
         select(Dossier.version).where(Dossier.investigation_id == investigation.id)

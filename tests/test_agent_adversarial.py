@@ -630,7 +630,9 @@ def test_offline_renderer_produces_an_identical_dossier_hash(real_session: Sessi
             .where(Claim.verification_status != "failed")
         ).all()
     )
-    rendered_again = render_offline(real_session, claims, "Determinism Hash Co", "2020-01-01")
+    rendered_again = render_offline(
+        real_session, claims, "Determinism Hash Co", "2020-01-01", company_id
+    )
 
     def _hash(rendered: RenderedDossier) -> str:
         payload = {"sections": rendered.sections, "claim_id_map": rendered.claim_id_map}
