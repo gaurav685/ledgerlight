@@ -111,38 +111,39 @@ def build_market_index(session: Session, method: str = "turnover_weighted") -> d
     field, so true market-cap weighting is not possible with this
     schema; `turnover` (real traded value) is used instead, disclosed
     explicitly, never silently presented as textbook market-cap
-    weighting. `equal_weighted` is the robustness alternative."""
+    weighting. `equal_weighted` is the robustness alternative.
+
+    Aggregated server-side (one row per real trade_date, not one row
+    per real (trade_date, symbol) pair, which is the full real
+    price_bars row count -- millions) -- found to matter in practice:
+    the naive per-row version was killed twice by this host's own,
+    real, independently confirmed memory pressure before this fix."""
     if method not in ("turnover_weighted", "equal_weighted"):
         raise ValueError(f"unknown market index method: {method!r}")
 
+    weight_expr = "COALESCE(turnover, 0)" if method == "turnover_weighted" else "1"
     rows = session.execute(
         text(
-            """
-            SELECT trade_date, symbol, close, prev_close, turnover
+            f"""
+            SELECT trade_date,
+                   SUM(((close - prev_close) / prev_close) * ({weight_expr})) AS weighted_sum,
+                   SUM({weight_expr}) AS total_weight
             FROM price_bars
             WHERE close IS NOT NULL AND prev_close IS NOT NULL AND prev_close != 0
-            ORDER BY trade_date, symbol
+            GROUP BY trade_date
+            ORDER BY trade_date
             """
         )
     ).all()
 
-    by_date: dict[dt.date, list[tuple[float, float]]] = {}
+    index: dict[dt.date, float] = {}
     for row in rows:
         trade_date = cast(dt.date, row[0])
-        close = float(cast(Decimal, row[2]))
-        prev_close = float(cast(Decimal, row[3]))
-        turnover_raw = row[4]
-        turnover = float(cast(Decimal, turnover_raw)) if turnover_raw is not None else 0.0
-        daily_return = (close - prev_close) / prev_close
-        weight = turnover if method == "turnover_weighted" else 1.0
-        by_date.setdefault(trade_date, []).append((daily_return, weight))
-
-    index: dict[dt.date, float] = {}
-    for trade_date, pairs in by_date.items():
-        total_weight = sum(w for _, w in pairs)
-        if total_weight <= 0:
+        weighted_sum = row[1]
+        total_weight = row[2]
+        if weighted_sum is None or total_weight is None or float(total_weight) <= 0:
             continue
-        index[trade_date] = sum(r * w for r, w in pairs) / total_weight
+        index[trade_date] = float(weighted_sum) / float(total_weight)
     return index
 
 
@@ -864,6 +865,20 @@ def run_event_study(
         pooled_days = sorted(set(est_days) | set(widest))
         ar_by_day = abnormal_returns(company_returns, market_primary, fit, pooled_days)
 
+        # Real daily AR by offset (-30..+60), for the real CAAR plots
+        # (spec §3's own output requirement) -- captured here, at the
+        # point where ar_by_day is already real and available, never
+        # recomputed later from a fresh price fetch.
+        day_zero_idx = trading_days.index(event_date) if event_date in trading_days else None
+        daily_ar_by_offset: dict[str, float] = {}
+        if day_zero_idx is not None:
+            for offset in range(-30, 61):
+                idx = day_zero_idx + offset
+                if 0 <= idx < len(trading_days):
+                    day = trading_days[idx]
+                    if day in ar_by_day:
+                        daily_ar_by_offset[str(offset)] = ar_by_day[day]
+
         closes = closes_by_company[c.company_id]
         possible_corporate_action = any(
             abs(company_returns[d]) > POSSIBLE_CORPORATE_ACTION_ABS_RETURN
@@ -968,6 +983,7 @@ def run_event_study(
                 "n_estimation_days": fit.n_days,
                 "car_by_window": car_by_window,
                 "window_n_by_window": window_n_by_window,
+                "daily_ar_by_offset": daily_ar_by_offset,
                 "placebo_mean": placebo_mean,
                 "placebo_std": placebo_std,
                 "placebo_percentile": placebo_pct,

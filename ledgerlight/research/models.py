@@ -21,6 +21,11 @@ from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, Stri
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
+import ledgerlight.knowledge.models  # noqa: F401 -- registers `companies` on Base.metadata,
+
+# a real dependency of EventStudyEventResult.company_id's ForeignKey below: without this,
+# any process that imports only this module (never ledgerlight.knowledge.models directly)
+# fails at flush time with NoReferencedTableError, found running the real first study.
 from ledgerlight.db.models import Base
 
 
@@ -73,6 +78,9 @@ class EventStudyEventResult(Base):
     n_estimation_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
     car_by_window: Mapped[dict[str, float]] = mapped_column(JSONB, nullable=False, default=dict)
     window_n_by_window: Mapped[dict[str, int]] = mapped_column(JSONB, nullable=False, default=dict)
+    daily_ar_by_offset: Mapped[dict[str, float]] = mapped_column(
+        JSONB, nullable=False, default=dict
+    )
     placebo_mean: Mapped[float | None] = mapped_column(Float, nullable=True)
     placebo_std: Mapped[float | None] = mapped_column(Float, nullable=True)
     placebo_percentile: Mapped[float | None] = mapped_column(Float, nullable=True)

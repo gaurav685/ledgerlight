@@ -21,6 +21,7 @@ from ledgerlight.api.routers import companies as companies_router
 from ledgerlight.api.routers import documents as documents_router
 from ledgerlight.api.routers import dossiers as dossiers_router
 from ledgerlight.api.routers import health as health_router
+from ledgerlight.api.routers import research as research_router
 from ledgerlight.api.routers import review as review_router
 from ledgerlight.api.routers import watchlists as watchlists_router
 from ledgerlight.api.routers import webhooks as webhooks_router
@@ -149,6 +150,7 @@ def create_app() -> FastAPI:
     app.include_router(api_keys_router.router)
     app.include_router(webhooks_router.router)
     app.include_router(admin_router.router)
+    app.include_router(research_router.router)
 
     return app
 

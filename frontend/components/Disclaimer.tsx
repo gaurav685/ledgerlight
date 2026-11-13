@@ -29,3 +29,15 @@ export function EventTierDisclaimer() {
     </Disclaimer>
   );
 }
+
+export function EventStudyDisclaimer() {
+  return (
+    <Disclaimer>
+      <strong>Not investment advice. Not a trading signal.</strong> A measured market
+      reaction around an already-disclosed event, never a causal claim that the event
+      caused it. Figures below a company-page comparison line are this project&apos;s
+      own pre-registered study (see <code>docs/enhancements/event-study/spec.md</code>),
+      not a recommendation.
+    </Disclaimer>
+  );
+}

@@ -379,6 +379,65 @@ def knowledge_pipeline_job() -> None:
     resolve_entities_op(after=extracted)
 
 
+@dg.op(name="event_study_run", retry_policy=_RETRY_POLICY)
+def event_study_run_op(context: OpExecutionContext) -> None:
+    """Enhancement 1: runs the real, pre-registered governance event
+    study against the frozen `spec.v1.json` (the spec-hash freeze
+    guard refuses to run under an edited, un-frozen spec). Deliberately
+    NOT on any schedule -- this op is wired only into
+    `event_study_job` below, which nothing triggers automatically; a
+    human runs it by hand, per the brief's own "run manually only"
+    requirement."""
+    from pathlib import Path
+
+    from ledgerlight.research.event_study import (
+        current_git_sha,
+        load_and_verify_spec,
+        run_event_study,
+    )
+
+    repo_root = Path(__file__).resolve().parents[2]
+    spec_path = repo_root / "docs" / "enhancements" / "event-study" / "spec.v1.json"
+    settings = load_settings()
+    session_factory = make_session_factory(settings)
+    with session_factory() as session:
+        spec = load_and_verify_spec(session, spec_path, "v1")
+        git_sha = current_git_sha(repo_root)
+        result = run_event_study(session, spec, git_sha, "dagster:event_study_run_op")
+    context.log.info(f"event_study_run: run_id={result.run_id}")
+
+
+@dg.op(name="event_study_report", retry_policy=_RETRY_POLICY, ins={"after": dg.In(dg.Nothing)})
+def event_study_report_op(context: OpExecutionContext) -> None:
+    """Enhancement 1: generates `docs/enhancements/event-study/report.md`
+    and the real CAAR plots from the LATEST real `event_study_runs`
+    row -- never a fresh recomputation."""
+    from pathlib import Path
+
+    from sqlalchemy import select
+
+    from ledgerlight.research.models import EventStudyRun
+    from ledgerlight.research.report import generate_report
+
+    repo_root = Path(__file__).resolve().parents[2]
+    settings = load_settings()
+    session_factory = make_session_factory(settings)
+    with session_factory() as session:
+        latest_id = session.execute(
+            select(EventStudyRun.id).order_by(EventStudyRun.created_at.desc()).limit(1)
+        ).scalar_one()
+        report_path = generate_report(session, latest_id, repo_root)
+    context.log.info(f"event_study_report: {report_path}")
+
+
+@dg.job(name="event_study_job")
+def event_study_job() -> None:
+    """Enhancement 1's own "run -> report" chain. Not on any schedule
+    or sensor -- run manually, per the brief's own requirement."""
+    ran = event_study_run_op()
+    event_study_report_op(after=ran)
+
+
 def _run_script_main(script_name: str) -> int:
     """Loads one scripts/*.py module's main() and calls it, the same
     dynamic-import technique this project's own tests already use
@@ -527,6 +586,7 @@ defs = dg.Definitions(
         risk_train_job,
         risk_score_and_report_job,
         alerts_generate_job,
+        event_study_job,
         *known_items_jobs.values(),
     ],
     schedules=[bhavcopy_daily_schedule, risk_score_monthly_schedule, alerts_generate_schedule],

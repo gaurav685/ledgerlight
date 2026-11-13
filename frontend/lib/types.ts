@@ -190,5 +190,28 @@ export interface DocumentPageTextOut {
   char_count: number;
 }
 
+// Enhancement 1: governance event study (market reaction) -- read-only
+// research output, never investment advice, never a trading signal.
+export interface EventStudyRunSummaryOut {
+  run_id: string;
+  spec_version: string;
+  spec_sha256: string;
+  git_sha: string;
+  created_at: string;
+  event_counts: Record<string, unknown>;
+  metrics: Record<string, unknown>;
+  disclaimer: string;
+}
+
+export interface EventStudyCompanyEventOut {
+  event_type_code: string;
+  severity_band: string | null;
+  event_date: string;
+  is_primary: boolean;
+  possible_corporate_action: boolean;
+  car_primary_window: number | null;
+  type_average_car_primary_window: number | null;
+}
+
 export const ROLES = ["viewer", "analyst", "reviewer", "tenant_admin"] as const;
 export type Role = (typeof ROLES)[number];

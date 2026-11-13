@@ -303,3 +303,39 @@ class DocumentPageTextOut(BaseModel):
     page_number: int
     raw_text: str
     char_count: int
+
+
+# --- research (Enhancement 1: governance event study) ---------------------------
+
+
+class EventStudyRunSummaryOut(BaseModel):
+    """The latest real governance event-study run -- read-only,
+    research output. Never investment advice, never a trading signal
+    (`ledgerlight.research.report.generate_report`'s own disclaimer,
+    repeated here at the API boundary)."""
+
+    run_id: uuid.UUID
+    spec_version: str
+    spec_sha256: str
+    git_sha: str
+    created_at: dt.datetime
+    event_counts: dict[str, object]
+    metrics: dict[str, object]
+    disclaimer: str = (
+        "Not investment advice. Not a trading signal. A measured market "
+        "reaction around an already-disclosed event, never a causal claim."
+    )
+
+
+class EventStudyCompanyEventOut(BaseModel):
+    """One real event for one real company, with its own real CAR next
+    to the real type-wide average CAR for the same primary window --
+    the comparison the company-page "Market reaction" panel shows."""
+
+    event_type_code: str
+    severity_band: str | None
+    event_date: dt.date
+    is_primary: bool
+    possible_corporate_action: bool
+    car_primary_window: float | None
+    type_average_car_primary_window: float | None
