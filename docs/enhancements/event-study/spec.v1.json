@@ -1,0 +1,112 @@
+{
+  "spec_version": "v1",
+  "created_at": "2026-11-13",
+  "description": "Pre-registered methodology for the Ledgerlight governance event study (market reaction). See spec.md for full prose rationale -- this file is the machine-readable twin consumed by ledgerlight.research.event_study.",
+  "event_types": {
+    "primary": [
+      {
+        "code": "CARE_RATING_DOWNGRADE",
+        "source": "ledgerlight.modelling.rating_features.extract_rating_observations",
+        "tier": "rule_verified_no_tier_gate",
+        "severity_bands": [
+          "within_investment_grade",
+          "crossing_into_sub_investment_grade",
+          "to_default_d"
+        ]
+      },
+      {
+        "code": "CARE_RATING_UPGRADE",
+        "source": "ledgerlight.modelling.rating_features.extract_rating_observations",
+        "tier": "rule_verified_no_tier_gate",
+        "severity_bands": []
+      },
+      {
+        "code": "SEBI_ORDER_AGAINST_COMPANY",
+        "source": "events_table",
+        "event_type_code": "SEBI_ORDER_AGAINST_COMPANY",
+        "tier": "verified",
+        "severity_bands": []
+      }
+    ],
+    "secondary_exploratory": [
+      {
+        "code": "IBBI_CIRP_ADMISSION",
+        "source": "events_table",
+        "event_type_code": "IBBI_CIRP_ADMISSION",
+        "tier": "candidate",
+        "severity_bands": [],
+        "note": "all real rows are status=candidate as of spec v1 (2026-11-13); excluded from primary significance claims, reported for completeness only"
+      }
+    ]
+  },
+  "rating_ordinal_boundaries": {
+    "investment_grade_max_ordinal": 9,
+    "sub_investment_grade_max_ordinal": 18,
+    "default_ordinal": 19
+  },
+  "event_date": {
+    "source_field": "known_at",
+    "timezone": "Asia/Kolkata",
+    "mapping_rule": "first_trading_session_at_or_after_ist_calendar_date"
+  },
+  "trading_day_index": {
+    "source": "distinct price_bars.trade_date values actually present",
+    "holiday_calendar_module": null
+  },
+  "market_model": {
+    "estimation_window": [-250, -30],
+    "min_valid_estimation_days": 120,
+    "normal_return_model": "ols_market_model",
+    "market_index_primary": {
+      "method": "turnover_weighted",
+      "weight_field": "price_bars.turnover"
+    },
+    "market_index_robustness": {
+      "method": "equal_weighted"
+    },
+    "split_adjustment": false,
+    "possible_corporate_action_flag_threshold_abs_daily_return": 0.5
+  },
+  "event_windows": [
+    {"name": "CAR_m1_p1", "start": -1, "end": 1, "primary": true},
+    {"name": "CAR_0_p5", "start": 0, "end": 5, "primary": false},
+    {"name": "CAR_m10_p10", "start": -10, "end": 10, "primary": false},
+    {"name": "CAR_m30_m1", "start": -30, "end": -1, "primary": false},
+    {"name": "CAR_p2_p60", "start": 2, "end": 60, "primary": false}
+  ],
+  "filters": {
+    "order": [
+      "point_in_time_validity",
+      "estimation_window_sufficiency",
+      "liquidity_min_pct_days_traded",
+      "confounding_window_days",
+      "event_window_data_availability"
+    ],
+    "liquidity_min_pct_days_traded": 0.80,
+    "confounding_window_days": 10
+  },
+  "tests": {
+    "cross_sectional_t_test": true,
+    "bmp_standardized_test": true,
+    "corrado_rank_test": true,
+    "kolari_pynnonen_adjustment": {
+      "trigger_same_month_share": 0.20
+    },
+    "multiple_testing_correction": "holm_bonferroni"
+  },
+  "placebo": {
+    "n_draws_per_event": 1000,
+    "year_matched": true,
+    "min_distance_from_real_event_days": 10,
+    "placebo_seed_formula": "int(hashlib.sha256(f'{spec_sha256}:{event_id}:{placebo_iteration_index}'.encode()).hexdigest()[:16], 16)",
+    "rng": "numpy.random.default_rng(seed)"
+  },
+  "real_counts_at_spec_time_2026_11_13": {
+    "companies_with_care_filing": 11,
+    "sebi_order_against_company_events": 69,
+    "ibbi_cirp_admission_events": 31,
+    "ibbi_cirp_admission_events_verified": 0,
+    "price_bars_distinct_symbols": 7155,
+    "price_bars_date_range": ["2016-01-01", "2026-10-30"]
+  }
+}
