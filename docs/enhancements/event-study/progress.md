@@ -25,8 +25,11 @@ language, not investment advice; no AI attribution on any commit.
       event-study` + `/v1/research/event-study/companies/{id}` +
       `/v1/research/event-study/caar/{type}.png`, company-page
       "Market reaction" panel, `/research/event-study` page.
-- [ ] §4 Verify and commit (final pass: full test layers, pre-commit,
-      gitleaks, print raw evidence, bundle).
+- [x] §4 Verify and commit: 463 default + 370 integration tests (all
+      real, unbatched -- no memory kill this time) pass; `pre-commit
+      run --all-files` clean; standalone full-history gitleaks (249
+      commits, 0 leaks); frontend lint/typecheck/build clean. Bundle
+      refreshed: `../ledgerlight-backups/ledgerlight-enh1.bundle`.
 
 ## The real first run's own result, stated plainly
 
@@ -113,3 +116,21 @@ exercises a full real DB-backed run):
   matching sample values), a few thousand real bytes transferred
   instead of a few hundred real megabytes. The run completed cleanly
   after this fix.
+
+**2026-11-13 (cont. 3)** — §4 final verification. Real results,
+printed in full in this session's own reply:
+- Default suite: 463 passed.
+- Full integration suite, unbatched: 370 passed, 1043.23s, no memory
+  kill this run (memory held at >=1.1GB free throughout, recovered to
+  3.0GB after).
+- `pre-commit run --all-files`: ruff, ruff-format, gitleaks
+  (pre-commit hook), mypy -- all passed.
+- Standalone full-history gitleaks (`gitleaks detect --source . --log-opts="--all" -v`):
+  249 commits scanned, 0 leaks.
+- Frontend: `npm run lint` (0 errors, 1 non-blocking `<img>` warning),
+  `npm run typecheck` (clean), `npm run build` (clean, `/research/
+  event-study` compiled as a static route).
+- Bundle refreshed and verified: `../ledgerlight-backups/ledgerlight-enh1.bundle`.
+
+Enhancement 1 complete. Stopped here, per the brief's own closing
+line -- no push, no tag.
