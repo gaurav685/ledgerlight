@@ -134,3 +134,68 @@ printed in full in this session's own reply:
 
 Enhancement 1 complete. Stopped here, per the brief's own closing
 line -- no push, no tag.
+
+## Enhancement 1 Correction
+
+`correction-1-brief.md` saved verbatim. Ground rules unchanged (local
+commits only, no AI attribution, never fabricate/weaken a result).
+
+### §1: corporate-action adjustment
+
+**§1.1 empirical verification** (`evidence-sec1-corporate-action-
+verification.md`): the brief's own suggested
+`prev_close(t)/close(t-1)` detector does not work on this data --
+confirmed against 5 real, independently cited public splits/bonuses:
+`prev_close` is always the raw, unadjusted prior close, never the
+adjusted one, even on the real ex-date. The real adjustment shows up
+entirely in `close` itself, as a clean consecutive-session ratio.
+Validated detector built on that finding instead, with a negative
+control (a real company with no corporate action ever).
+
+**§1.2 implementation**: `ledgerlight/modelling/price_adjustment.py`
+(detection + point-in-time `adjusted_close`/`get_adjusted_closes`),
+new `price_adjustment_factors` table (migration `c44df97d6b30`),
+`scripts/detect_price_adjustments.py` (memory-bounded, incremental-
+commit). 17 tests (`tests/test_price_adjustment.py`).
+
+Three real, severe problems were found and fixed along the way,
+documented in full in their own evidence files rather than quietly
+worked around:
+
+1. **Real `price_bars` CLOG corruption** (16 pages / 176 tuples,
+   2026-07-27, `nse_archives`) -- found mid-run, scoped via read-only
+   binary search, repaired via `pg_surgery.heap_force_kill` +
+   `scripts/reprocess.py` re-ingestion, all with explicit user
+   authorization at each step. Survived an unrelated Postgres
+   container crash (same incident also crashed the Garage object-
+   store container, found and restarted later) and a full re-scan
+   confirmed 0% corruption remaining. Full writeup:
+   `evidence-sec1-db-corruption-incident.md`.
+2. **Missing index**: `price_bars` had no index on `isin` at all --
+   every per-ISIN detection query was a full sequential scan of all
+   ~3.06M rows, repeated 3,847 times (this, not corruption, was the
+   real cause of the original run's 75+ minute near-hang). Fixed with
+   migration `38d6809e013b` (`ix_price_bars_isin_trade_date`).
+3. **Real sparse-ingestion gap + a real detector bug it caused**: the
+   global trading-day index was itself only ~2 dates/month for
+   2020-2024 (a known, pre-existing gap --
+   `docs/ingestion/runbook.md`), making "adjacent in that index" not
+   mean "one real session apart" for those years -- 66% of the first
+   run's 8,688 "detections" were really ~15-day-apart snapshots
+   misread as single sessions. Fixed the detector (a real calendar-
+   day bound, not just index adjacency) and ran the project's own
+   backfill/process tools to raise real daily density for 2020-2023
+   (2024/2025 remain genuinely, disclosedly sparse -- a real
+   external-site TLS/clock limitation blocks live-fetching them this
+   session). Full writeup: `evidence-sec1-ingestion-gap-and-backfill.md`.
+
+**§1.3 data-quality report** (`evidence-sec1.3-data-quality-report.md`):
+final clean run, 3,246 real detected factors across 3,847 real ISINs
+(2016: 626, 2017: 288, 2018: 310, 2019: 558, 2020: 852, 2021: 76,
+2022: 199, 2023: 78, 2024: 0 -- sparse-data gap, 2025: 45, 2026: 214).
+268 real residual suspicious jumps found no plausible ratio match;
+top 50 by magnitude include a real, disclosed scope gap (ETF/gold-ETF
+1:100 unit splits, a different real corporate-action class this
+detector was never validated against) alongside real, independently
+plausible large single-session moves (JETAIRWAYS, BAJAJFINSV, and
+others) correctly left unadjusted.

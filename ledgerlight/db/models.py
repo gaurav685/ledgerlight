@@ -26,6 +26,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -225,6 +226,34 @@ class PriceBar(Base):
     )
     updated_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=_utcnow
+    )
+
+
+class PriceAdjustmentFactor(Base):
+    """Enhancement 1 Correction §1: one real detected corporate-action
+    adjustment factor for one real ISIN. Raw `price_bars` is never
+    mutated -- this table, plus `ledgerlight.modelling.price_adjustment`'s
+    pure `adjusted_close` function, is the only real adjustment
+    mechanism. `evidence_json` carries the real source rows (the prior
+    and new real close/date pair) the detection matched against, the
+    same `evidence`-carrying discipline as every other RULE-VERIFIED
+    extraction in this project (e.g.
+    `ledgerlight.modelling.rating_features.RatingObservation`)."""
+
+    __tablename__ = "price_adjustment_factors"
+    __table_args__ = (
+        UniqueConstraint("isin", "ex_date", name="uq_price_adjustment_factors_isin_exdate"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    isin: Mapped[str] = mapped_column(String(16), nullable=False)
+    symbol: Mapped[str] = mapped_column(String(32), nullable=False)
+    ex_date: Mapped[dt.date] = mapped_column(Date, nullable=False)
+    factor: Mapped[Decimal] = mapped_column(Numeric(14, 6), nullable=False)
+    method: Mapped[str] = mapped_column(String(32), nullable=False)
+    evidence_json: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
 

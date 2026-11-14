@@ -674,3 +674,48 @@ real agent-eval run (60 investigations) confirms 0 leakage and 60/60
 FINALISED.
 
 **Evidence:** `docs/phase-6/evidence/sec3-dossier-rendering-fixes.md`.
+
+## Gap: raw prices were never adjusted for real corporate actions (splits/bonuses)
+
+**Status: CLOSED (Enhancement 1 Correction §1, 2026-11-14).** **First
+seen:** the Enhancement 1 Correction brief's own §1 (the real risk
+model and event study both ran on raw, unadjusted `price_bars` --
+feeding a real split/bonus day's ~50% price drop straight into any
+feature or return calculation as if it were a real market move).
+
+**Root cause, confirmed not guessed:** the bhavcopy's own `prev_close`
+field does not reflect adjustments (verified against 5 real,
+independently cited public splits/bonuses plus a negative control) --
+the real adjustment shows up only in `close` itself, as a clean
+consecutive-session ratio matching the action's real economic ratio.
+
+**Fix:** new, empirically-validated detector
+(`ledgerlight/modelling/price_adjustment.py`) over real consecutive
+sessions only (a real calendar-day bound on top of trading-day-index
+adjacency, added after a real bug let 2020-2024's sparse-ingestion
+snapshots -- ~15 real days apart -- get misread as single sessions),
+matched against a curated, named, real-world ratio table (never a
+dense generated grid, which was found to false-positive on an
+ordinary crash). Factors stored in `price_adjustment_factors`
+(migration `c44df97d6b30`) with full evidence; raw `price_bars` never
+mutated; point-in-time correct (`get_adjustment_factors`/
+`adjusted_close` only ever apply factors with `ex_date <= as_of`).
+3,246 real factors detected across 3,847 real ISINs (2024 and most of
+2025 remain at sparse density -- a real, disclosed, currently
+unfixable data gap, not a wrong detection).
+
+A real, severe, unrelated-but-adjacent database issue was found and
+fixed in the same work: a genuine `price_bars` CLOG corruption (16
+pages / 176 tuples) causing `UndefinedFile` errors on specific rows --
+repaired via `pg_surgery.heap_force_kill` + re-ingestion, with
+explicit user authorization at every destructive step, and confirmed
+0% corruption remaining in a full-table re-scan after surviving an
+unrelated Postgres+Garage container crash. A missing index on
+`price_bars.isin` (not corruption) was the real cause of the original
+run's 75+ minute near-hang -- fixed via migration `38d6809e013b`.
+
+**Evidence:**
+`docs/enhancements/event-study/evidence-sec1-corporate-action-verification.md`,
+`docs/enhancements/event-study/evidence-sec1-db-corruption-incident.md`,
+`docs/enhancements/event-study/evidence-sec1-ingestion-gap-and-backfill.md`,
+`docs/enhancements/event-study/evidence-sec1.3-data-quality-report.md`.
