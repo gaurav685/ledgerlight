@@ -31,7 +31,6 @@ from ledgerlight.config.settings import Settings
 from ledgerlight.db.models import Document, DocumentVersion
 from ledgerlight.ingestion.sources_sync import sync_sources
 from ledgerlight.ingestion.upsert import upsert_document_version
-from ledgerlight.storage.s3_store import ObjectStore
 
 pytestmark = pytest.mark.integration
 
@@ -41,9 +40,9 @@ def _load_real_settings() -> Settings:
     return Settings(_env_file=str(repo_root / ".env"))  # type: ignore[call-arg]
 
 
-def test_ingested_rows_are_visible_from_a_brand_new_session() -> None:
+def test_ingested_rows_are_visible_from_a_brand_new_session(object_store) -> None:
     settings = _load_real_settings()
-    store = ObjectStore(settings)
+    store = object_store
     repo_root = Path(__file__).resolve().parent.parent
     sources_yaml = repo_root / "data" / "manifests" / "sources.yaml"
 

@@ -116,15 +116,14 @@ def test_discovery_respects_robots_disallow() -> None:
 
 @pytest.mark.integration
 @respx.mock
-def test_run_care_discovery_job_end_to_end(db_session: Session, tmp_path: Path) -> None:
+def test_run_care_discovery_job_end_to_end(
+    db_session: Session, object_store, tmp_path: Path
+) -> None:
     repo_root = Path(__file__).resolve().parent.parent
-    from ledgerlight.config.settings import Settings
     from ledgerlight.ingestion.sources_sync import sync_sources
-    from ledgerlight.storage.s3_store import ObjectStore
 
-    settings = Settings(_env_file=str(repo_root / ".env"))  # type: ignore[call-arg]
     sync_sources(db_session, repo_root / "data" / "manifests" / "sources.yaml")
-    store = ObjectStore(settings)
+    store = object_store
 
     _allow_robots()
     pdf_name = f"TEST_COMPANY-{uuid.uuid4().hex}.pdf"
