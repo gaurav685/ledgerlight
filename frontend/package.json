@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test e2e/smoke.spec.ts",
+    "test:e2e:full": "playwright test e2e/full-e2e-lite.spec.ts"
   },
   "dependencies": {
     "next": "16.4.3",

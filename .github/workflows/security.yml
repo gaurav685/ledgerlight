@@ -71,14 +71,14 @@ jobs:
         run: docker build -t ledgerlight-web:ci -f frontend/Dockerfile frontend
 
       - name: Trivy scan -- api image
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ledgerlight-api:ci
           severity: CRITICAL,HIGH
           exit-code: "1"
 
       - name: Trivy scan -- web image
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ledgerlight-web:ci
           severity: CRITICAL,HIGH
