@@ -61,6 +61,9 @@ jobs:
       - name: Apply real database migrations
         run: uv run alembic upgrade head
 
+      - name: Sync sources table from data/manifests/sources.yaml
+        run: uv run python scripts/sources_sync.py
+
       - name: Test (non-integration)
         run: uv run pytest
 

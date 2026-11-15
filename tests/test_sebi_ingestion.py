@@ -131,15 +131,14 @@ def test_discovery_respects_robots_disallow() -> None:
 
 @pytest.mark.integration
 @respx.mock
-def test_run_sebi_discovery_job_end_to_end(db_session: Session, tmp_path: Path) -> None:
+def test_run_sebi_discovery_job_end_to_end(
+    db_session: Session, object_store, tmp_path: Path
+) -> None:
     repo_root = Path(__file__).resolve().parent.parent
-    from ledgerlight.config.settings import Settings
     from ledgerlight.ingestion.sources_sync import sync_sources
-    from ledgerlight.storage.s3_store import ObjectStore
 
-    settings = Settings(_env_file=str(repo_root / ".env"))  # type: ignore[call-arg]
     sync_sources(db_session, repo_root / "data" / "manifests" / "sources.yaml")
-    store = ObjectStore(settings)
+    store = object_store
 
     _allow_robots()
     respx.get(LISTING_PAGE).mock(return_value=httpx.Response(200, text="<html></html>"))
@@ -194,20 +193,19 @@ def test_run_sebi_discovery_job_end_to_end(db_session: Session, tmp_path: Path) 
 
 @pytest.mark.integration
 @respx.mock
-def test_run_sebi_discovery_job_resolves_relative_href(db_session: Session, tmp_path: Path) -> None:
+def test_run_sebi_discovery_job_resolves_relative_href(
+    db_session: Session, object_store, tmp_path: Path
+) -> None:
     """Real bug (2026-10-28 live run): some SEBI direct-PDF hrefs are
     relative paths, not absolute URLs (e.g. "/sebi_data/attachdocs/...pdf").
     Passing one straight to httpx as retrieval_url raised
     httpx.UnsupportedProtocol for 42 of 84 real fetch attempts in the
     first run. This is the regression test."""
     repo_root = Path(__file__).resolve().parent.parent
-    from ledgerlight.config.settings import Settings
     from ledgerlight.ingestion.sources_sync import sync_sources
-    from ledgerlight.storage.s3_store import ObjectStore
 
-    settings = Settings(_env_file=str(repo_root / ".env"))  # type: ignore[call-arg]
     sync_sources(db_session, repo_root / "data" / "manifests" / "sources.yaml")
-    store = ObjectStore(settings)
+    store = object_store
 
     _allow_robots()
     respx.get(LISTING_PAGE).mock(return_value=httpx.Response(200, text="<html></html>"))

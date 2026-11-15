@@ -57,3 +57,22 @@ def db_session() -> Iterator[Session]:
         transaction.rollback()
         connection.close()
         engine.dispose()
+
+
+@pytest.fixture
+def object_store():  # type: ignore[no-untyped-def]
+    """A real S3-compatible object store (the local Garage stack). Skips
+    cleanly if S3 credentials aren't configured -- same real convention
+    as `db_session` above for Postgres. Found missing (these tests
+    raised a hard RuntimeError instead) while re-verifying for the
+    v0.9.0-preview push's first real CI run."""
+    repo_root = Path(__file__).resolve().parent.parent
+
+    from ledgerlight.config.settings import Settings
+    from ledgerlight.storage.s3_store import ObjectStore
+
+    settings = Settings(_env_file=str(repo_root / ".env"))  # type: ignore[call-arg]
+    try:
+        return ObjectStore(settings)
+    except RuntimeError as exc:
+        pytest.skip(f"S3/Garage not configured (is the Docker stack provisioned?): {exc}")

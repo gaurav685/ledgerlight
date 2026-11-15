@@ -18,10 +18,8 @@ from sqlalchemy.orm import Session
 from ledgerlight.acquisition.manifest import ManifestEntry
 from ledgerlight.common.hashing import sha256_bytes
 from ledgerlight.common.timeutil import utc_now
-from ledgerlight.config.settings import Settings
 from ledgerlight.ingestion.sources_sync import sync_sources
 from ledgerlight.ingestion.upsert import upsert_document_version
-from ledgerlight.storage.s3_store import ObjectStore
 
 pytestmark = pytest.mark.integration
 
@@ -64,11 +62,12 @@ def _entry(
     )
 
 
-def test_jittered_zip_timestamp_does_not_create_a_second_version(db_session: Session) -> None:
+def test_jittered_zip_timestamp_does_not_create_a_second_version(
+    db_session: Session, object_store
+) -> None:
     repo_root = Path(__file__).resolve().parent.parent
-    settings = Settings(_env_file=str(repo_root / ".env"))  # type: ignore[call-arg]
     sync_sources(db_session, repo_root / "data" / "manifests" / "sources.yaml")
-    store = ObjectStore(settings)
+    store = object_store
 
     url = f"https://archives.nseindia.com/content/historical/EQUITIES/test-{uuid.uuid4()}.csv.zip"
     inner = b"SYMBOL,SERIES,OPEN\nINFY,EQ,1500.00\n"
@@ -99,11 +98,12 @@ def _html_with_csrf_and_nonce_id(token: str, nav_id: str) -> bytes:
 </body></html>""".encode()
 
 
-def test_churning_html_csrf_token_does_not_create_a_second_version(db_session: Session) -> None:
+def test_churning_html_csrf_token_does_not_create_a_second_version(
+    db_session: Session, object_store
+) -> None:
     repo_root = Path(__file__).resolve().parent.parent
-    settings = Settings(_env_file=str(repo_root / ".env"))  # type: ignore[call-arg]
     sync_sources(db_session, repo_root / "data" / "manifests" / "sources.yaml")
-    store = ObjectStore(settings)
+    store = object_store
 
     url = f"https://www.suzlon.com/investors/test-{uuid.uuid4()}/"
     page_a = _html_with_csrf_and_nonce_id("jE6l8JTh", "cigw")
