@@ -1,5 +1,7 @@
 # Ledgerlight
 
+**v0.9.0-preview — portfolio preview; human review gates not completed; not for investment decisions.**
+
 Evidence-backed corporate-governance red-flag intelligence for Indian listed
 companies. Ledgerlight ingests public disclosures (BSE/NSE announcements,
 annual reports, shareholding/pledge disclosures, auditor resignations,

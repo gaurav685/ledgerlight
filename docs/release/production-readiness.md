@@ -179,3 +179,34 @@ deployed, GitHub Actions unverified, financial features excluded,
 guidance extraction blocked for lack of data) is a scoped, disclosed,
 non-blocking limitation of this specific research prototype, not a
 defect hiding behind a passing test suite.
+
+## v0.9.0-preview pre-push re-verification (2026-11-15)
+
+Re-ran, on `phase-6/integrated-validation-release` HEAD (`0345a43`,
+the commit `main` fast-forwards to), the specific layers this
+release's own push brief required before pushing:
+
+- Backend lint (`ruff check`), format (`ruff format --check`), and
+  mypy: all clean.
+- Frontend lint (`eslint`) and typecheck (`tsc --noEmit`): clean
+  (one stale `.next` type-cache artifact from a different branch's
+  build was found and cleared first -- not a real defect).
+- Default test suite: **441 passed, 1 xfailed** (the permitted OCR
+  tripwire) -- a real, current count, not the Phase 6A §13 snapshot
+  above (this branch gained tests since then, via Phase 6 Correction
+  1/2).
+- Security layer (`test_api_auth.py`, `test_authz_matrix.py`,
+  `test_security_controls.py`): **61 passed.**
+- Golden-fixture regression suite (`test_regression_snapshots.py`):
+  **6 passed.**
+- Agent-eval (`scripts/agent_eval.py`): 60 real investigations,
+  **unsupported-claim leakage: 0.**
+- Gold hash check: `data/manifests/gold-labels-phase2.json`'s own
+  `sha256_of_sorted_ids` field still matches the value recorded at
+  freeze time (`1b0f9c10...`) -- untampered.
+- Gold-review authorship: all 77 real gold records show
+  `reviewer: "Gaurav"` -- **0 AI review decisions counted as gold.**
+
+The full 361-test integration suite was not re-run in full for this
+check (out of this specific verification's scope); the 330/330 figure
+above remains the most recent full-suite evidence.
