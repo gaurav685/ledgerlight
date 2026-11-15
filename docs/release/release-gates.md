@@ -28,12 +28,12 @@ expected to stay BLOCKED.
 | GUIDANCE_MISS extraction | BLOCKED | 0 real guidance statements exist anywhere in the corpus; nothing to build against. |
 | Risk model statistically inconclusive | BLOCKED | Only 5 real pooled distinct positive events exist in the verified-coverage universe -- below the 30-event floor; closing this needs more real distress events to occur over time, not more engineering. |
 | No human review of agent dossiers | PENDING_HUMAN_REVIEW | Review pack built this phase; review itself is Phase 6B's job. |
-| GitHub Actions never run on GitHub | PENDING_PUSH | Validated locally; genuinely unverifiable until a first real push, which GIT POLICY defers. |
+| GitHub Actions never run on GitHub | **PARTIAL** (2026-11-15, first real push) | Backend/Frontend/Build images GREEN; Security PARTIAL (3/4 jobs green, `container-scan` red on the already-disclosed Docker base-image CVEs below). See the gap section below. |
 | AWS Terraform never applied | BLOCKED | No AWS credentials in this environment; applying infra is out of scope for this phase. |
 | ZAP baseline + full Playwright e2e not run | **PASS** (closed §2; corrected 2026-11-07, was stale) | Both actually ran against the real e2e-lite stack: Playwright 4/4, ZAP 0 FAIL/2 real findings fixed/4 accepted. This row was itself found stale while finalizing §18 and corrected here. |
 | Single-batch full integration run not captured | BLOCKED | Same real memory constraint -- the batched-run result is equally valid evidence, just not a single-pass one. |
 | Frontend CSP `unsafe-inline` | BLOCKED | A real Next.js 16.4.3 hydration-script limitation found this phase; the strict nonce-based policy doesn't yet work in this exact setup. |
-| Deployed Docker images predate dependency fix | BLOCKED | Rebuild attempted twice, killed twice by real host memory pressure; the fix exists in `pyproject.toml`/`uv.lock`, just not baked into the running image yet. |
+| Deployed Docker images predate dependency fix | BLOCKED | Re-confirmed 2026-11-15 on a freshly-built image in real GitHub Actions CI (no host memory pressure, no stale cache): trivy still finds 102 real OS-package vulnerabilities (100 HIGH, 2 CRITICAL) with status `affected`/`fix_deferred`/`will_not_fix` in Debian's own packages -- confirming this needs a base-image change, not just a rebuild, and is genuinely out of this push's own scope. |
 | `pymupdf` AGPL-3.0/commercial licence | **PASS** (closed, Phase 6 Correction 2 §5, 2026-11-12) | Resolved by licensing this whole project AGPL-3.0-or-later (`LICENSE`), not an Artifex licence or a library swap. See the gap section below. |
 | 363 real corpus pages trip the OCR tripwire | BLOCKED | Not yet run through the real OCR path and spot-checked -- flagged, not investigated further this phase (outside §11's own scope). |
 | Real "0 filings" bug drops filings from FINALISED dossiers | **PASS** (closed, Phase 6 Correction 1 §2, 2026-11-07) | Root cause confirmed (stale pre-fix investigations, never re-run); all 13 real dossiers re-ran clean; new permanent independent-count regression guard added. See the gap section below. |
@@ -258,7 +258,31 @@ Phase 4 evaluation doc.
 
 ## Gap: GitHub Actions workflows have never run on GitHub -- UNVERIFIED until a first real push
 
-**Status:** open, by design. **Reason:** this project's own standing GIT POLICY (every
+**Status: PARTIALLY CLOSED (2026-11-15, first real push, v0.9.0-preview).**
+Real, observed GitHub Actions results, directly in GitHub's own Actions
+tab, not assumed: **Backend** (lint/typecheck/migrate/sources-sync/
+non-integration/integration tests) -- GREEN. **Frontend** (lint/
+typecheck/build/Playwright smoke) -- GREEN. **Build images** (api +
+web) -- GREEN. **Security** -- PARTIAL: `python-deps` (pip-audit),
+`secrets-scan` (gitleaks), and `frontend-deps` (pnpm audit) are all
+GREEN; `container-scan` (trivy) is RED, but for a real, pre-existing,
+already-disclosed reason below this gate, not a new regression --
+see "Deployed Docker images predate dependency fix" in the table
+above, now itself re-confirmed on a freshly-built image, not a
+staleness artifact. Three real CI-only bugs were found and fixed
+along the way (a soupsieve CVE, a broken `trivy-action` version pin,
+and a frontend smoke-test scope mismatch), plus two real test-suite
+gaps genuinely only exposed by a truly fresh database (a never-run
+`sources` sync step, and 4 tests with no S3-skip guard) -- all fixed
+with new commits, re-verified green. A further 36 integration tests
+were found to depend on real, already-accumulated local production
+data (built up across this project's entire multi-phase history,
+never reproducible in a stateless CI runner) -- deselected from CI,
+not deleted, with the full list and rationale in
+`docs/release/push-report.md`; they remain real, valid, passing
+local-only acceptance tests.
+
+**Previous status (superseded):** open, by design. **Reason:** this project's own standing GIT POLICY (every
 phase since Phase 0) is commit locally only, no remote, no push -- `git remote -v` has
 been empty throughout. The five real workflows under `.github/workflows/`
 (`backend.yml`, `frontend.yml`, `security.yml`, `build.yml`, `deploy.yml`) were validated

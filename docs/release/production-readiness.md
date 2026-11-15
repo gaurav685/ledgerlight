@@ -93,7 +93,7 @@ unilaterally, flagged for human decision.
 | Security test suite (authz, IDOR, CSRF, SSRF, rate limits, prompt-injection) | **COMPLETE** | `docs/phase-6/evidence/sec09-security-suite.log`: 97 passed, 0 failures | -- |
 | Dependency vulnerabilities (`pip-audit`) | **COMPLETE** | Phase 6A §9: 24 real vulnerabilities found and fixed, 0 remaining | -- |
 | Frontend CSP | **PARTIAL** | `docs/security/threat-model.md` residual risks | `script-src 'unsafe-inline'` with no working nonce -- a real Next.js 16.4.3 hydration-script limitation found this phase; mitigated by no `dangerouslySetInnerHTML` anywhere and no raw document HTML ever rendered as markup. |
-| Deployed Docker images' dependency freshness | **BLOCKED** | `docs/release/release-gates.md` | Images predate the §9 dependency fix; rebuild attempted twice, killed twice by real host memory pressure. The fix exists in `pyproject.toml`/`uv.lock`; only the baked image is stale. |
+| Deployed Docker images' dependency freshness | **BLOCKED** | `docs/release/release-gates.md` | Re-confirmed 2026-11-15 on a freshly-built image in real GitHub Actions CI: 102 real OS-package vulnerabilities (100 HIGH, 2 CRITICAL), `affected`/`fix_deferred`/`will_not_fix` in Debian's own packages -- a base-image change is needed, not just a rebuild; out of this push's scope, same as the AWS deploy job. |
 
 ## Frontend, orchestration, ops
 
@@ -131,7 +131,7 @@ unilaterally, flagged for human decision.
 
 | Capability | Status | Evidence | Reason |
 |---|---|---|---|
-| **GitHub Actions workflows** | **BLOCKED -- UNVERIFIED** | `docs/release/release-gates.md`, 5 workflows validated locally only | No remote configured (GIT POLICY: local-only, no push, this phase and every prior one). Cannot be verified until a first real push happens. |
+| **GitHub Actions workflows** | **PARTIAL** (2026-11-15, first real push) | `docs/release/release-gates.md`, real observed runs on github.com/gaurav685/ledgerlight | Backend/Frontend/Build images GREEN; Security PARTIAL (container-scan red on already-disclosed Docker base-image CVEs, re-confirmed on a fresh build -- see "Deployed Docker images' dependency freshness" above). 5 real bugs found and fixed via new commits during this push; 36 integration tests deselected as genuinely not CI-portable (local-only, passing). |
 | **AWS deployment** | **BLOCKED -- not deployed** | `docs/deploy/aws-architecture.md` | Terraform is validated (`terraform fmt`/`validate`) but never applied -- no AWS credentials in this environment, and applying infrastructure is explicitly out of scope. |
 | Local Docker Compose stack | **COMPLETE** | `infra/docker-compose.yml`, confirmed working via the real, currently-running dev stack and independently via Phase 6A §13's clean-install test | Real constraint found this phase: the Compose project name and host ports are hardcoded, so a second instance cannot safely run alongside the first on one machine -- a real, disclosed limitation, not a blocker for normal single-instance use. |
 
@@ -152,7 +152,7 @@ unilaterally, flagged for human decision.
 |---|---|---|---|
 | Local-only commits, no AI attribution | **COMPLETE** | Every commit this phase verified via `git log --format='%H%n%an <%ae>%n%B'` | -- |
 | Backup bundles | **PARTIAL** | `../ledgerlight-backups/ledgerlight-phase-{1..5}.bundle` exist | Phase 6A's own bundle is created in §17 (not yet reached). |
-| Push to a remote | **BLOCKED -- by policy** | GIT POLICY, every phase | No remote configured; explicitly reserved, not this project's current policy to push. |
+| Push to a remote | **COMPLETE** (2026-11-15, explicit one-time user override) | `https://github.com/gaurav685/ledgerlight` | Standing local-only GIT POLICY explicitly overridden by the user for this one push. `main`, all 7 phase branches, and `enhancement/event-study` pushed; local vs remote SHA verified matching for every ref. |
 
 ## Overall summary
 

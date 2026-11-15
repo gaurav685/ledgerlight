@@ -109,6 +109,37 @@ its own progress log shows the Enhancement 1 Correction brief's §1 of
 5 sections done, §2-§5 not started. Pushed as-is, named here as
 work-in-progress rather than silently omitted.
 
+## GitHub Actions: real, observed results from this first push
+
+Backend, Frontend, and Build images workflows: **GREEN**, directly
+observed in GitHub's own Actions tab. Security workflow: **PARTIAL**
+-- `pip-audit`, `gitleaks`, and `pnpm audit` jobs are GREEN; the
+`trivy` container-scan job is RED, on 102 real OS-package
+vulnerabilities (100 HIGH, 2 CRITICAL) in the Debian base image,
+`affected`/`fix_deferred`/`will_not_fix` -- re-confirmed on a freshly
+built image in CI itself, so this is a real base-image gap, not
+staleness. Fixing it needs a base-image change, out of this push's
+own scope (the same category as the AWS deploy job below). Five real
+bugs were found and fixed with new commits during this push (a
+soupsieve CVE, a broken `trivy-action` version pin, a frontend
+smoke-test scope mismatch, a never-run `sources`-sync step, and 4
+tests missing an S3-skip guard) -- all re-verified green afterward.
+
+A further 36 integration tests were found to depend on specific,
+already-accumulated real production records (named real companies,
+entity links, feature snapshots, the frozen gold-label manifest, real
+dossiers) built up across this project's entire multi-phase local
+history -- genuinely not reproducible from a fresh, stateless CI
+database without replaying the whole real data pipeline. Deselected
+from the CI run (not deleted, not marked xfail); they remain real,
+valid, passing local-only acceptance tests. Full list and rationale:
+`docs/release/push-report.md`.
+
+The AWS deploy workflow is confirmed skipped by design:
+`workflow_dispatch`-only (never runs on push) and gated behind a
+credential check that defaults to false with no AWS secrets
+configured.
+
 ## A note on what was and wasn't re-run for this push
 
 Playwright full e2e and the ZAP baseline were last run before the
