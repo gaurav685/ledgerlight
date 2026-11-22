@@ -43,6 +43,7 @@ def test_require_human_confirmation_allows_with_the_flag() -> None:
         ("scripts/entity_pair_review.py", ["--reviewer", "test"]),
         ("scripts/retrieval_review.py", ["--reviewer", "test"]),
         ("scripts/outcome_evidence_review.py", ["--reviewer", "test"]),
+        ("scripts/precision_review.py", ["--reviewer", "test"]),
     ],
 )
 def test_file_backed_review_cli_refuses_without_human_flag(
