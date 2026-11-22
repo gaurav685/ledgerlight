@@ -53,6 +53,8 @@ Survivorship: ALL 5 companies in this universe have a real confirmed trading-sto
 
 See `docs/modelling/event-reliability.md` for the full real gold-validation precision/recall by event type, before vs. after hardening, and the frozen-test report. No EVENT-CANDIDATE event type currently meets the reliability bar for promotion to VERIFIED -- the primary model's feature policy (`ledgerlight.modelling.feature_policy`) excludes EVENT-CANDIDATE features for this reason; the Sec7 ablation arm (c) tests adding them anyway and finds no measurable improvement in this dataset.
 
+A later, fresh held-out precision review of KMP_EXIT, ID_EXIT and RPT_GROWTH specifically (`docs/enhancements/precision-review/results.md`, enhancement branch `enhancement/precision-review`) found **0 correct detections out of 25 human-reviewed scored items** across all three types -- worse than the thin gold-validation estimate these production methods were originally selected on, now with more real support (1, 6 and 18 scored items respectively, vs. 3, 1 and 3 before). None clears the reliability bar. This does not change the primary risk model (none of these three types feeds it; see the feature-policy exclusion above) -- recorded here only to keep this card's event-level honesty current.
+
 ## Failure modes
 
 - Inconclusive by construction: too few real distinct positive events (5 pooled) for any model to demonstrate real skill.

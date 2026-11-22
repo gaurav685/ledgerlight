@@ -51,6 +51,27 @@ Several per-class rates (`RPT_GROWTH` 0.667, `ID_EXIT` 0.833) have wide
 CIs or insufficient support (n<5) -- not a precision claim at the
 class level, context only.
 
+### 1a. Precision review: KMP_EXIT, ID_EXIT, RPT_GROWTH (fresh held-out sample)
+
+**Tier: GOLD** (fresh, untouched sample, one real human reviewer).
+Source: `docs/enhancements/precision-review/results.md` (enhancement
+branch `enhancement/precision-review`), built and reviewed after this
+phase, excluding every item this section's n=77/n=41 figures already
+used.
+
+| event_type | n reviewed | correct | precision | Wilson 95% CI |
+|---|---|---|---|---|
+| KMP_EXIT | 1 | 0 | 0.000 | [0.000, 0.794] |
+| ID_EXIT | 6 | 0 | 0.000 | [0.000, 0.390] |
+| RPT_GROWTH | 18 | 0 | 0.000 | [0.000, 0.176] |
+
+**Zero correct detections out of 25 scored items**, worse than the
+thin gold-validation estimate these production methods were originally
+selected on (KMP_EXIT 0.667 n=3; ID_EXIT 0.333 n=1; RPT_GROWTH 0.250
+n=3), now with more real support. None clears the reliability bar
+(support >= 10 and lower 95% bound >= 0.7); full error analysis in the
+source doc.
+
 ## 2. Extraction
 
 **Tier: SILVER-UNREVIEWED.** No human-reviewed gold field labels exist
@@ -250,6 +271,7 @@ carried forward unchanged from Phase 3 -- not softened here.
 | Section | Tier | Headline |
 |---|---|---|
 | Classification | GOLD (test n=14) + silver context | rules macro-F1 0.635 [0.432, 1.000] |
+| Precision review (KMP_EXIT/ID_EXIT/RPT_GROWTH) | GOLD (fresh held-out sample) | 0 correct / 25 scored; none clears the reliability bar |
 | Extraction | SILVER-UNREVIEWED, PENDING_HUMAN_REVIEW | 6/6 real audit_firm fields validated, reproducible |
 | Entity resolution | SILVER-UNREVIEWED, PENDING_HUMAN_REVIEW | 3/3 mentions correctly resolved; pairwise P/R/F1 not run (too thin) |
 | Retrieval | SILVER-UNREVIEWED, PENDING_HUMAN_REVIEW | lexical_bm25 recall@10 0.667, MRR 0.330 (best of 3 methods) |
