@@ -93,6 +93,32 @@ def tfidf_lr_predict(model: TfidfLrModel, texts: list[str]) -> list[str]:
     return predictions
 
 
+RPT_GROWTH_EVIDENCE_FILTER_VERSION = "1"
+
+
+def tfidf_lr_predict_rpt_growth_filtered(model: TfidfLrModel, texts: list[str]) -> list[str]:
+    """`tfidf_lr_predict`, with every RPT_GROWTH prediction additionally
+    required to pass `labeling.rpt_growth_evidence_bar` (the real
+    quantified-multi-period-amount requirement RPT_GROWTH's own
+    production method otherwise has no way to enforce, being a pure
+    bag-of-words classifier). A prediction of RPT_GROWTH that fails the
+    evidence bar is downgraded to NONE_LABEL; every other prediction
+    (including a genuine RPT_GROWTH that passes) is unchanged. Added
+    after real human review (`docs/enhancements/precision-review/
+    results.md`) found 18/18 of RPT_GROWTH's real flagged items had no
+    quantified amount at all -- this is the production path for
+    RPT_GROWTH going forward; `tfidf_lr_predict` itself is left
+    unchanged for other callers (classifier comparison/selection, which
+    must keep comparing each method's own unmodified output)."""
+    from ledgerlight.knowledge.labeling import rpt_growth_evidence_bar
+
+    predictions = tfidf_lr_predict(model, texts)
+    return [
+        pred if pred != "RPT_GROWTH" or rpt_growth_evidence_bar(text.lower()) else NONE_LABEL
+        for pred, text in zip(predictions, texts, strict=True)
+    ]
+
+
 # --- DeBERTa-v3 zero-shot NLI ------------------------------------------------
 
 _zero_shot_pipeline: Pipeline | None = None

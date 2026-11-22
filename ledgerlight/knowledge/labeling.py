@@ -106,6 +106,44 @@ chunks -- every negated occurrence in THIS corpus today already fails
 one of v2's OTHER independent requirements. A real, disclosed,
 preventative hardening against a confirmed real text pattern, not a
 retroactive fix to a currently-live miscount.
+
+PROPOSER_VERSION 4 (enhancement/precision-review, real-review-informed
+hardening -- disclosed, not hidden, same as AUD_RESIGN's TEST-split
+disclosure above): `scripts/precision_review.py`'s fresh human review
+of KMP_EXIT/ID_EXIT (`docs/enhancements/precision-review/results.md`)
+found two real, generalizable bugs in `_director_or_kmp_exit`'s
+character-window branch, confirmed by re-running v3 and v4 head-to-head
+over the whole real corpus before this version was adopted:
+
+  - KMP_EXIT wrong-type (1/1 reviewed): the window branch checked "some
+    role mention within window of some resign" AND "some name mention
+    within window of some resign" *independently* -- never that the
+    role and the resign describe the SAME person. A real THERMAX chunk
+    had "Mr. X, Director, resigned" near an unrelated "...was appointed
+    as Whole Time Director" (a different person's appointment),
+    falsely pairing the resignation with someone else's KMP title. v4
+    requires the role's nearest name and the resign's nearest name to
+    be the same name (`_same_person_resign_and_role`).
+  - ID_EXIT not-an-event (6/6 reviewed, all one real THERMAX departure
+    cited 6 times): a single real departure, correctly disclosed once,
+    recurs as a footnote-marker citation (e.g. "#Name ceased...",
+    "$Name ceased...") across unrelated tables elsewhere in the same
+    annual report (a remuneration footnote, a RPT list, a board
+    skill-matrix, an appointment-date table) -- the SAME real event
+    re-detected on every page that cites it, not 6 independent events.
+    v4 requires the resigning/ceasing person's own name NOT be
+    immediately preceded by a footnote-marker symbol (`@ # $ * † ‡`,
+    with at most one space) -- `_is_footnote_marker_prefixed`. Verified
+    against every real gold KMP_EXIT/ID_EXIT true positive available at
+    v4's adoption: none of them have their subject name footnote-
+    marker-prefixed, so none regress.
+
+Both checks are structural (position/character-level), not keyed to
+this specific dataset's words -- the same kind of generalization this
+module's rules have used throughout (numbered-row markers, proximity
+windows), applied to a newly-confirmed real failure mode. See
+`docs/enhancements/precision-review/results-v2.md` for the full
+before/after diff over the real corpus.
 """
 
 from __future__ import annotations
@@ -121,7 +159,7 @@ from ledgerlight.knowledge.evidence import find_dates_in_text, is_negated_before
 from ledgerlight.knowledge.models import Chunk, LabelItem
 
 PROPOSER_NAME = "keyword-rule-baseline"
-PROPOSER_VERSION = "3"
+PROPOSER_VERSION = "4"
 
 # How close two pieces of evidence must be (in characters) to count as
 # "about the same thing" -- generous enough for real disclosure text
@@ -167,6 +205,18 @@ _KMP_ROLE_PATTERN = re.compile(
     r"|whole[- ]?\s*time\s+director|managing\s+director",
     re.IGNORECASE,
 )
+# Footnote-reference markers this corpus's real board-composition/
+# remuneration tables use to annotate a name with a fact disclosed once
+# elsewhere (e.g. a numbered roster table's own key: "# Nawshir Hoshang
+# Mirza", "$ Jairam Varadaraj", de-referenced below the table as "#
+# Mr. Nawshir Hoshang Mirza ... ceased to be..."). A name immediately
+# preceded by one of these (at most one space between) is a citation
+# of a fact stated authoritatively once elsewhere, not itself a
+# dedicated disclosure -- real review found the SAME real departure
+# cited this way across 6 different unrelated tables in one annual
+# report (PROPOSER_VERSION 4; see this module's own docstring).
+_FOOTNOTE_MARKERS = frozenset("@#$*†‡")
+
 _RPT_PHRASE_PATTERN = re.compile(r"related\s+part(?:y|ies)\s+transactions?", re.IGNORECASE)
 _AMOUNT_PATTERN = re.compile(
     r"(?:rs\.?|inr|₹)\s?\d[\d,]*(?:\.\d+)?|(?<!\w)\d[\d,]{2,}(?:\.\d+)?\s?(?:crore|lakh|lakhs|cr\.?)\b",
@@ -197,15 +247,55 @@ def _row_segments(text: str) -> list[str] | None:
     return [text[bounds[i] : bounds[i + 1]] for i in range(len(bounds) - 1)]
 
 
+def _is_footnote_marker_prefixed(text: str, name_pos: int) -> bool:
+    """True if the name match starting at `name_pos` is immediately
+    preceded (at most one space) by a footnote-reference marker -- a
+    citation of a fact disclosed once elsewhere, not a dedicated
+    disclosure in its own right (PROPOSER_VERSION 4)."""
+    return (name_pos >= 1 and text[name_pos - 1] in _FOOTNOTE_MARKERS) or (
+        name_pos >= 2 and text[name_pos - 1] == " " and text[name_pos - 2] in _FOOTNOTE_MARKERS
+    )
+
+
+def _same_person_resign_and_role(
+    text: str,
+    resign_positions: list[int],
+    role_positions: list[int],
+    name_positions: list[int],
+    window: int,
+) -> bool:
+    """True if some resign/cease occurrence and some role occurrence
+    share the SAME nearest named person, that person's name is not a
+    footnote-marker citation, and the resign/role pair itself is within
+    `window` of each other (PROPOSER_VERSION 4). Independently checking
+    "a role somewhere near a resign" and "a name somewhere near a
+    resign" (the pre-v4 behaviour) let an unrelated role elsewhere in a
+    dense multi-fact chunk falsely pair with a different person's
+    resignation -- a real false positive this closes."""
+    for resign_pos in resign_positions:
+        nearest_name_to_resign = min(name_positions, key=lambda n: abs(n - resign_pos))
+        if _is_footnote_marker_prefixed(text, nearest_name_to_resign):
+            continue
+        for role_pos in role_positions:
+            if abs(resign_pos - role_pos) > window:
+                continue
+            nearest_name_to_role = min(name_positions, key=lambda n: abs(n - role_pos))
+            if nearest_name_to_role == nearest_name_to_resign:
+                return True
+    return False
+
+
 def _director_or_kmp_exit(text: str, role_pattern: re.Pattern[str]) -> bool:
     """Shared evidence rule for ID_EXIT/KMP_EXIT: resignation/cessation
-    language + the specific role + a named person. In a detected
-    numbered roster/KMP table, all three must belong to the SAME row
-    (otherwise a resignation in one row and an unrelated role in the
-    next row -- a different person -- would false-positive, which is
-    exactly what v1's whole-chunk co-occurrence did). Outside such a
-    table, a generous character window is used instead (real narrative
-    text interposes firm/person names between subject and verb)."""
+    language + the specific role + a named person, all describing the
+    SAME person. In a detected numbered roster/KMP table, all three
+    must belong to the SAME row (otherwise a resignation in one row and
+    an unrelated role in the next row -- a different person -- would
+    false-positive, which is exactly what v1's whole-chunk co-occurrence
+    did). Outside such a table, the resign and role occurrences must
+    share the same nearest named person, who must not be a footnote-
+    marker citation of a fact disclosed once elsewhere (both added in
+    PROPOSER_VERSION 4 -- see this module's own docstring)."""
     segments = _row_segments(text)
     if segments is not None:
         return any(
@@ -220,9 +310,9 @@ def _director_or_kmp_exit(text: str, role_pattern: re.Pattern[str]) -> bool:
     name_positions = _positions(_PERSON_NAME_PATTERN, text)
     if not (resign_positions and role_positions and name_positions):
         return False
-    return _any_within_window(
-        resign_positions, role_positions, EVIDENCE_WINDOW_CHARS
-    ) and _any_within_window(resign_positions, name_positions, EVIDENCE_WINDOW_CHARS)
+    return _same_person_resign_and_role(
+        text, resign_positions, role_positions, name_positions, EVIDENCE_WINDOW_CHARS
+    )
 
 
 def _aud_resign(text: str) -> bool:
@@ -257,6 +347,22 @@ def _rpt_growth(text: str) -> bool:
         if any(abs(a - r) <= EVIDENCE_WINDOW_CHARS for r in rpt_positions)
     }
     return len(nearby_amounts) >= 2
+
+
+def rpt_growth_evidence_bar(text_lower: str) -> bool:
+    """Public alias for `_rpt_growth` -- the real quantified-multi-
+    period-amount evidence requirement RPT_GROWTH's taxonomy entry
+    defines. `tfidf_lr` (RPT_GROWTH's own production classifier,
+    `ledgerlight.knowledge.classifier`) is a bag-of-words model with no
+    such constraint built in; real review (`docs/enhancements/
+    precision-review/results.md`) found 18/18 of its real flagged items
+    had no quantified amount at all.
+    `classifier.tfidf_lr_predict_rpt_growth_filtered` ANDs this
+    existing, independently-designed rule onto `tfidf_lr`'s own
+    prediction -- it is not a new rule invented from the reviewed
+    sample, only this rule's first application to that classifier's
+    output."""
+    return _rpt_growth(text_lower)
 
 
 def _audit_qual(text_lower: str) -> bool:

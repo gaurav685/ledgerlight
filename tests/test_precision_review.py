@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 from ledgerlight.db.models import Document, DocumentVersion
 from ledgerlight.knowledge.models import Chunk, Event, EventField, EventType, LabelItem
 from ledgerlight.knowledge.precision_review import (
+    SAMPLE_VERSION,
     Candidate,
     build_exclusion_set,
     current_detector_state,
@@ -343,10 +344,10 @@ def test_detector_freeze_matches_current_code_and_artifact() -> None:
         Path(__file__).resolve().parent.parent
         / "data"
         / "manifests"
-        / "precision-review-v1-detector.json"
+        / f"precision-review-{SAMPLE_VERSION}-detector.json"
     )
     if not freeze_path.exists():
-        pytest.skip("precision-review-v1-detector.json not built yet")
+        pytest.skip(f"precision-review-{SAMPLE_VERSION}-detector.json not built yet")
 
     with freeze_path.open(encoding="utf-8") as f:
         frozen = json.load(f)
@@ -355,6 +356,6 @@ def test_detector_freeze_matches_current_code_and_artifact() -> None:
     assert frozen["detectors"] == current, (
         "the checked-out detector code/artifact no longer matches the frozen "
         "manifest -- any precision measured against data/manifests/"
-        "precision-review-v1.jsonl is no longer about the current detector; "
-        "build a NEW sample instead of reusing this one"
+        f"precision-review-{SAMPLE_VERSION}.jsonl is no longer about the current "
+        "detector; build a NEW sample instead of reusing this one"
     )

@@ -23,6 +23,7 @@ from ledgerlight.db.session import make_session_factory  # noqa: E402
 from ledgerlight.knowledge.precision_review import (  # noqa: E402
     SAMPLE_SEED,
     SAMPLE_SIZE_PER_TYPE,
+    SAMPLE_VERSION,
     TARGET_EVENT_TYPES,
     build_exclusion_set,
     current_detector_state,
@@ -30,8 +31,10 @@ from ledgerlight.knowledge.precision_review import (  # noqa: E402
     stratified_sample,
 )
 
-DETECTOR_FREEZE_PATH = REPO_ROOT / "data" / "manifests" / "precision-review-v1-detector.json"
-SAMPLE_MANIFEST_PATH = REPO_ROOT / "data" / "manifests" / "precision-review-v1.jsonl"
+DETECTOR_FREEZE_PATH = (
+    REPO_ROOT / "data" / "manifests" / f"precision-review-{SAMPLE_VERSION}-detector.json"
+)
+SAMPLE_MANIFEST_PATH = REPO_ROOT / "data" / "manifests" / f"precision-review-{SAMPLE_VERSION}.jsonl"
 
 
 def main() -> int:
@@ -42,6 +45,7 @@ def main() -> int:
 
     detector_state = current_detector_state()
     freeze_record = {
+        "sample_version": SAMPLE_VERSION,
         "frozen_at": dt.datetime.now(dt.UTC).isoformat(),
         "sample_seed": SAMPLE_SEED,
         "sample_size_per_type": SAMPLE_SIZE_PER_TYPE,
@@ -51,7 +55,11 @@ def main() -> int:
             "docs/modelling/event-reliability.md). This freeze instead locks the "
             "exact classifier code/artifact that stands in as 'the detector' for "
             "these three types, run directly over chunk text -- see "
-            "ledgerlight/knowledge/precision_review.py's module docstring."
+            "ledgerlight/knowledge/precision_review.py's module docstring. v2: "
+            "KMP_EXIT/ID_EXIT rules hardened to PROPOSER_VERSION 4 and RPT_GROWTH's "
+            "tfidf_lr predictions are now evidence-filtered "
+            "(tfidf_lr_predict_rpt_growth_filtered), both informed by v1's real "
+            "review -- see docs/enhancements/precision-review/results-v2.md."
         ),
         "detectors": detector_state,
     }

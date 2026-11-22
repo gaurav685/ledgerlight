@@ -1,11 +1,12 @@
 """Enhancement `precision-review` §3: a real human review CLI over the
-frozen, fresh sample in `data/manifests/precision-review-v1.jsonl`
-(built by `scripts/build_precision_review_sample.py`). For each sampled
-chunk, shows the flagged event type, the chunk text (the real cited
-evidence for a whole-chunk classifier -- see the note printed for each
-item), the company, document type/date, and records a real reviewer
-decision (correct / wrong-type / not-an-event / skip) to an append-only
-audit log.
+frozen, fresh sample in `data/manifests/precision-review-<version>.jsonl`
+(built by `scripts/build_precision_review_sample.py`; `<version>` is
+`ledgerlight.knowledge.precision_review.SAMPLE_VERSION`). For each
+sampled chunk, shows the flagged event type, the chunk text (the real
+cited evidence for a whole-chunk classifier -- see the note printed for
+each item), the company, document type/date, and records a real
+reviewer decision (correct / wrong-type / not-an-event / skip) to an
+append-only audit log.
 
 YOU (a human) run this. Claude/any automated process must never run
 this on your behalf -- see ledgerlight.review_pack and
@@ -18,8 +19,8 @@ Usage (Windows PowerShell, .venv directly):
     .venv\\Scripts\\python.exe scripts\\precision_review.py --reviewer "your name" --human
 
 Resumes automatically: an item with an existing decision in
-docs/enhancements/precision-review/precision-review-audit.jsonl is
-skipped. Re-run the same command after an interruption to continue.
+docs/enhancements/precision-review/precision-review-audit-<version>.jsonl
+is skipped. Re-run the same command after an interruption to continue.
 """
 
 from __future__ import annotations
@@ -40,12 +41,17 @@ from ledgerlight.config.settings import load_settings  # noqa: E402
 from ledgerlight.db.models import Document, DocumentVersion  # noqa: E402
 from ledgerlight.db.session import make_session_factory  # noqa: E402
 from ledgerlight.knowledge.models import Chunk, Company, Filing  # noqa: E402
+from ledgerlight.knowledge.precision_review import SAMPLE_VERSION  # noqa: E402
 from ledgerlight.review_pack import require_human_confirmation  # noqa: E402
 from ledgerlight.review_pack.audit import append_entry, latest_decisions  # noqa: E402
 
-SAMPLE_MANIFEST_PATH = REPO_ROOT / "data" / "manifests" / "precision-review-v1.jsonl"
+SAMPLE_MANIFEST_PATH = REPO_ROOT / "data" / "manifests" / f"precision-review-{SAMPLE_VERSION}.jsonl"
 AUDIT_PATH = (
-    REPO_ROOT / "docs" / "enhancements" / "precision-review" / "precision-review-audit.jsonl"
+    REPO_ROOT
+    / "docs"
+    / "enhancements"
+    / "precision-review"
+    / f"precision-review-audit-{SAMPLE_VERSION}.jsonl"
 )
 
 DECISION_MAP = {"c": "correct", "w": "wrong-type", "n": "not-an-event", "s": "skip"}

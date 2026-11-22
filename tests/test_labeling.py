@@ -139,6 +139,58 @@ def test_propose_event_type_roster_table_different_people_is_none() -> None:
     assert propose_event_type(text) != "ID_EXIT"
 
 
+def test_propose_event_type_kmp_exit_role_must_belong_to_the_resigning_person() -> None:
+    # PROPOSER_VERSION 4, real THERMAX false positive (precision-review
+    # v1, docs/enhancements/precision-review/results.md): a bare
+    # "Director... resigned" was wrongly paired with an unrelated
+    # person's "appointed as Whole Time Director" elsewhere in the same
+    # dense bulleted chunk -- the role belongs to someone who was
+    # APPOINTED, not to the person who resigned.
+    text = (
+        "I further report that during the audit period:\n"
+        "- Mr. Ashok Kumar, Director of the Company resigned w.e.f. April 24, 2024.\n"
+        "- Mr. Bimal Rao, Director of the Company resigned w.e.f. July 22, 2024.\n"
+        "- At the Annual General Meeting, Mr. Chetan Shah was regularised as "
+        "Director of the Company and was appointed as Whole Time Director of "
+        "the Company w.e.f. February 6, 2024."
+    )
+    assert propose_event_type(text) != "KMP_EXIT"
+
+
+def test_propose_event_type_kmp_exit_still_matches_when_role_belongs_to_the_same_person() -> None:
+    # Regression safety for the v4 same-person check: a role genuinely
+    # describing the resigning person must still match.
+    text = (
+        "Mr. Arun Kumar, Chief Financial Officer of the Company, has resigned "
+        "w.e.f. April 24, 2024."
+    )
+    assert propose_event_type(text) == "KMP_EXIT"
+
+
+def test_propose_event_type_id_exit_footnote_citation_is_not_an_event() -> None:
+    # PROPOSER_VERSION 4, real THERMAX false positive: the SAME real
+    # departure, already disclosed once, recurs as a footnote-marker
+    # citation ("#Name ceased...") in an unrelated table elsewhere in
+    # the same annual report -- not a new, independent event.
+    text = (
+        "#Mr. Dinesh Mehta ceased to be Non-Executive, Independent Director of the "
+        "Company effective July 21, 2024.\n"
+        "The maximum time gap between any two sequential meetings was not more "
+        "than 120 days."
+    )
+    assert propose_event_type(text) != "ID_EXIT"
+
+
+def test_propose_event_type_id_exit_still_matches_without_a_footnote_marker() -> None:
+    # Regression safety: the same sentence, without the footnote marker
+    # prefix, must still match -- the real dedicated-disclosure case.
+    text = (
+        "Mr. Dinesh Mehta ceased to be Non-Executive, Independent Director of the "
+        "Company effective July 21, 2024."
+    )
+    assert propose_event_type(text) == "ID_EXIT"
+
+
 def test_propose_event_type_roster_table_same_row_kmp_exit_matches() -> None:
     # Same fixture as the roster test above, kept at its real size (>= 3
     # numbered rows -- below that, _row_segments doesn't treat it as a

@@ -1,0 +1,33 @@
+{
+  "detectors": {
+    "ID_EXIT": {
+      "code_files": "ledgerlight/knowledge/labeling.py, ledgerlight/knowledge/evidence.py",
+      "code_hash_sha256": "5a38757838772bebc44d1c846dea12dcb2c28e92c0ececc6f260d75fdec761e3",
+      "method": "rules_baseline",
+      "proposer_name": "keyword-rule-baseline",
+      "proposer_version": "4"
+    },
+    "KMP_EXIT": {
+      "code_files": "ledgerlight/knowledge/labeling.py, ledgerlight/knowledge/evidence.py",
+      "code_hash_sha256": "5a38757838772bebc44d1c846dea12dcb2c28e92c0ececc6f260d75fdec761e3",
+      "method": "rules_baseline",
+      "proposer_name": "keyword-rule-baseline",
+      "proposer_version": "4"
+    },
+    "RPT_GROWTH": {
+      "artifact_path": "data/models/tfidf_lr_v1.pkl",
+      "artifact_sha256": "5cf970508bdc5574ddc2006d8574a257ef7af48112e325e93643d32ddae8cb58",
+      "filter_code_files": "ledgerlight/knowledge/classifier.py, ledgerlight/knowledge/labeling.py",
+      "filter_code_hash_sha256": "6695ce560aab08518d4ba8655a7388d93f560093fea805ed3ea51db179b0dde2",
+      "filter_version": "1",
+      "method": "tfidf_lr_rpt_growth_filtered",
+      "model_name": "tfidf-logreg-event-classifier",
+      "model_version": "1"
+    }
+  },
+  "disclosure": "No Event-table row of KMP_EXIT, ID_EXIT or RPT_GROWTH exists in this database; extraction_pipeline.py only wires AUD_RESIGN (see docs/modelling/event-reliability.md). This freeze instead locks the exact classifier code/artifact that stands in as 'the detector' for these three types, run directly over chunk text -- see ledgerlight/knowledge/precision_review.py's module docstring. v2: KMP_EXIT/ID_EXIT rules hardened to PROPOSER_VERSION 4 and RPT_GROWTH's tfidf_lr predictions are now evidence-filtered (tfidf_lr_predict_rpt_growth_filtered), both informed by v1's real review -- see docs/enhancements/precision-review/results-v2.md.",
+  "frozen_at": "2026-11-22T10:28:17.059534+00:00",
+  "sample_seed": 42,
+  "sample_size_per_type": 20,
+  "sample_version": "v2"
+}

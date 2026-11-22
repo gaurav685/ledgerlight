@@ -11,7 +11,8 @@ The real production method per type (Phase 3 §1.3, `data/manifests/
 classifier-selection-gold-validation.json`) is a classifier run directly
 over chunk text:
   - KMP_EXIT, ID_EXIT -> rules_baseline (`propose_event_type`)
-  - RPT_GROWTH        -> tfidf_lr (`data/models/tfidf_lr_v1.pkl`)
+  - RPT_GROWTH        -> tfidf_lr, evidence-filtered
+    (`tfidf_lr_predict_rpt_growth_filtered`, `data/models/tfidf_lr_v1.pkl`)
 This module runs exactly those frozen classifiers, fresh, over every
 real chunk in the corpus, and treats "classifier flags this chunk as
 type X" as the candidate pool -- the closest honest analog to "current
@@ -33,17 +34,24 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ledgerlight.knowledge.classifier import rules_baseline_predict, tfidf_lr_predict
+from ledgerlight.knowledge.classifier import (
+    RPT_GROWTH_EVIDENCE_FILTER_VERSION,
+    rules_baseline_predict,
+    tfidf_lr_predict_rpt_growth_filtered,
+)
 from ledgerlight.knowledge.labeling import PROPOSER_NAME, PROPOSER_VERSION
 from ledgerlight.knowledge.models import Chunk, EventField, Filing, LabelItem
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+
+SAMPLE_VERSION = "v2"
 
 GOLD_LABELS_PATH = REPO_ROOT / "data" / "manifests" / "gold-labels-phase2.json"
 FROZEN_TEST_SPLIT_PATH = REPO_ROOT / "data" / "manifests" / "frozen-test-split-phase2.json"
 TFIDF_MODEL_PATH = REPO_ROOT / "data" / "models" / "tfidf_lr_v1.pkl"
 LABELING_SOURCE_PATH = REPO_ROOT / "ledgerlight" / "knowledge" / "labeling.py"
 EVIDENCE_SOURCE_PATH = REPO_ROOT / "ledgerlight" / "knowledge" / "evidence.py"
+CLASSIFIER_SOURCE_PATH = REPO_ROOT / "ledgerlight" / "knowledge" / "classifier.py"
 
 REVIEW_PACK_AUDIT_PATHS = [
     REPO_ROOT / "docs" / "phase-6" / "review-pack" / "field-review-audit.jsonl",
@@ -125,11 +133,16 @@ def current_detector_state() -> dict[str, dict[str, str]]:
         "code_files": "ledgerlight/knowledge/labeling.py, ledgerlight/knowledge/evidence.py",
     }
     tfidf_state = {
-        "method": "tfidf_lr",
+        "method": "tfidf_lr_rpt_growth_filtered",
         "model_name": "tfidf-logreg-event-classifier",
         "model_version": "1",
         "artifact_path": "data/models/tfidf_lr_v1.pkl",
         "artifact_sha256": _sha256_file(TFIDF_MODEL_PATH),
+        "filter_version": RPT_GROWTH_EVIDENCE_FILTER_VERSION,
+        "filter_code_hash_sha256": _sha256_files([CLASSIFIER_SOURCE_PATH, LABELING_SOURCE_PATH]),
+        "filter_code_files": (
+            "ledgerlight/knowledge/classifier.py, ledgerlight/knowledge/labeling.py"
+        ),
     }
     return {
         "KMP_EXIT": rules_state,
@@ -165,6 +178,7 @@ def build_exclusion_set(
     frozen_test_split_path: Path = FROZEN_TEST_SPLIT_PATH,
     hardening_cited_ids: frozenset[str] = HARDENING_CITED_LABEL_ITEM_IDS,
     review_pack_audit_paths: list[Path] | None = None,
+    prior_round_manifest_paths: list[Path] | None = None,
 ) -> ExclusionReport:
     """Every chunk that must never appear in the fresh sample, because it
     already informed a human decision, a frozen metric, or this
@@ -174,6 +188,10 @@ def build_exclusion_set(
     review_pack_audit_paths = (
         REVIEW_PACK_AUDIT_PATHS if review_pack_audit_paths is None else review_pack_audit_paths
     )
+    if prior_round_manifest_paths is None:
+        prior_round_manifest_paths = sorted(
+            (REPO_ROOT / "data" / "manifests").glob("precision-review-v*.jsonl")
+        )
 
     # 1. Phase 2 label set, all splits (every id ever reviewed to gold).
     gold_ids: set[uuid.UUID] = set()
@@ -256,6 +274,24 @@ def build_exclusion_set(
     report.by_source["ai_qa_review_pack_net_new"] = len(new_from_pack)
     report.excluded_chunk_ids |= review_pack_chunk_ids
 
+    # 5. Every chunk already sampled in a prior precision-review round
+    #    (data/manifests/precision-review-v*.jsonl) -- "fresh" means
+    #    never shown to a reviewer before, in this round or any earlier
+    #    one, not just never in the Phase 2/6 sets above.
+    prior_round_chunk_ids: set[uuid.UUID] = set()
+    for manifest_path in prior_round_manifest_paths:
+        if not manifest_path.exists():
+            continue
+        with manifest_path.open(encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    prior_round_chunk_ids.add(uuid.UUID(json.loads(line)["id"]))
+    new_from_prior_rounds = prior_round_chunk_ids - report.excluded_chunk_ids
+    report.by_source["prior_precision_review_rounds"] = len(prior_round_chunk_ids)
+    report.by_source["prior_precision_review_rounds_net_new"] = len(new_from_prior_rounds)
+    report.excluded_chunk_ids |= prior_round_chunk_ids
+
     return report
 
 
@@ -297,7 +333,10 @@ def run_frozen_detector(
     if event_type in RULES_BASELINE_TYPES:
         predictions = [predict_one(text) for _, text, _ in eligible]
     else:
-        predictions = tfidf_lr_predict(tfidf_model, [text for _, text, _ in eligible])  # type: ignore[arg-type]
+        predictions = tfidf_lr_predict_rpt_growth_filtered(
+            tfidf_model,  # type: ignore[arg-type]
+            [text for _, text, _ in eligible],
+        )
 
     flagged = [
         (cid, vid)
